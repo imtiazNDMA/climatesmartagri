@@ -1,0 +1,37 @@
+{
+  "chart": {
+    "title": "Nitrous oxide emissions",
+    "subtitle": "Nitrous oxide (N₂O) emissions are measured in tonnes of carbon dioxide-equivalents.",
+    "citation": "Jones et al. (2025)",
+    "originalChartUrl": "https://ourworldindata.org/grapher/nitrous-oxide-emissions?tab=line&country=~PAK&v=1&csvType=filtered&useColumnShortNames=false",
+    "selection": [
+      "United States",
+      "China",
+      "European Union (28)"
+    ]
+  },
+  "columns": {
+    "Annual nitrous oxide emissions in CO₂ equivalents": {
+      "titleShort": "Annual nitrous oxide emissions including land use",
+      "titleLong": "Annual nitrous oxide emissions including land use",
+      "descriptionShort": "Measured in tonnes of carbon dioxide-equivalents over a 100-year timescale.",
+      "descriptionProcessing": "Nitrous oxide emissions in tonnes have been converted to carbon-dioxide equivalents over a 100-year timescale using a conversion factor of 273. This factor is taken from the 6th Assessment Report (AR6) of the Intergovernmental Panel on Climate Change (IPCC).",
+      "shortUnit": "t",
+      "unit": "tonnes of CO₂ equivalents",
+      "timespan": "1850-2024",
+      "type": "Numeric",
+      "owidVariableId": 1129033,
+      "shortName": "annual_emissions_n2o_total_co2eq",
+      "lastUpdated": "2025-12-04",
+      "nextUpdate": "2026-12-04",
+      "citationShort": "Jones et al. (2025) – with major processing by Our World in Data",
+      "citationLong": "Jones et al. (2025) – with major processing by Our World in Data. “Annual nitrous oxide emissions including land use” [dataset]. Jones et al., “National contributions to climate change 2025.1” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1129033.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-09-18",
+  "activeFilters": {
+    "country": "~PAK",
+    "tab": "line"
+  }
+}

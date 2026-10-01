@@ -1,0 +1,44 @@
+{
+  "chart": {
+    "title": "Per capita nitrous oxide emissions from agriculture",
+    "subtitle": "Nitrous oxide (N₂O) emissions are measured in kilograms of carbon dioxide-equivalents.",
+    "citation": "Climate Watch (2026); Population based on various sources (2024)",
+    "originalChartUrl": "https://ourworldindata.org/grapher/per-capita-nitrous-oxide-agriculture?tab=line&country=~PAK&v=1&csvType=filtered&useColumnShortNames=false",
+    "selection": [
+      "Niger",
+      "Nigeria",
+      "South Sudan",
+      "South Africa",
+      "Brazil",
+      "China",
+      "India",
+      "United States",
+      "United Kingdom",
+      "World",
+      "Australia"
+    ]
+  },
+  "columns": {
+    "Per capita nitrous oxide emissions from agriculture": {
+      "titleShort": "Agriculture",
+      "titleLong": "Agriculture",
+      "descriptionShort": "Emissions are measured in kilograms of carbon dioxide-equivalents per person.",
+      "shortUnit": "kg/person",
+      "unit": "kilograms per person",
+      "timespan": "1990-2023",
+      "type": "Numeric",
+      "owidVariableId": 1146699,
+      "shortName": "agriculture_n2o_emissions_per_capita",
+      "lastUpdated": "2026-02-10",
+      "nextUpdate": "2027-02-10",
+      "citationShort": "Climate Watch (2026); Population based on various sources (2024) – with major processing by Our World in Data",
+      "citationLong": "Climate Watch (2026); Population based on various sources (2024) – with major processing by Our World in Data. “Agriculture” [dataset]. Climate Watch, “Greenhouse gas emissions by sector”; Various sources, “Population” [original data].",
+      "fullMetadata": "https://api.ourworldindata.org/v1/indicators/1146699.metadata.json"
+    }
+  },
+  "dateDownloaded": "2026-09-18",
+  "activeFilters": {
+    "country": "~PAK",
+    "tab": "line"
+  }
+}

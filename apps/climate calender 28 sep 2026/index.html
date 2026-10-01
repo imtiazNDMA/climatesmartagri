@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Climate-Smart Agriculture Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div class="brand-wrap">
+          <div class="brand-mark">CSA</div>
+          <div>
+            <p class="eyebrow">Agricultural analytics</p>
+            <h1>Climate-Smart Agriculture Portal</h1>
+          </div>
+        </div>
+        <nav class="nav">
+          <a href="#overview">Overview</a>
+          <a href="#calendar">Crop calendar</a>
+          <a href="#insights">Insights</a>
+        </nav>
+        <button class="primary-btn">Export report</button>
+      </header>
+
+      <main>
+        <section class="hero" id="overview">
+          <div class="hero-copy">
+            <span class="status-pill">Climate adaptation dashboard</span>
+            <h2>Updated crop calendars for a hotter, variable season.</h2>
+            <p>
+              This portal consolidates climate-smart agronomic adjustments across Pakistan to help farmers,
+              planners, and agencies respond to rising temperatures, water stress, and shifting rainfall patterns.
+            </p>
+          </div>
+
+          <div class="hero-kpis" id="kpiGrid"></div>
+        </section>
+
+        <section class="panel filter-panel">
+          <div class="panel-header">
+            <h3>Province focus</h3>
+            <div class="search-box">
+              <span>🔎</span>
+              <input id="searchInput" type="text" placeholder="Search crop or province" aria-label="Search crop or province" />
+            </div>
+          </div>
+          <div class="filter-row" id="provinceFilters"></div>
+        </section>
+
+        <section class="insight-grid" id="insights">
+          <article class="insight-card accent-green">
+            <span class="mini-label">Priority risk</span>
+            <h3>Heat stress</h3>
+            <p>Late-season temperature spikes reduce grain filling and reproductive success across most cereals.</p>
+          </article>
+
+          <article class="insight-card accent-blue">
+            <span class="mini-label">Water strategy</span>
+            <h3>Efficient irrigation</h3>
+            <p>Earlier establishment and water-aware scheduling limit stress in rice, cotton, and sugarcane systems.</p>
+          </article>
+
+          <article class="insight-card accent-gold">
+            <span class="mini-label">Planning approach</span>
+            <h3>Timely sowing</h3>
+            <p>Adopting early or adjusted sowing dates helps align crop growth stages with changing climate patterns.</p>
+          </article>
+        </section>
+
+        <section class="panel table-panel" id="calendar">
+          <div class="panel-header">
+            <h3>Climate-smart crop calendar</h3>
+            <span id="resultCount" class="subtle-badge">0 records</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Province</th>
+                  <th>Crop</th>
+                  <th>Traditional Calendar</th>
+                  <th>Climate-Smart / Adjusted Calendar</th>
+                  <th>Reason for Shift</th>
+                </tr>
+              </thead>
+              <tbody id="calendarBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
