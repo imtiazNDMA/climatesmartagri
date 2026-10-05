@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "dash>=4.4.1",
+    "fastapi>=0.142.2",
     "ipykernel>=7.4.0",
     "jupyter>=1.1.1",
     "matplotlib>=3.11.2",
@@ -16,5 +17,16 @@ dependencies = [
     "plotly>=7.1.0",
     "scipy>=1.18.1",
     "seaborn>=0.13.2",
+    "uvicorn[standard]>=0.54.0",
     "xlrd>=2.0.2",
 ]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["backend"]
+testpaths = ["backend/tests"]
