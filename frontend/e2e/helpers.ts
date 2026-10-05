@@ -22,9 +22,26 @@ export async function mockTiles(page: Page) {
   )
 }
 
+const SHAPES = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: { id: 'shape-a', name: 'Shape A', kind: 'a', label: 'Kind: A' },
+      geometry: { type: 'Polygon', coordinates: [[[66, 26], [70, 26], [70, 30], [66, 30], [66, 26]]] },
+    },
+  ],
+}
+
+/** The fixture backend has no shape layers either; serve one polygon over the west of the fixture country. */
+export async function mockShapes(page: Page) {
+  await page.route('**/api/layers/*/geojson**', (route) => route.fulfill({ json: SHAPES }))
+}
+
 export async function openPortal(page: Page, path = '/') {
   await mockBasemap(page)
   await mockTiles(page)
+  await mockShapes(page)
   await page.goto(path)
   await page.getByRole('navigation', { name: 'Sections' }).waitFor()
 }

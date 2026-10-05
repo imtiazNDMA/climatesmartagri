@@ -96,13 +96,13 @@ h2, h3 { margin: 0; }
   position: absolute; z-index: 10; background: var(--surface);
   border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 4px rgb(0 0 0 / 15%);
 }
-.active-layers { top: 56px; right: 12px; width: 260px; padding: 10px 12px; }
+.active-layers { top: 56px; right: 12px; width: 300px; padding: 10px 12px; }
 .active-layers h3 { font-size: 13px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
-.active-layers ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.active-layers ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .active-grip { cursor: grab; color: var(--muted); display: grid; place-items: center; }
-.active-row { display: flex; align-items: center; gap: 2px; }
-.active-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.active-row button { border: 0; background: transparent; padding: 4px; border-radius: 4px; }
+.active-row { display: flex; align-items: flex-start; gap: 2px; }
+.active-title { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.active-row button { flex: none; border: 0; background: transparent; padding: 4px; border-radius: 4px; }
 .active-row button:hover:not(:disabled) { background: #f1f5f9; }
 .active-layers input[type='range'] { width: 100%; }
 .active-error { display: flex; justify-content: space-between; color: var(--warning); font-size: 13px; }
@@ -155,3 +155,17 @@ h2, h3 { margin: 0; }
 .breadcrumb li + li::before { content: '›'; margin-right: 6px; color: var(--muted); }
 .breadcrumb button { border: 0; background: transparent; color: var(--accent); padding: 0; }
 .breadcrumb [aria-current] { font-weight: 600; }
+
+/* Figures, notes and charts in the section panel */
+.note { margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.chart { margin: 0 0 20px; }
+.chart figcaption { font-weight: 600; margin-bottom: 4px; }
+.chart figcaption small { font-weight: 400; color: var(--muted); }
+.chart-plot { width: 100%; cursor: pointer; }
+.chart-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.chart-table { margin-top: 4px; font-size: 13px; }
+.chart-table summary { cursor: pointer; color: var(--accent); }
+.chart-table table { border-collapse: collapse; width: 100%; margin-top: 6px; }
+.chart-table th, .chart-table td { padding: 3px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+.chart-table th:first-child { text-align: left; }
+.maplibregl-popup-content { font-size: 13px; }

@@ -5,6 +5,8 @@ import {
   fetchBoundaries,
   fetchCatalogue,
   fetchSectionData,
+  layerGeojsonUrl,
+  probeLayer,
   probeTile,
   tileUrlTemplate,
   withRetry,
@@ -112,5 +114,28 @@ describe('withRetry', () => {
     }
     await expect(withRetry(run, 3, 1)).rejects.toBeInstanceOf(ApiError)
     expect(calls).toBe(1)
+  })
+})
+
+describe('shape layers', () => {
+  const shapes = { id: 'shapes', kind: 'geojson' as const }
+  const raster = { id: 'forest', kind: 'raster' as const }
+
+  it('builds the data address, with the retry count when retrying', () => {
+    expect(layerGeojsonUrl('shapes', 0)).toBe('/api/layers/shapes/geojson')
+    expect(layerGeojsonUrl('shapes', 2)).toBe('/api/layers/shapes/geojson?r=2')
+  })
+
+  it('probes a shape layer at its data address and a tile layer at its root tile', async () => {
+    const ok = respond(200, {})
+    vi.stubGlobal('fetch', ok)
+    expect(await probeLayer(shapes, 2005, 0)).toBe(true)
+    expect(await probeLayer(raster, 2005, 0)).toBe(true)
+    expect(ok.mock.calls.map((c) => c[0])).toEqual(['/api/layers/shapes/geojson', '/api/tiles/forest/0/0/0?year=2005'])
+  })
+
+  it('reports a shape layer that cannot be loaded', async () => {
+    vi.stubGlobal('fetch', respond(404, { detail: { message: 'x', reason: 'no-data' } }))
+    expect(await probeLayer(shapes, null, 0)).toBe(false)
   })
 })

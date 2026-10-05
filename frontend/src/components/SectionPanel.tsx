@@ -1,13 +1,15 @@
 import { X } from 'lucide-react'
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { COUNTRY_ID } from '../api/types'
+import { formatNumber } from '../charts/chartOption'
 import type { PortalData } from '../data/usePortalData'
 import { useSectionData, type SectionDataState } from '../data/useSectionData'
 import { effectiveYear } from '../state/selectors'
 import { useView, viewStore } from '../state/viewState'
+import { Chart } from './Chart'
 
 const MIN_WIDTH = 280
-const MAX_WIDTH = 640
+const MAX_WIDTH = 760
 
 function Figures({ state, placeSelected }: { state: SectionDataState; placeSelected: boolean }) {
   if (state.status === 'no-data') return <p className="empty">Data not loaded yet</p>
@@ -18,17 +20,27 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
   return (
     <>
       {placeSelected && data.level_used === 'national' && <p className="national-only">National figures only</p>}
-      {data.figures.length === 0 ? (
-        <p className="empty">No figures for this section yet.</p>
-      ) : (
+      {data.figures.length > 0 && (
         <dl className="figures">
           {data.figures.map((figure) => (
             <div key={figure.label}>
               <dt>{figure.label}</dt>
-              <dd>{[figure.value, figure.unit].filter((part) => part !== '').join(' ')}</dd>
+              <dd>
+                {figure.value === null
+                  ? 'Not reported'
+                  : [formatNumber(figure.value), figure.unit].filter((part) => part !== '').join(' ')}
+              </dd>
             </div>
           ))}
         </dl>
+      )}
+      {(data.notes ?? []).map((note) => (
+        <p className="note" key={note}>
+          {note}
+        </p>
+      ))}
+      {data.figures.length === 0 && (data.notes ?? []).length === 0 && (
+        <p className="empty">No figures for this selection.</p>
       )}
     </>
   )
@@ -39,7 +51,7 @@ export function SectionPanel({ data }: { data: PortalData }) {
   const activeLayers = useView((s) => s.layers)
   const placeId = useView((s) => s.place)
   const year = useView((s) => s.year)
-  const [width, setWidth] = useState(340)
+  const [width, setWidth] = useState(400)
 
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
   const sectionData = useSectionData(section, placeId, effectiveYear(section?.years, year))
@@ -103,14 +115,23 @@ export function SectionPanel({ data }: { data: PortalData }) {
             })}
           </section>
           <section>
-            <h3>Figures for {place?.name ?? 'Pakistan'}</h3>
+            <h3>
+              Figures for {place?.name ?? 'Pakistan'}
+              {sectionData.status === 'ready' && sectionData.data.year !== null && `, ${sectionData.data.year}`}
+            </h3>
             <Figures state={sectionData} placeSelected={placeId !== null} />
           </section>
           <section>
             <h3>Charts</h3>
-            <p className="empty">
-              {sectionData.status === 'ready' ? 'No charts for this section yet.' : 'Data not loaded yet'}
-            </p>
+            {sectionData.status === 'ready' && sectionData.data.charts.length > 0 ? (
+              sectionData.data.charts.map((chart) => (
+                <Chart key={chart.id} spec={chart} year={sectionData.data.year} />
+              ))
+            ) : (
+              <p className="empty">
+                {sectionData.status === 'ready' ? 'No charts for this selection.' : 'Data not loaded yet'}
+              </p>
+            )}
           </section>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { probeTile } from '../api/client'
+import { probeLayer } from '../api/client'
 import type { Catalogue } from '../api/types'
 import { effectiveYear } from '../state/selectors'
 import { uiStore, useUi } from '../state/uiState'
@@ -32,7 +32,7 @@ export function useLayerProbes(catalogue: Catalogue): void {
       const key = `${shownYear ?? ''}|${retry}`
       if (probed.current.get(layer.id) === key) continue
       probed.current.set(layer.id, key)
-      probeTile(layer.id, shownYear, retry).then((ok) => {
+      probeLayer(layer, shownYear, retry).then((ok) => {
         if (probed.current.get(layer.id) !== key) return
         if (ok) uiStore.getState().clearLayerError(layer.id)
         else uiStore.getState().setLayerError(layer.id)

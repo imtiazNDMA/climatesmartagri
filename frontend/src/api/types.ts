@@ -8,6 +8,8 @@ export interface YearRange {
 export interface LegendItem {
   colour: string
   label: string
+  /** For a shape layer: the feature property value this colour stands for. */
+  value?: string | null
 }
 
 export type Legend =
@@ -32,9 +34,11 @@ export interface Layer {
   id: string
   section_id: string | null
   title: string
-  kind: 'raster' | 'vector' | 'boundary'
+  kind: 'raster' | 'vector' | 'geojson' | 'boundary'
   status: 'ready' | 'no-data'
   legend: Legend | null
+  /** For a shape layer: the feature property the legend colours. */
+  property?: string | null
   years: YearRange | null
   default_opacity: number
 }
@@ -55,8 +59,32 @@ export interface Place {
 
 export interface Figure {
   label: string
-  value: number | string
+  value: number | string | null
   unit: string
+}
+
+export interface ChartSeries {
+  name: string
+  /** Position in the fixed colour order, starting at 1. */
+  slot: number
+  values: (number | null)[]
+  /** Indexes that get a dot, for charts that single out some points. */
+  points?: number[]
+}
+
+export interface ChartSpec {
+  id: string
+  title: string
+  kind: 'line' | 'stacked-area' | 'bar'
+  unit: string
+  /** True when the categories are years. */
+  time: boolean
+  categories: (string | number)[]
+  series: ChartSeries[]
+  horizontal?: boolean
+  highlight?: number | null
+  zero_line?: boolean
+  note?: string
 }
 
 export interface SectionData {
@@ -65,7 +93,8 @@ export interface SectionData {
   level_used: PlaceLevel
   year: number | null
   figures: Figure[]
-  charts: unknown[]
+  charts: ChartSpec[]
+  notes?: string[]
 }
 
 export interface Boundaries {

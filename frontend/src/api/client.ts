@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson'
-import type { Catalogue, Place, SectionData } from './types'
+import type { Catalogue, Layer, Place, SectionData } from './types'
 
 export class ApiError extends Error {
   status: number
@@ -69,6 +69,20 @@ export function tileUrlTemplate(layerId: string, year: number | null, retry: num
   if (retry > 0) params.push(`r=${retry}`)
   const query = params.length ? `?${params.join('&')}` : ''
   return `/api/tiles/${layerId}/{z}/{x}/{y}${query}`
+}
+
+export function layerGeojsonUrl(layerId: string, retry: number): string {
+  return `/api/layers/${layerId}/geojson${retry > 0 ? `?r=${retry}` : ''}`
+}
+
+/** Learn whether a layer's data can be served: its shapes for a shape layer, its root tile otherwise. */
+export async function probeLayer(layer: Pick<Layer, 'id' | 'kind'>, year: number | null, retry: number): Promise<boolean> {
+  if (layer.kind !== 'geojson') return probeTile(layer.id, year, retry)
+  try {
+    return (await fetch(layerGeojsonUrl(layer.id, retry))).ok
+  } catch {
+    return false
+  }
 }
 
 /** Ask for the root tile to learn whether a layer's tiles can be served at all. */

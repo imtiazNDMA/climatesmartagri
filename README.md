@@ -26,7 +26,7 @@ This runs the backend tests (pytest), the frontend logic tests (Vitest) and the 
 ## Layout
 
 - `backend/` — FastAPI app. `catalogue.json` describes every section and layer; the interface is built from it.
-- `backend/boundaries/` — province and district boundaries, produced by `backend/scripts/prepare_boundaries.py`.
+- `backend/boundaries/` and `backend/data/` — boundaries and section data, produced from the files in `data/` by `uv run python backend/scripts/prepare_data.py`. Re-run it after changing a source spreadsheet or map file, then restart the portal.
 - `frontend/` — React app.
 - `data/` — source datasets.
 - `docs/superpowers/specs/` — design documents.

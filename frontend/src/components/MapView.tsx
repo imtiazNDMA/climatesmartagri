@@ -2,9 +2,10 @@ import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type StyleS
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef, useState } from 'react'
-import { tileUrlTemplate } from '../api/client'
+import { layerGeojsonUrl, tileUrlTemplate } from '../api/client'
 import { COUNTRY_ID, type Layer } from '../api/types'
 import type { PortalData } from '../data/usePortalData'
+import { fillColour } from '../map/layerStyle'
 import { clickTarget, effectiveYear } from '../state/selectors'
 import { uiStore, useUi } from '../state/uiState'
 import { useView, viewStore } from '../state/viewState'
@@ -89,7 +90,21 @@ function wireInteractions(map: MapLibreMap, data: PortalData) {
       map.setFeatureState({ source: 'districts', id }, { hover: true })
     }
     map.getCanvas().style.cursor = 'pointer'
-    popup.setLngLat(event.lngLat).setText(String(feature.properties.name)).addTo(map)
+    // The district's name, then what each visible shape layer says about this spot.
+    const content = document.createElement('div')
+    const heading = document.createElement('strong')
+    heading.textContent = String(feature.properties.name)
+    content.append(heading)
+    const seen = new Set<string>()
+    for (const under of map.queryRenderedFeatures(event.point)) {
+      const label = under.properties?.label
+      if (!under.layer.id.startsWith('data-') || typeof label !== 'string' || seen.has(under.layer.id)) continue
+      seen.add(under.layer.id)
+      const line = document.createElement('div')
+      line.textContent = label
+      content.append(line)
+    }
+    popup.setLngLat(event.lngLat).setDOMContent(content).addTo(map)
   })
   map.on('mouseleave', 'districts-fill', () => {
     clearHover()
@@ -106,6 +121,17 @@ function wireInteractions(map: MapLibreMap, data: PortalData) {
 
 function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry: number) {
   const id = dataId(layer.id)
+  if (layer.kind === 'geojson') {
+    map.addSource(id, { type: 'geojson', data: `${window.location.origin}${layerGeojsonUrl(layer.id, retry)}` })
+    map.addLayer({
+      id,
+      type: 'fill',
+      source: id,
+      // The expression is built from the catalogue's legend, so it is typed loosely here.
+      paint: { 'fill-color': fillColour(layer) as never, 'fill-outline-color': 'rgba(255, 255, 255, 0.7)' },
+    })
+    return
+  }
   const tiles = [`${window.location.origin}${tileUrlTemplate(layer.id, year, retry)}`]
   if (layer.kind === 'vector') {
     const colour = layer.legend?.type === 'classes' ? layer.legend.items[0].colour : '#1d4ed8'
@@ -232,7 +258,7 @@ export function MapView({ data }: { data: PortalData }) {
       const id = dataId(layer.id)
       map.moveLayer(id, anchor)
       map.setLayoutProperty(id, 'visibility', active.hidden ? 'none' : 'visible')
-      map.setPaintProperty(id, layer.kind === 'vector' ? 'fill-opacity' : 'raster-opacity', active.opacity)
+      map.setPaintProperty(id, layer.kind === 'raster' ? 'raster-opacity' : 'fill-opacity', active.opacity)
     }
   }, [ready, layers, year, retryCounts, data])
 

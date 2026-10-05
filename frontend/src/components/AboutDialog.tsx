@@ -15,10 +15,11 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
       <h2>Climate Smart Agriculture Portal</h2>
       <h3>Data sources</h3>
       <ul>
-        <li>Land cover and irrigation: project datasets, loaded in a later release.</li>
+        <li>Irrigation practice and district irrigation figures: project datasets.</li>
+        <li>Land cover: project rasters, loaded in a later release.</li>
         <li>Greenhouse-gas emissions: Our World in Data and national inventory figures, 1994–2021.</li>
         <li>Crop water balance and food security projections: project spreadsheets.</li>
-        <li>Administrative boundaries: source to be confirmed by the project owner.</li>
+        <li>Province and district boundaries: merged from the project's irrigation practice map layer.</li>
         <li>Background map: OpenFreeMap, © OpenStreetMap contributors.</li>
       </ul>
       <button type="button" onClick={onClose}>
