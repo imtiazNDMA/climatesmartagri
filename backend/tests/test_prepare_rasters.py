@@ -67,48 +67,41 @@ def test_every_land_cover_layer_has_a_source_file_name():
     assert set(RASTERS) == {"forest", "shrub-land", "bare-land", "irrigated-rainfed"}
 
 
-def write_sparse_raster(path: Path, size: int = 1024) -> None:
-    """Like the irrigated/rainfed file: 0 means 'other area' and fills most cells; cropland (2) is scattered."""
-    data = np.zeros((size, size), dtype="int8")
-    data[::4, ::4] = 2
-    data[:, :64] = 127
+def write_scattered_raster(path: Path, share: float = 0.10, size: int = 2048) -> None:
+    """A class scattered thinly over an otherwise empty raster, like forest across a plain."""
+    rng = np.random.default_rng(7)
+    data = np.where(rng.random((size, size)) < share, 2, 15).astype("uint8")
     with rasterio.open(
-        path, "w", driver="GTiff", height=size, width=size, count=1, dtype="int8", crs="EPSG:4326",
-        transform=from_origin(70, 30, 0.001, 0.001), nodata=127, tiled=True, blockxsize=128, blockysize=128,
+        path, "w", driver="GTiff", height=size, width=size, count=1, dtype="uint8", crs="EPSG:4326",
+        transform=from_origin(70, 30, 0.001, 0.001), nodata=15, tiled=True, blockxsize=128, blockysize=128,
     ) as dst:
         dst.write(data, 1)
 
 
-def _smallest_overview(path: Path) -> np.ndarray:
-    with rasterio.open(path) as cog:
-        factor = cog.overviews(1)[-1]
-        return cog.read(1, out_shape=(cog.height // factor, cog.width // factor))
+def test_zoomed_out_copies_show_a_scattered_class_in_its_true_proportion(tmp_path):
+    """A class on 10% of the land must not vanish when zoomed out, and must not flood the map either."""
+    source, target = tmp_path / "scattered.tif", tmp_path / "out.tif"
+    write_scattered_raster(source, share=0.10)
+    convert(source, target)
+    with rasterio.open(target) as cog:
+        for factor in cog.overviews(1):
+            coarse = cog.read(1, out_shape=(cog.height // factor, cog.width // factor))
+            share = float((coarse == 2).mean())
+            assert 0.05 < share < 0.15, f"at 1/{factor} scale the class covers {share:.0%} of cells"
 
 
-def test_scattered_classes_vanish_when_zoomed_out_unless_the_background_is_marked_empty(tmp_path):
-    source = tmp_path / "sparse.tif"
-    write_sparse_raster(source)
-
-    convert(source, tmp_path / "as-is.tif")
-    assert 2 not in _smallest_overview(tmp_path / "as-is.tif")
-
-    convert(source, tmp_path / "kept.tif", empty_value=0)
-    assert 2 in _smallest_overview(tmp_path / "kept.tif")
-    with rasterio.open(tmp_path / "kept.tif") as cog:
-        assert cog.nodata == 0
-        # Stored as plain bytes: GDAL builds zoomed-out copies of signed-byte rasters very slowly.
-        assert cog.dtypes[0] == "uint8"
-        assert int((cog.read(1) == 2).sum()) == (1024 // 4) * ((1024 - 64) // 4)
-
-
-def test_convert_redoes_a_target_made_with_a_different_empty_value(tmp_path):
-    source, target = tmp_path / "sparse.tif", tmp_path / "out.tif"
-    write_sparse_raster(source)
-    assert convert(source, target) is True
-    assert convert(source, target, empty_value=0) is True
-    assert convert(source, target, empty_value=0) is False
-
-
-def test_the_irrigated_and_rainfed_layer_treats_other_area_as_empty():
-    assert RASTERS["irrigated-rainfed"].empty_value == 0
-    assert RASTERS["forest"].empty_value is None
+def test_signed_byte_rasters_convert_too(tmp_path):
+    """The irrigated and rainfed file stores its classes as signed bytes, with 0 for 'other area'."""
+    source, target = tmp_path / "signed.tif", tmp_path / "out.tif"
+    data = np.zeros((1024, 1024), dtype="int8")
+    data[100:300, 100:600] = 2
+    data[500:700, 100:600] = 3
+    with rasterio.open(
+        source, "w", driver="GTiff", height=1024, width=1024, count=1, dtype="int8", crs="EPSG:4326",
+        transform=from_origin(70, 30, 0.001, 0.001), nodata=127, tiled=True, blockxsize=128, blockysize=128,
+    ) as dst:
+        dst.write(data, 1)
+    convert(source, target)
+    with rasterio.open(target) as cog:
+        np.testing.assert_array_equal(cog.read(1), data)
+        assert cog.nodata == 127
