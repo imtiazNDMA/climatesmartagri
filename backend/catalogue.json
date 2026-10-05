@@ -1,0 +1,70 @@
+{
+  "sections": [
+    {
+      "id": "land-cover", "title": "Land cover", "icon": "trees", "order": 1,
+      "status": "no-data", "place_levels": ["national", "province", "district"]
+    },
+    {
+      "id": "irrigation", "title": "Irrigation practices", "icon": "droplets", "order": 2,
+      "status": "no-data", "place_levels": ["national", "province", "district"]
+    },
+    {
+      "id": "emissions", "title": "Greenhouse-gas emissions", "icon": "factory", "order": 3,
+      "status": "no-data", "place_levels": ["national"],
+      "years": { "first": 1994, "last": 2021 }
+    },
+    {
+      "id": "water-balance", "title": "Crop water balance", "icon": "waves", "order": 4,
+      "status": "no-data", "place_levels": ["national"]
+    },
+    {
+      "id": "food-security", "title": "Food security projections", "icon": "wheat", "order": 5,
+      "status": "no-data", "place_levels": ["national"]
+    },
+    {
+      "id": "climate-calendar", "title": "Climate calendar", "icon": "calendar-days", "order": 6,
+      "status": "no-data", "place_levels": ["national"]
+    },
+    {
+      "id": "hazards", "title": "Hazards", "icon": "cloud-lightning", "order": 7,
+      "status": "coming-soon",
+      "summary": "Flood, drought and heatwave layers to overlay on cropland and irrigation.",
+      "place_levels": ["national", "province", "district"]
+    },
+    {
+      "id": "exposure", "title": "Exposure and vulnerability", "icon": "users", "order": 8,
+      "status": "coming-soon",
+      "summary": "Population and cropland at risk, with a district risk ranking.",
+      "place_levels": ["national", "province", "district"]
+    }
+  ],
+  "layers": [
+    { "id": "provinces", "title": "Provinces", "kind": "boundary", "status": "ready" },
+    { "id": "districts", "title": "Districts", "kind": "boundary", "status": "ready" },
+    {
+      "id": "forest", "section_id": "land-cover", "title": "Forest cover",
+      "kind": "raster", "status": "no-data", "default_opacity": 0.8,
+      "legend": { "type": "classes", "items": [{ "colour": "#2e7d32", "label": "Forest" }] }
+    },
+    {
+      "id": "shrub-land", "section_id": "land-cover", "title": "Shrub land",
+      "kind": "raster", "status": "no-data", "default_opacity": 0.8,
+      "legend": { "type": "classes", "items": [{ "colour": "#9ccc65", "label": "Shrub land" }] }
+    },
+    {
+      "id": "bare-land", "section_id": "land-cover", "title": "Bare land",
+      "kind": "raster", "status": "no-data", "default_opacity": 0.8,
+      "legend": { "type": "classes", "items": [{ "colour": "#bcaaa4", "label": "Bare land" }] }
+    },
+    {
+      "id": "irrigated-rainfed", "section_id": "land-cover", "title": "Irrigated and rainfed cropland",
+      "kind": "raster", "status": "no-data", "default_opacity": 0.8,
+      "legend": { "type": "classes", "items": [{ "colour": "#1565c0", "label": "Cropland" }] }
+    },
+    {
+      "id": "irrigation-practices", "section_id": "irrigation", "title": "Irrigation practices",
+      "kind": "vector", "status": "no-data", "default_opacity": 0.7,
+      "legend": { "type": "classes", "items": [{ "colour": "#00838f", "label": "Irrigation practice" }] }
+    }
+  ]
+}
