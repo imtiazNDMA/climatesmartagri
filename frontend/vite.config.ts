@@ -5,6 +5,8 @@ const backend = process.env.CSA_BACKEND_URL ?? 'http://127.0.0.1:8000'
 
 export default defineConfig({
   plugins: [react()],
+  // MapLibre's worker is an ES module that shares a chunk with the main bundle.
+  worker: { format: 'es' },
   server: {
     // 127.0.0.1 with strictPort, so a port already used by another project fails loudly.
     host: '127.0.0.1',

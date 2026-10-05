@@ -2,19 +2,23 @@ import { useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
 import { BackendDown } from './components/BackendDown'
 import { IconRail } from './components/IconRail'
+import { MapView } from './components/MapView'
 import { Notices } from './components/Notices'
 import { SectionPanel } from './components/SectionPanel'
+import { useLayerProbes } from './data/useLayerProbes'
 import { usePortalData, type PortalData } from './data/usePortalData'
 import { useUrlSync } from './state/useUrlSync'
 
 function Portal({ data }: { data: PortalData }) {
   useUrlSync(data.catalogue, data.places)
+  useLayerProbes(data.catalogue)
   const [aboutOpen, setAboutOpen] = useState(false)
   return (
     <div className="app">
       <IconRail catalogue={data.catalogue} onAbout={() => setAboutOpen(true)} />
       <SectionPanel data={data} />
       <main className="map-area">
+        <MapView data={data} />
         <Notices />
       </main>
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />

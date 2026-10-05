@@ -89,3 +89,5 @@ h2, h3 { margin: 0; }
   .panel { position: absolute; left: var(--rail-width); right: 0; top: 0; bottom: 0; width: auto !important; }
   .panel-resize { display: none; }
 }
+
+.map { position: absolute; inset: 0; }
