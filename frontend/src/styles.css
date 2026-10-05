@@ -91,3 +91,36 @@ h2, h3 { margin: 0; }
 }
 
 .map { position: absolute; inset: 0; }
+
+.active-layers, .legend, .time-slider {
+  position: absolute; z-index: 10; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 1px 4px rgb(0 0 0 / 15%);
+}
+.active-layers { top: 56px; right: 12px; width: 260px; padding: 10px 12px; }
+.active-layers h3 { font-size: 13px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.active-layers ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.active-layers li { cursor: grab; }
+.active-row { display: flex; align-items: center; gap: 2px; }
+.active-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.active-row button { border: 0; background: transparent; padding: 4px; border-radius: 4px; }
+.active-row button:hover:not(:disabled) { background: #f1f5f9; }
+.active-layers input[type='range'] { width: 100%; }
+.active-error { display: flex; justify-content: space-between; color: var(--warning); font-size: 13px; }
+.active-error button { border: 0; background: transparent; color: var(--accent); }
+
+.legend { left: 12px; bottom: 76px; max-width: 260px; max-height: 40%; overflow-y: auto; padding: 10px 12px; }
+.legend-entry + .legend-entry { margin-top: 10px; }
+.legend-entry h4 { margin: 0 0 4px; font-size: 13px; }
+.legend-hidden { opacity: 0.45; }
+.legend-classes { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.legend-classes li { display: flex; align-items: center; gap: 6px; }
+.legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); }
+.legend-ramp { display: grid; gap: 2px; font-size: 13px; }
+.legend-bar { height: 10px; border-radius: 3px; border: 1px solid var(--line); }
+
+.time-slider {
+  left: 12px; right: 12px; bottom: 12px; display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+}
+.time-slider input[type='range'] { flex: 1; }
+.time-slider button { border: 0; background: transparent; padding: 4px; }
+.time-slider button:disabled { opacity: 0.35; cursor: default; }
