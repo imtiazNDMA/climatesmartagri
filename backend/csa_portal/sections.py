@@ -457,10 +457,7 @@ def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
                 "notes": [f"The land-cover maps do not reach {name}."],
             }
 
-        notes = [
-            "The layers come from separate maps and can overlap, and they do not cover every kind of land, "
-            "so the shares need not add up to 100%."
-        ]
+        notes: list[str] = []
         if missing:
             notes.append(f"Not measured yet: {', '.join(missing)}.")
 
