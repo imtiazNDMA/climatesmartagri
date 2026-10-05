@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
 import { ActiveLayers } from './components/ActiveLayers'
 import { BackendDown } from './components/BackendDown'
+import { Breadcrumb } from './components/Breadcrumb'
 import { IconRail } from './components/IconRail'
 import { Legend } from './components/Legend'
 import { MapView } from './components/MapView'
 import { Notices } from './components/Notices'
+import { PlaceSearch } from './components/PlaceSearch'
 import { SectionPanel } from './components/SectionPanel'
 import { TimeSlider } from './components/TimeSlider'
 import { useLayerProbes } from './data/useLayerProbes'
@@ -22,6 +24,10 @@ function Portal({ data }: { data: PortalData }) {
       <SectionPanel data={data} />
       <main className="map-area">
         <MapView data={data} />
+        <div className="map-toolbar">
+          <PlaceSearch places={data.places} />
+          <Breadcrumb places={data.places} />
+        </div>
         <ActiveLayers catalogue={data.catalogue} />
         <Legend catalogue={data.catalogue} />
         <TimeSlider catalogue={data.catalogue} />
