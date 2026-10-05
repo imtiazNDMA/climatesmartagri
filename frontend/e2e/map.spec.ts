@@ -65,3 +65,15 @@ test('hovering names a district, and clicks drill from province to district', as
   await page.mouse.click(x, y)
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha', 'District One'])
 })
+
+test('clicking the map outside every district clears the selection', async ({ page }) => {
+  await openPortal(page, '/?place=PK1')
+  await page.locator('[data-boundaries-drawn="true"]').waitFor()
+  const crumbs = page.getByRole('navigation', { name: 'Selected place' }).getByRole('listitem')
+  await expect(crumbs).toHaveText(['Pakistan', 'Alpha'])
+  // The map has zoomed to province Alpha, which is taller than it is wide, so the left edge is outside it.
+  await page.waitForTimeout(1200)
+  const box = (await page.locator('.map').boundingBox())!
+  await page.mouse.click(box.x + 40, box.y + box.height / 2)
+  await expect(crumbs).toHaveText(['Pakistan'])
+})

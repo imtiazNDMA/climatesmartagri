@@ -111,6 +111,13 @@ function wireInteractions(map: MapLibreMap, data: PortalData) {
     map.getCanvas().style.cursor = ''
     popup.remove()
   })
+  // A click on the map that lands outside every district clears the selection.
+  map.on('click', (event) => {
+    if (viewStore.getState().place === null) return
+    if (map.queryRenderedFeatures(event.point, { layers: ['districts-fill'] }).length === 0) {
+      viewStore.getState().selectPlace(null)
+    }
+  })
   map.on('click', 'districts-fill', (event) => {
     const feature = event.features?.[0]
     if (!feature) return

@@ -367,7 +367,9 @@ def test_land_cover_figures_give_area_and_each_measured_class(land_cover):
         "Irrigated cropland": (800, "ha"),
         "Rainfed cropland": (200, "ha"),
     }
-    assert "Measured from the rasters." in body["notes"]
+    # How the areas were measured is documentation, not something to repeat under every set of figures.
+    assert "Measured from the rasters." not in body["notes"]
+    assert len(body["notes"]) == 2
     assert any("add up to 100%" in note for note in body["notes"])
     assert "Not measured yet: Shrub land, Bare land." in body["notes"]
 

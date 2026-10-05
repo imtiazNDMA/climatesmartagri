@@ -118,6 +118,14 @@ export function SectionPanel({ data, sectionData }: { data: PortalData; sectionD
               Figures for {place?.name ?? 'Pakistan'}
               {sectionData.status === 'ready' && sectionData.data.year !== null && `, ${sectionData.data.year}`}
             </h3>
+            {placeId !== null && (
+              <p className="place-scope">
+                These are for the place selected on the map.{' '}
+                <button type="button" className="link-button" onClick={() => viewStore.getState().selectPlace(null)}>
+                  Show all of Pakistan
+                </button>
+              </p>
+            )}
             <Figures state={sectionData} placeSelected={placeId !== null} />
           </section>
           <section>

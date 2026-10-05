@@ -23,14 +23,24 @@ export function ChartsView({
   sectionData: SectionDataState
 }) {
   const data = sectionData.status === 'ready' ? sectionData.data : null
-  const where = [place?.name ?? 'Pakistan', data?.year].filter((part) => part !== null && part !== undefined)
 
   return (
     <section className="charts-view" aria-label="Charts in full view">
       <header className="charts-view-header">
         <div>
           <h2>{section.title}</h2>
-          <p className="charts-view-where">{where.join(', ')}</p>
+          <p className="charts-view-where">
+            <span>{place?.name ?? 'Pakistan'}</span>
+            {data?.year !== null && data?.year !== undefined && <span>, {data.year}</span>}
+            {place && place.level !== 'national' && (
+              <>
+                {' · '}
+                <button type="button" className="link-button" onClick={() => viewStore.getState().selectPlace(null)}>
+                  Show all of Pakistan
+                </button>
+              </>
+            )}
+          </p>
         </div>
         <button type="button" className="charts-view-back" onClick={() => viewStore.getState().setFull(false)}>
           <MapIcon size={16} aria-hidden /> Back to map
