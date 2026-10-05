@@ -17,6 +17,10 @@
     {
       "id": "empty-section", "title": "Empty section", "icon": "wheat", "order": 4,
       "status": "no-data", "place_levels": ["national"]
+    },
+    {
+      "id": "bare-section", "title": "Bare section", "icon": "waves", "order": 5,
+      "status": "no-data", "place_levels": ["national"]
     }
   ],
   "layers": [

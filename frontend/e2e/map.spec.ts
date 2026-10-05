@@ -46,3 +46,22 @@ test('the map worker loads, so boundaries can be drawn', async ({ page }) => {
   await expect(page.locator('[data-boundaries-drawn="true"]')).toBeVisible()
   expect(errors.filter((text) => /worker/i.test(text))).toEqual([])
 })
+
+test('hovering names a district, and clicks drill from province to district', async ({ page }) => {
+  await openPortal(page)
+  await page.locator('[data-boundaries-drawn="true"]').waitFor()
+  const box = (await page.locator('.map').boundingBox())!
+  // The fixture country spans the map's width; its first quarter is District One, in province Alpha.
+  const x = box.x + box.width * 0.15
+  const y = box.y + box.height / 2
+  const crumbs = page.getByRole('navigation', { name: 'Selected place' }).getByRole('listitem')
+
+  await page.mouse.move(x - 5, y)
+  await page.mouse.move(x, y, { steps: 3 })
+  await expect(page.locator('.maplibregl-popup')).toHaveText('District One')
+
+  await page.mouse.click(x, y)
+  await expect(crumbs).toHaveText(['Pakistan', 'Alpha'])
+  await page.mouse.click(x, y)
+  await expect(crumbs).toHaveText(['Pakistan', 'Alpha', 'District One'])
+})

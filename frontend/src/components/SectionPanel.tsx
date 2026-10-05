@@ -79,7 +79,11 @@ export function SectionPanel({ data }: { data: PortalData }) {
         <div className="panel-body">
           <section>
             <h3>Layers</h3>
-            {layers.length === 0 && <p className="empty">This section has no map layers.</p>}
+            {layers.length === 0 && (
+              <p className="empty">
+                {section.status === 'no-data' ? 'Data not loaded yet' : 'This section has no map layers.'}
+              </p>
+            )}
             {layers.map((layer) => {
               const ready = layer.status === 'ready'
               return (

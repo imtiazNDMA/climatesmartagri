@@ -99,7 +99,7 @@ h2, h3 { margin: 0; }
 .active-layers { top: 56px; right: 12px; width: 260px; padding: 10px 12px; }
 .active-layers h3 { font-size: 13px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
 .active-layers ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.active-layers li { cursor: grab; }
+.active-grip { cursor: grab; color: var(--muted); display: grid; place-items: center; }
 .active-row { display: flex; align-items: center; gap: 2px; }
 .active-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .active-row button { border: 0; background: transparent; padding: 4px; border-radius: 4px; }

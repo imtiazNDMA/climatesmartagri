@@ -83,3 +83,15 @@ def test_malformed_json_is_rejected(tmp_path):
     (tmp_path / "provinces.geojson").write_text("{oops", encoding="utf-8")
     with pytest.raises(BoundaryError, match="provinces.geojson"):
         load_places(tmp_path)
+
+
+def test_features_that_are_not_objects_are_rejected(tmp_path):
+    (tmp_path / "provinces.geojson").write_text('{"type": "FeatureCollection", "features": [42]}', encoding="utf-8")
+    with pytest.raises(BoundaryError, match="provinces.geojson"):
+        load_places(tmp_path)
+
+
+def test_features_that_are_not_a_list_are_rejected(tmp_path):
+    (tmp_path / "provinces.geojson").write_text('{"type": "FeatureCollection", "features": 7}', encoding="utf-8")
+    with pytest.raises(BoundaryError, match="provinces.geojson"):
+        load_places(tmp_path)

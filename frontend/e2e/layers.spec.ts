@@ -106,3 +106,15 @@ test('a layer whose tiles fail shows a warning and can be retried', async ({ pag
   await active.getByRole('button', { name: 'Retry Fake yearly' }).click()
   await expect(active.getByText('Could not load')).toHaveCount(0)
 })
+
+test('layers can be reordered by dragging the grip, and the row itself is not draggable', async ({ page }) => {
+  await openPortal(page)
+  await switchOn(page, 'Alpha section', 'Fake yearly')
+  await switchOn(page, 'Beta section', 'Fake static')
+  const items = page.getByRole('region', { name: 'Active layers' }).getByRole('listitem')
+  await expect(items).toHaveText([/Fake static/, /Fake yearly/])
+  await expect(items.first()).not.toHaveAttribute('draggable', 'true')
+
+  await items.filter({ hasText: 'Fake yearly' }).locator('.active-grip').dragTo(items.first())
+  await expect(items).toHaveText([/Fake yearly/, /Fake static/])
+})

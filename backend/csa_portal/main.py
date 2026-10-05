@@ -2,19 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping
 from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException, Query, Response
 
 from .catalogue import load_catalogue
-from .places import COUNTRY_ID, Place, load_places
+from .places import COUNTRY_ID, BoundaryError, Place, load_places, no_places
 from .settings import Settings
 
 SectionDataProvider = Callable[[Place, int | None], dict[str, Any]]
 TileProvider = Callable[[int, int, int, int | None], tuple[bytes, str] | None]
 
 MAX_ZOOM = 24
+
+logger = logging.getLogger("uvicorn.error")
 
 
 def _error(status: int, message: str, reason: str) -> HTTPException:
@@ -28,7 +31,14 @@ def create_app(
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     catalogue = load_catalogue(settings.catalogue_path)
-    places = load_places(settings.boundaries_dir)
+    boundaries_error: str | None = None
+    try:
+        places = load_places(settings.boundaries_dir)
+    except BoundaryError as err:
+        # Bad boundary files must not take the portal down; run without them and say why.
+        boundaries_error = str(err)
+        logger.error("Boundaries could not be loaded: %s", err)
+        places = no_places()
     section_data = dict(section_providers or {})
     tiles = dict(tile_providers or {})
     sections = {section.id: section for section in catalogue.sections}
@@ -41,6 +51,7 @@ def create_app(
         return {
             "status": "ok",
             "boundaries_loaded": places.loaded,
+            "boundaries_error": boundaries_error,
             "layers": {
                 layer.id: places.loaded if layer.kind == "boundary" else layer.id in tiles
                 for layer in catalogue.layers

@@ -1,5 +1,7 @@
 from dataclasses import replace
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from csa_portal.main import create_app
@@ -152,3 +154,20 @@ def test_shell_has_no_providers(bare_client):
     assert (data.status_code, data.json()["detail"]["reason"]) == (404, "no-data")
     tile = bare_client.get("/api/tiles/fake-yearly/0/0/0")
     assert (tile.status_code, tile.json()["detail"]["reason"]) == (404, "no-data")
+
+
+@pytest.mark.parametrize("content", ["{oops", '{"type": "FeatureCollection", "features": [42]}'])
+def test_unusable_boundary_file_does_not_stop_the_backend(settings, tmp_path, content):
+    (tmp_path / "provinces.geojson").write_text(content, encoding="utf-8")
+    client = TestClient(create_app(replace(settings, boundaries_dir=tmp_path)))
+    health = client.get("/api/health").json()
+    assert health["boundaries_loaded"] is False
+    assert "provinces.geojson" in health["boundaries_error"]
+    assert [p["id"] for p in client.get("/api/places").json()] == ["PK"]
+    response = client.get("/api/places/boundaries", params={"level": "province"})
+    assert response.json()["detail"]["reason"] == "no-data"
+    assert client.get("/api/catalogue").status_code == 200
+
+
+def test_health_has_no_boundary_error_when_boundaries_load(client):
+    assert client.get("/api/health").json()["boundaries_error"] is None

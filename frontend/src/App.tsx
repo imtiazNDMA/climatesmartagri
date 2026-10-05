@@ -10,6 +10,7 @@ import { Notices } from './components/Notices'
 import { PlaceSearch } from './components/PlaceSearch'
 import { SectionPanel } from './components/SectionPanel'
 import { TimeSlider } from './components/TimeSlider'
+import { useBackendWatch } from './data/useBackendWatch'
 import { useLayerProbes } from './data/useLayerProbes'
 import { usePortalData, type PortalData } from './data/usePortalData'
 import { useUrlSync } from './state/useUrlSync'
@@ -17,6 +18,7 @@ import { useUrlSync } from './state/useUrlSync'
 function Portal({ data }: { data: PortalData }) {
   useUrlSync(data.catalogue, data.places)
   useLayerProbes(data.catalogue)
+  useBackendWatch()
   const [aboutOpen, setAboutOpen] = useState(false)
   return (
     <div className="app">

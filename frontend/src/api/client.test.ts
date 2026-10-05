@@ -7,6 +7,7 @@ import {
   fetchSectionData,
   probeTile,
   tileUrlTemplate,
+  withRetry,
 } from './client'
 
 function respond(status: number, body: unknown) {
@@ -78,5 +79,38 @@ describe('client', () => {
     expect(await probeTile('forest', null, 0)).toBe(false)
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('failed') }))
     expect(await probeTile('forest', null, 0)).toBe(false)
+  })
+})
+
+describe('withRetry', () => {
+  it('tries again while the backend is unreachable, then returns the result', async () => {
+    let calls = 0
+    const result = await withRetry(async () => {
+      calls += 1
+      if (calls < 3) throw new BackendUnreachableError()
+      return 'ok'
+    }, 4, 1)
+    expect(result).toBe('ok')
+    expect(calls).toBe(3)
+  })
+
+  it('gives up after the allowed attempts', async () => {
+    let calls = 0
+    const run = async () => {
+      calls += 1
+      throw new BackendUnreachableError()
+    }
+    await expect(withRetry(run, 3, 1)).rejects.toBeInstanceOf(BackendUnreachableError)
+    expect(calls).toBe(3)
+  })
+
+  it('does not retry other errors', async () => {
+    let calls = 0
+    const run = async () => {
+      calls += 1
+      throw new ApiError(404, 'not-found', 'nope')
+    }
+    await expect(withRetry(run, 3, 1)).rejects.toBeInstanceOf(ApiError)
+    expect(calls).toBe(1)
   })
 })

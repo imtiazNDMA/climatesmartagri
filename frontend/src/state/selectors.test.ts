@@ -6,6 +6,7 @@ import {
   effectiveYear,
   searchPlaces,
   sectionsWithActiveLayers,
+  tidyYear,
   timeRange,
 } from './selectors'
 import { emptyView, type View } from './viewState'
@@ -144,5 +145,22 @@ describe('searchPlaces', () => {
   it('puts names that start with the query first and respects the limit', () => {
     expect(searchPlaces(places, 'a').map((p) => p.id)[0]).toBe('PK1')
     expect(searchPlaces(places, 'district', 2)).toHaveLength(2)
+  })
+})
+
+describe('tidyYear', () => {
+  it('clears the year when nothing on screen has years', () => {
+    expect(tidyYear(view({ section: 'static', year: 2005 }), catalogue)).toBeNull()
+    expect(tidyYear(view({ year: 2005 }), catalogue)).toBeNull()
+  })
+  it('keeps a year inside the range', () => {
+    expect(tidyYear(view({ section: 'yearly', year: 2005 }), catalogue)).toBe(2005)
+  })
+  it('clamps a year outside the range', () => {
+    expect(tidyYear(view({ section: 'yearly', year: 1990 }), catalogue)).toBe(2000)
+    expect(tidyYear(view({ section: 'yearly', year: 2030 }), catalogue)).toBe(2010)
+  })
+  it('leaves the latest-year default alone', () => {
+    expect(tidyYear(view({ section: 'yearly' }), catalogue)).toBeNull()
   })
 })

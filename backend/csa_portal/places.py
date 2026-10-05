@@ -82,10 +82,14 @@ def _read_level(path: Path, level: str) -> tuple[list[Place], dict[str, Any]]:
         features = collection["features"]
     except (json.JSONDecodeError, KeyError, TypeError) as err:
         raise BoundaryError(f"{path.name} is not a GeoJSON FeatureCollection: {err}") from err
+    if not isinstance(features, list):
+        raise BoundaryError(f"{path.name}: 'features' is not a list")
 
     places: list[Place] = []
     kept: list[dict[str, Any]] = []
     for number, feature in enumerate(features):
+        if not isinstance(feature, dict):
+            raise BoundaryError(f"{path.name}: feature {number} is not an object")
         props = feature.get("properties") or {}
         if not props.get("id") or not props.get("name"):
             raise BoundaryError(f"{path.name}: feature {number} has no 'id' or 'name' property")
@@ -100,6 +104,12 @@ def _read_level(path: Path, level: str) -> tuple[list[Place], dict[str, Any]]:
         places.append(Place(str(props["id"]), str(props["name"]), level, parent_id, bbox))
         kept.append(feature)
     return places, {"type": "FeatureCollection", "features": kept}
+
+
+def no_places() -> PlaceIndex:
+    """The index used when no boundaries can be loaded: the country alone."""
+    country = Place(COUNTRY_ID, COUNTRY_NAME, "national", None, FALLBACK_BBOX)
+    return PlaceIndex(places=[country], boundaries={}, loaded=False)
 
 
 def load_places(boundaries_dir: Path) -> PlaceIndex:

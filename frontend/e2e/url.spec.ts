@@ -43,3 +43,15 @@ test('invalid values in a link are dropped with a notice and the rest loads', as
   await expect(notice).toContainText('year "1800"')
   await expect(page).toHaveURL(/\?section=alpha-section&layers=fake-static:1$/)
 })
+
+test('the year leaves the address bar when the time slider goes away', async ({ page }) => {
+  await openPortal(page)
+  await page.getByRole('button', { name: 'Alpha section' }).click()
+  await page.getByRole('group', { name: 'Year' }).getByRole('button', { name: 'Previous year' }).click()
+  await expect(page).toHaveURL(/year=2009/)
+  await page.getByRole('button', { name: 'Beta section' }).click()
+  await expect(page).toHaveURL(/\?section=beta-section$/)
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Beta section' })).toBeVisible()
+  await expect(page.getByText(/Ignored from the link/)).toHaveCount(0)
+})

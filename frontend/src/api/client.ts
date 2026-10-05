@@ -43,7 +43,8 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchCatalogue = () => getJson<Catalogue>('/api/catalogue')
 export const fetchPlaces = () => getJson<Place[]>('/api/places')
-export const fetchHealth = () => getJson<{ status: string }>('/api/health')
+export const fetchHealth = () =>
+  getJson<{ status: string; boundaries_loaded: boolean; boundaries_error: string | null }>('/api/health')
 
 export async function fetchBoundaries(level: 'province' | 'district'): Promise<FeatureCollection | null> {
   try {
@@ -77,5 +78,17 @@ export async function probeTile(layerId: string, year: number | null, retry: num
     return response.ok
   } catch {
     return false
+  }
+}
+
+/** Run a request again while the backend is unreachable, for a backend that is still starting. */
+export async function withRetry<T>(run: () => Promise<T>, attempts: number, delayMs: number): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await run()
+    } catch (error) {
+      if (!(error instanceof BackendUnreachableError) || attempt >= attempts) throw error
+      await new Promise((resolve) => setTimeout(resolve, delayMs))
+    }
   }
 }

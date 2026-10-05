@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Eye, EyeOff, RotateCw, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, RotateCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Catalogue } from '../api/types'
 import { uiStore, useUi } from '../state/uiState'
@@ -20,8 +20,6 @@ export function ActiveLayers({ catalogue }: { catalogue: Catalogue }) {
           return (
             <li
               key={active.id}
-              draggable
-              onDragStart={() => setDragged(active.id)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={() => {
                 if (dragged) view.moveLayer(dragged, index)
@@ -29,6 +27,15 @@ export function ActiveLayers({ catalogue }: { catalogue: Catalogue }) {
               }}
             >
               <div className="active-row">
+                <span
+                  className="active-grip"
+                  draggable
+                  title="Drag to reorder"
+                  aria-hidden
+                  onDragStart={() => setDragged(active.id)}
+                >
+                  <GripVertical size={14} />
+                </span>
                 <span className="active-title">{title}</span>
                 <button
                   type="button" aria-label={`Move ${title} up`} disabled={index === 0}

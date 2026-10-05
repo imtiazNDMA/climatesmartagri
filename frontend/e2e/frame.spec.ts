@@ -18,7 +18,7 @@ test('opens a section and closes it so the map takes the full width', async ({ p
 test('lists every section in catalogue order and marks coming-soon ones', async ({ page }) => {
   await openPortal(page)
   const buttons = page.getByRole('navigation', { name: 'Sections' }).locator('button[data-section]')
-  await expect(buttons).toHaveCount(4)
+  await expect(buttons).toHaveCount(5)
   await expect(buttons.nth(0)).toHaveAttribute('aria-label', 'Alpha section')
   await expect(buttons.nth(2)).toHaveAttribute('aria-label', 'Later section (coming soon)')
 })
@@ -99,4 +99,39 @@ test('the panel covers the map on a narrow screen and has a close button', async
   expect(panel.x + panel.width).toBe(800)
   await page.getByRole('button', { name: 'Close panel' }).click()
   await expect(page.locator('.panel')).toHaveCount(0)
+})
+
+test('a no-data section without layers still says "Data not loaded yet" in all three blocks', async ({ page }) => {
+  await openPortal(page)
+  await page.getByRole('button', { name: 'Bare section' }).click()
+  await expect(page.getByText('Data not loaded yet')).toHaveCount(3)
+})
+
+test('shows a banner when the backend is lost while in use, keeps the view, and recovers', async ({ page }) => {
+  await openPortal(page)
+  await page.getByRole('button', { name: 'Alpha section' }).click()
+  const backendCalls = /:5183\/api\//
+  await page.route(backendCalls, (route) => route.abort())
+  await expect(page.getByText('The portal has lost its data service')).toBeVisible({ timeout: 15000 })
+  await expect(page.getByRole('heading', { name: 'Alpha section' })).toBeVisible()
+
+  await page.unroute(backendCalls)
+  await page.getByRole('button', { name: 'Check again' }).click()
+  await expect(page.getByText('The portal has lost its data service')).toHaveCount(0)
+})
+
+test('says why boundaries could not be loaded', async ({ page }) => {
+  await page.route('**/api/places/boundaries**', (route) =>
+    route.fulfill({ status: 404, json: { detail: { message: 'none', reason: 'no-data' } } }),
+  )
+  await page.route('**/api/health', (route) =>
+    route.fulfill({
+      json: {
+        status: 'ok', boundaries_loaded: false, layers: {},
+        boundaries_error: 'provinces.geojson: feature 3 has no name',
+      },
+    }),
+  )
+  await openPortal(page)
+  await expect(page.getByText('provinces.geojson: feature 3 has no name')).toBeVisible()
 })

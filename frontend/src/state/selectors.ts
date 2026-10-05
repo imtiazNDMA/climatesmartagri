@@ -24,6 +24,13 @@ export function effectiveYear(years: YearRange | null | undefined, year: number 
   return Math.min(years.last, Math.max(years.first, year))
 }
 
+/** The stored year, kept only while something on screen has years, and inside their range. */
+export function tidyYear(view: View, catalogue: Catalogue): number | null {
+  const range = timeRange(view, catalogue)
+  if (!range || view.year === null) return null
+  return Math.min(range.last, Math.max(range.first, view.year))
+}
+
 export function sectionsWithActiveLayers(view: View, catalogue: Catalogue): Set<string> {
   const result = new Set<string>()
   for (const active of view.layers) {

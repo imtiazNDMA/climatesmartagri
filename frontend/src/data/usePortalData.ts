@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { BackendUnreachableError, fetchBoundaries, fetchCatalogue, fetchPlaces } from '../api/client'
+import {
+  BackendUnreachableError, fetchBoundaries, fetchCatalogue, fetchHealth, fetchPlaces, withRetry,
+} from '../api/client'
 import type { Boundaries, Catalogue, Place } from '../api/types'
 import { uiStore } from '../state/uiState'
 
@@ -23,11 +25,23 @@ export function usePortalData(): { state: PortalState; retry: () => void } {
   useEffect(() => {
     let cancelled = false
     setState({ status: 'loading' })
-    Promise.all([fetchCatalogue(), fetchPlaces(), fetchBoundaries('province'), fetchBoundaries('district')])
+    // The browser can open before the backend is listening, so allow it a few seconds.
+    withRetry(
+      () => Promise.all([fetchCatalogue(), fetchPlaces(), fetchBoundaries('province'), fetchBoundaries('district')]),
+      4,
+      700,
+    )
       .then(([catalogue, places, province, district]) => {
         if (cancelled) return
         if (!province || !district) {
           uiStore.getState().addNotice('Boundaries are not loaded, so places cannot be selected on the map.')
+          fetchHealth()
+            .then((health) => {
+              if (!cancelled && health.boundaries_error) {
+                uiStore.getState().addNotice(`Boundaries could not be read: ${health.boundaries_error}`)
+              }
+            })
+            .catch(() => undefined)
         }
         const sorted = { ...catalogue, sections: [...catalogue.sections].sort((a, b) => a.order - b.order) }
         setState({ status: 'ready', data: { catalogue: sorted, places, boundaries: { province, district } } })
