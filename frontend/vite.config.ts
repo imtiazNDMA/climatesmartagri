@@ -1,7 +1,7 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
-const backend = process.env.CSA_BACKEND_URL ?? 'http://127.0.0.1:8000'
+const backend = process.env.CSA_BACKEND_URL ?? 'http://127.0.0.1:9988'
 
 export default defineConfig({
   plugins: [react()],
@@ -10,7 +10,7 @@ export default defineConfig({
   server: {
     // 127.0.0.1 with strictPort, so a port already used by another project fails loudly.
     host: '127.0.0.1',
-    port: Number(process.env.CSA_FRONTEND_PORT ?? 5180),
+    port: Number(process.env.CSA_FRONTEND_PORT ?? 9080),
     strictPort: true,
     proxy: {
       '/api': {

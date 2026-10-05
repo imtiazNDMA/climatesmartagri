@@ -2,7 +2,7 @@
   "name": "csa-portal",
   "private": true,
   "scripts": {
-    "dev": "concurrently -k -n api,web \"uv run uvicorn csa_portal.main:create_app --factory --app-dir backend --port 8000\" \"npm --prefix frontend run dev -- --open\"",
+    "dev": "concurrently -k -n api,web \"uv run uvicorn csa_portal.main:create_app --factory --app-dir backend --port 9988\" \"npm --prefix frontend run dev -- --open\"",
     "test": "uv run pytest && npm --prefix frontend run test && npm --prefix frontend run e2e"
   },
   "devDependencies": {

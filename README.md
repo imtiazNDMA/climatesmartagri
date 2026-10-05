@@ -11,7 +11,7 @@ Requires [uv](https://docs.astral.sh/uv/) and Node 20 or later.
     npm --prefix frontend install
     npm run dev
 
-The portal opens in your browser. The backend runs on port 8000 and the frontend on 5180. The background map needs internet access.
+The portal opens in your browser. The backend runs on port 9988 and the frontend on 9080. The background map needs internet access.
 
 ## Test it
 
