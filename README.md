@@ -6,6 +6,10 @@ A map-first portal for Pakistan's climate smart agriculture data, built for disa
 
 Requires [uv](https://docs.astral.sh/uv/) and Node 20 or later.
 
+On Windows, double-click `start-portal.cmd`. It installs anything missing, starts the backend and frontend, and opens the portal. If the portal is already running it just opens it. Close the window to stop the portal.
+
+Or by hand:
+
     uv sync
     npm install
     npm --prefix frontend install
