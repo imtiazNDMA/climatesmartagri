@@ -380,8 +380,8 @@
    "irrigated": 66650,
    "districts_reported": 1
   },
-  "d-khyber-pakhtunkhwa-d-i-khan": {
-   "name": "D. I. Khan",
+  "d-khyber-pakhtunkhwa-dera-ismail-khan": {
+   "name": "Dera Ismail Khan",
    "level": "district",
    "parent_id": "p-khyber-pakhtunkhwa",
    "equipped": 146864,
@@ -730,10 +730,10 @@
    "irrigated": 153000,
    "districts_reported": 1
   },
-  "d-islamabad-islamabad": {
+  "d-federal-capital-islamabad": {
    "name": "Islamabad",
    "level": "district",
-   "parent_id": "p-islamabad",
+   "parent_id": "p-federal-capital",
    "equipped": 0,
    "groundwater": 0,
    "surface": 0,
@@ -800,8 +800,8 @@
    "irrigated": 100000,
    "districts_reported": 1
   },
-  "d-punjab-leiah": {
-   "name": "Leiah",
+  "d-punjab-layyah": {
+   "name": "Layyah",
    "level": "district",
    "parent_id": "p-punjab",
    "equipped": 297000,

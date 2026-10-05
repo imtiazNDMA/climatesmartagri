@@ -47,10 +47,15 @@ def test_boundaries_are_loaded_from_the_prepared_files():
     assert health["boundaries_error"] is None
     places = client.get("/api/places").json()
     levels = [p["level"] for p in places]
-    assert levels.count("province") == 7
-    assert levels.count("district") == 160
+    assert levels.count("province") == 8
+    assert levels.count("district") == 167
+    kashmir = next(p for p in places if p["id"] == "p-jammu-and-kashmir")
+    assert kashmir["name"] == "Jammu and Kashmir"
+    assert sum(1 for p in places if p["name"] == "Punjab") == 1
     punjab = next(p for p in places if p["name"] == "Punjab")
     assert punjab["id"] == "p-punjab"
+    pakistan = next(p for p in places if p["id"] == "PK")
+    assert pakistan["bbox"][2] > 79
 
 
 def test_every_ready_section_serves_figures_and_charts():
@@ -100,7 +105,7 @@ def test_irrigation_layers_are_served_and_match_their_legends():
     assert found <= legend_values
     for layer_id in IRRIGATION_LAYERS[1:]:
         collection = client.get(f"/api/layers/{layer_id}/geojson").json()
-        assert len(collection["features"]) == 160
+        assert len(collection["features"]) == 167
         values = [f["properties"]["value"] for f in collection["features"] if "value" in f["properties"]]
         assert len(values) >= 80, layer_id
         legend = by_id[layer_id].legend

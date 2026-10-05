@@ -19,7 +19,7 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
         <li>Land cover: project rasters, loaded in a later release.</li>
         <li>Greenhouse-gas emissions: Our World in Data and national inventory figures, 1994–2021.</li>
         <li>Crop water balance and food security projections: project spreadsheets.</li>
-        <li>Province and district boundaries: merged from the project's irrigation practice map layer.</li>
+        <li>Province and district boundaries: the project's district map, including Jammu and Kashmir.</li>
         <li>Background map: OpenFreeMap, © OpenStreetMap contributors.</li>
       </ul>
       <button type="button" onClick={onClose}>

@@ -9,7 +9,8 @@ from shapely.geometry import box
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 from prepare_data import (  # noqa: E402
-    build_boundaries,
+    build_districts,
+    build_practice_layer,
     match_districts,
     norm,
     practice_label,
@@ -41,6 +42,91 @@ def _tehsils():
     )
 
 
+def _district_map():
+    """A small stand-in for the main district map file."""
+    return gpd.GeoDataFrame(
+        {
+            "Districts": ["Lahore", "Attock ", "Kot Addu", "Thatta", "Peshawar", "Indian Illegally Occupied Jammu Kashmir"],
+            "province": ["Punjab", "Punjab", "PUNJAB", "Sindh", "Khyber Pakhtunkhwa", "Indian_Illegally_Occupied_Jammu_Kashmir"],
+            "Population": [100.0, 50.0, 25.0, 80.0, 60.0, 40.0],
+        },
+        geometry=[
+            box(74, 31, 75, 31.5),
+            box(72, 33, 73, 34),
+            box(70, 30, 71, 31),
+            box(67, 24, 68, 25),
+            box(71, 33.5, 72, 34.5),
+            box(74, 32, 79.3, 35.5),
+        ],
+        crs="EPSG:4326",
+    )
+
+
+def test_build_districts_reads_provinces_and_districts_from_the_district_map():
+    provinces, districts = build_districts(_district_map(), tolerance=0)
+
+    assert list(provinces["id"]) == ["p-jammu-and-kashmir", "p-khyber-pakhtunkhwa", "p-punjab", "p-sindh"]
+    assert list(provinces["parent_id"]) == ["PK"] * 4
+    assert len(districts) == 6
+    lahore = districts[districts["name"] == "Lahore"].iloc[0]
+    assert (lahore["id"], lahore["parent_id"]) == ("d-punjab-lahore", "p-punjab")
+    assert lahore.geometry.bounds == (74, 31, 75, 31.5)
+    assert districts["id"].is_unique
+
+
+def test_build_districts_merges_differently_cased_province_names():
+    provinces, districts = build_districts(_district_map(), tolerance=0)
+    assert list(provinces["name"]).count("Punjab") == 1
+    kot_addu = districts[districts["name"] == "Kot Addu"].iloc[0]
+    assert kot_addu["parent_id"] == "p-punjab"
+    punjab = provinces[provinces["id"] == "p-punjab"].iloc[0]
+    assert punjab.geometry.bounds == (70, 30, 75, 34)
+    assert districts[districts["id"] == "d-punjab-attock"].iloc[0]["name"] == "Attock"
+
+
+def test_build_districts_includes_the_kashmir_region_under_its_display_name():
+    provinces, districts = build_districts(_district_map(), tolerance=0)
+    region = provinces[provinces["id"] == "p-jammu-and-kashmir"].iloc[0]
+    assert region["name"] == "Jammu and Kashmir"
+    assert region.geometry.bounds == (74, 32, 79.3, 35.5)
+    district = districts[districts["parent_id"] == "p-jammu-and-kashmir"].iloc[0]
+    assert district["name"] == "Jammu and Kashmir"
+    assert district["id"] == "d-jammu-and-kashmir-jammu-and-kashmir"
+
+
+def test_build_districts_reports_missing_columns():
+    frame = _district_map().rename(columns={"Districts": "Name"})
+    with pytest.raises(ValueError, match="Districts"):
+        build_districts(frame, tolerance=0)
+
+
+def test_build_districts_rejects_two_districts_with_one_name_in_a_province():
+    frame = _district_map()
+    frame.loc[1, "Districts"] = "Lahore"
+    with pytest.raises(ValueError, match="Lahore"):
+        build_districts(frame, tolerance=0)
+
+
+def test_practice_layer_keeps_each_tehsil_with_its_recommended_practice():
+    tehsils = build_practice_layer(_tehsils(), tolerance=0)
+    assert list(tehsils.columns) == ["id", "name", "practice", "label", "geometry"]
+    city = tehsils[tehsils["name"] == "Lahore City"].iloc[0]
+    assert city["practice"] == "Drip, SP"
+    assert city["label"] == "Recommended practice: Drip, Sprinkler"
+    attock = tehsils[tehsils["name"] == "Attock"].iloc[0]
+    assert attock["practice"] is None
+    assert attock["label"] == "Recommended practice: No recommendation"
+    assert tehsils["id"].is_unique
+
+
+def test_practice_layer_keeps_ids_unique_when_names_repeat():
+    frame = _tehsils()
+    frame.loc[1, "ADM3_EN"] = "Lahore City"
+    tehsils = build_practice_layer(frame, tolerance=0)
+    assert tehsils["id"].is_unique
+    assert len(tehsils) == 5
+
+
 def test_norm_and_slug():
     assert norm(" D.I. Khan ") == "dikhan"
     assert norm("Dera-Ismail  Khan") == "deraismailkhan"
@@ -56,34 +142,7 @@ def test_practice_label_spells_out_codes():
     assert practice_label("Mystery") == "Mystery"
 
 
-def test_build_boundaries_merges_tehsils_into_districts_and_provinces():
-    provinces, districts, tehsils = build_boundaries(_tehsils(), tolerance=0)
 
-    assert list(provinces["id"]) == ["p-khyber-pakhtunkhwa", "p-punjab", "p-sindh"]
-    assert list(provinces["parent_id"]) == ["PK", "PK", "PK"]
-
-    lahore = districts[districts["name"] == "Lahore"].iloc[0]
-    assert lahore["id"] == "d-punjab-lahore"
-    assert lahore["parent_id"] == "p-punjab"
-    assert lahore.geometry.bounds == (74, 31, 75, 31.5)
-    assert len(districts) == 4
-
-    city = tehsils[tehsils["name"] == "Lahore City"].iloc[0]
-    assert city["district_id"] == "d-punjab-lahore"
-    assert city["practice"] == "Drip, SP"
-    assert city["label"] == "Recommended practice: Drip, Sprinkler"
-    attock = tehsils[tehsils["name"] == "Attock"].iloc[0]
-    assert attock["practice"] is None
-    assert attock["label"] == "Recommended practice: No recommendation"
-    assert tehsils["id"].is_unique
-
-
-def test_build_boundaries_keeps_ids_unique_when_names_repeat():
-    frame = _tehsils()
-    frame.loc[1, "ADM3_EN"] = "Lahore City"
-    _, _, tehsils = build_boundaries(frame, tolerance=0)
-    assert tehsils["id"].is_unique
-    assert len(tehsils) == 5
 
 
 def _sheet_file(tmp_path):
@@ -114,7 +173,7 @@ def test_read_irrigation_sheet_keeps_only_district_rows(tmp_path):
 
 def test_match_districts_uses_spelling_pairs_and_reports_the_rest(tmp_path):
     sheet = read_irrigation_sheet(_sheet_file(tmp_path))
-    _, districts, _ = build_boundaries(_tehsils(), tolerance=0)
+    _, districts = build_districts(_district_map(), tolerance=0)
     matches, unmatched = match_districts(sheet, districts, {"attok": "Attock"})
     assert matches == {
         0: "d-punjab-lahore",
@@ -127,14 +186,14 @@ def test_match_districts_uses_spelling_pairs_and_reports_the_rest(tmp_path):
 
 def test_match_districts_without_pairs_leaves_misspellings_unmatched(tmp_path):
     sheet = read_irrigation_sheet(_sheet_file(tmp_path))
-    _, districts, _ = build_boundaries(_tehsils(), tolerance=0)
+    _, districts = build_districts(_district_map(), tolerance=0)
     _, unmatched = match_districts(sheet, districts, {})
     assert unmatched == ["Attok (Punjab)", "Nowhere (Sindh)"]
 
 
 def test_summarise_irrigation_totals_by_district_province_and_country(tmp_path):
     sheet = read_irrigation_sheet(_sheet_file(tmp_path))
-    provinces, districts, _ = build_boundaries(_tehsils(), tolerance=0)
+    provinces, districts = build_districts(_district_map(), tolerance=0)
     matches, unmatched = match_districts(sheet, districts, {"attok": "Attock"})
     summary = summarise_irrigation(sheet, matches, unmatched, provinces, districts)
     places = summary["places"]

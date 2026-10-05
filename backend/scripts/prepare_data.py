@@ -23,6 +23,8 @@ BOUNDARIES_OUT = REPO / "backend" / "boundaries"
 DATA_OUT = REPO / "backend" / "data"
 
 TEHSILS_FILE = SOURCE / "geospatial" / "vectors" / "Irr_Prac.shp"
+# The main map: districts and provinces, including the Kashmir region.
+DISTRICTS_FILE = SOURCE / "geospatial" / "vectors" / "sajid(2oct)" / "Join_Irrigated_Full.shp"
 IRRIGATION_FILE = SOURCE / "spreadsheets" / "Complete GHG and Irrigation data 30 Sep.xls"
 EMISSIONS_FILE = SOURCE / "spreadsheets" / "Pakistan_GHG_1994_2021_Excel_Data.xlsx"
 WATER_FILE = SOURCE / "spreadsheets" / "CRW(efficiency) 25sep.xlsx"
@@ -62,6 +64,13 @@ DISTRICT_SPELLINGS = {
     "nausheroferoze": "Naushahro Feroze",
     "nawabshah": "Shaheed Benazir Abad",
 }
+# Names the portal shows in place of the ones in the district map file.
+PROVINCE_DISPLAY_NAMES = {
+    "Indian_Illegally_Occupied_Jammu_Kashmir": "Jammu and Kashmir",
+}
+DISTRICT_DISPLAY_NAMES = {
+    "Indian Illegally Occupied Jammu Kashmir": "Jammu and Kashmir",
+}
 
 
 def norm(name: Any) -> str:
@@ -95,43 +104,57 @@ def _simplify(geometries: gpd.GeoSeries, tolerance: float) -> gpd.GeoSeries:
     return gpd.GeoSeries(simplified, index=geometries.index, crs=geometries.crs)
 
 
-def build_boundaries(
-    tehsils: gpd.GeoDataFrame, tolerance: float = 0.004
-) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, gpd.GeoDataFrame]:
-    """Provinces, districts and tehsils, each with id, name and parent, from the tehsil map file."""
+def _display_province(name: Any) -> str:
+    """A province name as the portal shows it: trimmed, consistently cased, with display names applied."""
+    text = str(name).strip()
+    if text in PROVINCE_DISPLAY_NAMES:
+        return PROVINCE_DISPLAY_NAMES[text]
+    return text.title() if text.isupper() else text
+
+
+def build_districts(
+    source: gpd.GeoDataFrame, tolerance: float = 0.004
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """Provinces and districts, each with id, name and parent, from the main district map."""
+    missing = [c for c in ("Districts", "province") if c not in source.columns]
+    if missing:
+        raise ValueError(f"District map is missing columns {missing}; found {list(source.columns)}")
+    frame = source.to_crs(4326).copy()
+    frame["province"] = frame["province"].map(_display_province)
+    frame["name"] = frame["Districts"].astype(str).str.strip().map(lambda n: DISTRICT_DISPLAY_NAMES.get(n, n))
+    frame = frame.set_geometry(_simplify(frame.geometry.make_valid(), tolerance))
+    frame["parent_id"] = "p-" + frame["province"].map(slug)
+    frame["id"] = "d-" + frame["province"].map(slug) + "-" + frame["name"].map(slug)
+    repeated = frame.loc[frame["id"].duplicated(), "name"].tolist()
+    if repeated:
+        raise ValueError(f"District map has more than one district with the same name in a province: {repeated}")
+
+    districts = frame[["id", "name", "parent_id", "geometry"]].sort_values("id").reset_index(drop=True)
+    provinces = (
+        frame.dissolve(by="parent_id", as_index=False, aggfunc="first")[["parent_id", "province", "geometry"]]
+        .rename(columns={"parent_id": "id", "province": "name"})
+        .sort_values("id")
+        .reset_index(drop=True)
+    )
+    provinces.insert(2, "parent_id", COUNTRY_ID)
+    return provinces, districts
+
+
+def build_practice_layer(tehsils: gpd.GeoDataFrame, tolerance: float = 0.004) -> gpd.GeoDataFrame:
+    """The recommended irrigation practice for each tehsil, from the tehsil map file."""
     frame = tehsils.to_crs(4326).copy()
-    frame["province"] = frame["ADM1_EN"].astype(str).str.strip()
-    frame["district"] = frame["ADM2_EN"].astype(str).str.strip()
     frame["name"] = frame["ADM3_EN"].astype(str).str.strip()
     frame = frame.set_geometry(_simplify(frame.geometry.make_valid(), tolerance))
-    frame["province_id"] = "p-" + frame["province"].map(slug)
-    frame["district_id"] = "d-" + frame["province"].map(slug) + "-" + frame["district"].map(slug)
-
-    base = frame["district_id"].str.replace("d-", "t-", n=1) + "-" + frame["name"].map(slug)
+    base = (
+        "t-" + frame["ADM1_EN"].map(slug) + "-" + frame["ADM2_EN"].map(slug) + "-" + frame["name"].map(slug)
+    )
     repeat = base.groupby(base).cumcount()
     frame["id"] = base.where(repeat == 0, base + "-" + (repeat + 1).astype(str))
     practice = frame["Irr_Rec"].astype(str).str.strip()
     frame["practice"] = practice.where(~practice.isin(["NA", "", "nan", "None"]), None).astype(object)
     frame["practice"] = frame["practice"].where(frame["practice"].notna(), None)
     frame["label"] = "Recommended practice: " + frame["Irr_Rec"].map(practice_label)
-
-    districts = (
-        frame.dissolve(by="district_id", as_index=False, aggfunc="first")[
-            ["district_id", "district", "province_id", "geometry"]
-        ]
-        .rename(columns={"district_id": "id", "district": "name", "province_id": "parent_id"})
-        .sort_values("id")
-        .reset_index(drop=True)
-    )
-    provinces = (
-        frame.dissolve(by="province_id", as_index=False, aggfunc="first")[["province_id", "province", "geometry"]]
-        .rename(columns={"province_id": "id", "province": "name"})
-        .sort_values("id")
-        .reset_index(drop=True)
-    )
-    provinces.insert(2, "parent_id", COUNTRY_ID)
-    tehsil_layer = frame[["id", "name", "district_id", "practice", "label", "geometry"]].reset_index(drop=True)
-    return provinces, districts, tehsil_layer
+    return frame[["id", "name", "practice", "label", "geometry"]].reset_index(drop=True)
 
 
 def _require(frame: pd.DataFrame, columns: list[str], path: Path) -> None:
@@ -294,11 +317,13 @@ def main() -> None:
     BOUNDARIES_OUT.mkdir(exist_ok=True)
     DATA_OUT.mkdir(exist_ok=True)
 
-    print("Boundaries and irrigation practice, from", TEHSILS_FILE.name)
-    provinces, districts, tehsils = build_boundaries(gpd.read_file(TEHSILS_FILE))
+    print("Provinces and districts, from", DISTRICTS_FILE.name)
+    provinces, districts = build_districts(gpd.read_file(DISTRICTS_FILE))
     _write_geojson(provinces, BOUNDARIES_OUT / "provinces.geojson")
     _write_geojson(districts, BOUNDARIES_OUT / "districts.geojson")
-    _write_geojson(tehsils, DATA_OUT / "irrigation_practice.geojson")
+
+    print("Irrigation practice by tehsil, from", TEHSILS_FILE.name)
+    _write_geojson(build_practice_layer(gpd.read_file(TEHSILS_FILE)), DATA_OUT / "irrigation_practice.geojson")
 
     print("Irrigation figures, from", IRRIGATION_FILE.name)
     sheet = read_irrigation_sheet(IRRIGATION_FILE)
