@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 
 SectionStatus = Literal["ready", "no-data", "coming-soon"]
 LayerStatus = Literal["ready", "no-data"]
-LayerKind = Literal["raster", "vector", "boundary"]
+LayerKind = Literal["raster", "vector", "geojson", "boundary"]
 PlaceLevel = Literal["national", "province", "district"]
 
 # Ids appear in the URL as `id:opacity,id:opacity`, so they must stay URL-safe.
@@ -35,6 +35,8 @@ class YearRange(BaseModel):
 class LegendItem(BaseModel):
     colour: str
     label: str
+    # For a geojson layer: the feature property value this colour stands for.
+    value: str | None = None
 
 
 class ClassLegend(BaseModel):
@@ -71,6 +73,8 @@ class Layer(BaseModel):
     kind: LayerKind
     status: LayerStatus
     legend: Legend | None = None
+    # For a geojson layer: the feature property the legend colours.
+    property: str | None = None
     years: YearRange | None = None
     default_opacity: float = Field(default=1.0, ge=0, le=1)
 
@@ -97,6 +101,8 @@ class Catalogue(BaseModel):
                 )
             if layer.legend is None:
                 raise ValueError(f"layer '{layer.id}' has no legend")
+            if layer.kind == "geojson" and not layer.property:
+                raise ValueError(f"geojson layer '{layer.id}' has no property")
         return self
 
 

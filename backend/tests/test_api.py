@@ -171,3 +171,39 @@ def test_unusable_boundary_file_does_not_stop_the_backend(settings, tmp_path, co
 
 def test_health_has_no_boundary_error_when_boundaries_load(client):
     assert client.get("/api/health").json()["boundaries_error"] is None
+
+
+def test_section_data_carries_notes(client):
+    assert client.get("/api/sections/alpha-section/data").json()["notes"] == ["A note"]
+
+
+def test_geojson_layer_is_served(client):
+    response = client.get("/api/layers/fake-shapes/geojson")
+    assert response.status_code == 200
+    assert response.json() == {"type": "FeatureCollection", "features": []}
+
+
+def test_geojson_route_errors(client, bare_client):
+    unknown = client.get("/api/layers/ghost/geojson")
+    assert (unknown.status_code, unknown.json()["detail"]["reason"]) == (404, "not-found")
+    raster = client.get("/api/layers/fake-yearly/geojson")
+    assert (raster.status_code, raster.json()["detail"]["reason"]) == (404, "not-found")
+    unprovided = bare_client.get("/api/layers/fake-shapes/geojson")
+    assert (unprovided.status_code, unprovided.json()["detail"]["reason"]) == (404, "no-data")
+
+
+def test_geojson_layers_are_not_tile_layers(client):
+    response = client.get("/api/tiles/fake-shapes/0/0/0")
+    assert (response.status_code, response.json()["detail"]["reason"]) == (404, "not-found")
+
+
+def test_health_reports_geojson_layers(client, bare_client):
+    assert client.get("/api/health").json()["layers"]["fake-shapes"] is True
+    assert bare_client.get("/api/health").json()["layers"]["fake-shapes"] is False
+
+
+def test_providers_default_to_the_data_folder(settings, tmp_path):
+    """With no providers passed in, the app builds them from the data folder (here: an empty one)."""
+    client = TestClient(create_app(replace(settings, data_dir=tmp_path)))
+    response = client.get("/api/sections/alpha-section/data")
+    assert response.json()["detail"]["reason"] == "no-data"

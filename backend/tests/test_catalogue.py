@@ -119,3 +119,29 @@ def test_invalid_json_gives_clear_error(tmp_path):
     path.write_text("{not json", encoding="utf-8")
     with pytest.raises(CatalogueError, match="not valid JSON"):
         load_catalogue(path)
+
+
+def _geojson_layer():
+    return {
+        "id": "shapes", "section_id": "s1", "title": "Shapes", "kind": "geojson", "status": "ready",
+        "property": "practice",
+        "legend": {"type": "classes", "items": [{"colour": "#000000", "label": "Drip", "value": "Drip"}]},
+    }
+
+
+def test_geojson_layer_loads_with_its_property_and_legend_values(tmp_path):
+    data = _valid()
+    data["layers"].append(_geojson_layer())
+    layer = _load(tmp_path, data).layers[1]
+    assert layer.kind == "geojson"
+    assert layer.property == "practice"
+    assert layer.legend.items[0].value == "Drip"
+
+
+def test_geojson_layer_needs_a_property(tmp_path):
+    data = _valid()
+    layer = _geojson_layer()
+    del layer["property"]
+    data["layers"].append(layer)
+    with pytest.raises(CatalogueError, match="shapes"):
+        _load(tmp_path, data)

@@ -10,9 +10,9 @@ from fastapi import FastAPI, HTTPException, Query, Response
 
 from .catalogue import load_catalogue
 from .places import COUNTRY_ID, BoundaryError, Place, load_places, no_places
+from .sections import GeoJsonProvider, SectionDataProvider, build_providers
 from .settings import Settings
 
-SectionDataProvider = Callable[[Place, int | None], dict[str, Any]]
 TileProvider = Callable[[int, int, int, int | None], tuple[bytes, str] | None]
 
 MAX_ZOOM = 24
@@ -28,6 +28,7 @@ def create_app(
     settings: Settings | None = None,
     section_providers: Mapping[str, SectionDataProvider] | None = None,
     tile_providers: Mapping[str, TileProvider] | None = None,
+    geojson_providers: Mapping[str, GeoJsonProvider] | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     catalogue = load_catalogue(settings.catalogue_path)
@@ -39,7 +40,10 @@ def create_app(
         boundaries_error = str(err)
         logger.error("Boundaries could not be loaded: %s", err)
         places = no_places()
-    section_data = dict(section_providers or {})
+    # Providers not passed in are built from the prepared files in the data folder.
+    default_sections, default_geojson = build_providers(settings.data_dir, settings.boundaries_dir)
+    section_data = dict(default_sections if section_providers is None else section_providers)
+    geojson = dict(default_geojson if geojson_providers is None else geojson_providers)
     tiles = dict(tile_providers or {})
     sections = {section.id: section for section in catalogue.sections}
     layers = {layer.id: layer for layer in catalogue.layers}
@@ -53,7 +57,7 @@ def create_app(
             "boundaries_loaded": places.loaded,
             "boundaries_error": boundaries_error,
             "layers": {
-                layer.id: places.loaded if layer.kind == "boundary" else layer.id in tiles
+                layer.id: places.loaded if layer.kind == "boundary" else layer.id in tiles or layer.id in geojson
                 for layer in catalogue.layers
             },
         }
@@ -75,8 +79,8 @@ def create_app(
     @app.get("/api/tiles/{layer_id}/{z}/{x}/{y}")
     def get_tile(layer_id: str, z: int, x: int, y: int, year: int | None = None) -> Response:
         layer = layers.get(layer_id)
-        if layer is None or layer.kind == "boundary":
-            raise _error(404, f"Unknown layer '{layer_id}'", "not-found")
+        if layer is None or layer.kind in ("boundary", "geojson"):
+            raise _error(404, f"Unknown tile layer '{layer_id}'", "not-found")
         if not 0 <= z <= MAX_ZOOM or not 0 <= x < 2**z or not 0 <= y < 2**z:
             raise _error(422, f"Tile {z}/{x}/{y} does not exist", "bad-tile")
         if sections[layer.section_id].status == "coming-soon":
@@ -95,6 +99,18 @@ def create_app(
             return Response(status_code=204)
         content, media_type = result
         return Response(content=content, media_type=media_type)
+
+    @app.get("/api/layers/{layer_id}/geojson")
+    def get_layer_geojson(layer_id: str) -> dict[str, Any]:
+        layer = layers.get(layer_id)
+        if layer is None or layer.kind != "geojson":
+            raise _error(404, f"Unknown shape layer '{layer_id}'", "not-found")
+        if sections[layer.section_id].status == "coming-soon":
+            raise _error(404, f"Layer '{layer_id}' is coming soon", "coming-soon")
+        provider = geojson.get(layer_id)
+        if layer.status != "ready" or provider is None:
+            raise _error(404, f"Layer '{layer_id}' has no data loaded", "no-data")
+        return provider()
 
     @app.get("/api/sections/{section_id}/data")
     def get_section_data(
@@ -131,6 +147,7 @@ def create_app(
             "year": year,
             "figures": body.get("figures", []),
             "charts": body.get("charts", []),
+            "notes": body.get("notes", []),
         }
 
     return app

@@ -15,6 +15,7 @@ class Settings:
     catalogue_path: Path
     boundaries_dir: Path
     basemap_style_url: str
+    data_dir: Path = BACKEND_DIR / "data"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -28,4 +29,5 @@ class Settings:
             basemap_style_url=os.environ.get(
                 "CSA_BASEMAP_STYLE_URL", DEFAULT_BASEMAP_STYLE_URL
             ),
+            data_dir=Path(os.environ.get("CSA_DATA_DIR", BACKEND_DIR / "data")),
         )
