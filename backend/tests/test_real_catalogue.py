@@ -112,9 +112,31 @@ def test_irrigation_layers_are_served_and_match_their_legends():
         assert legend.min <= min(values) and max(values) <= legend.max, layer_id
 
 
-def test_land_cover_is_still_not_loaded():
-    tile = _client().get("/api/tiles/forest/0/0/0")
-    assert tile.json()["detail"]["reason"] == "no-data"
+LAND_COVER = {"forest": {"2"}, "shrub-land": {"3"}, "bare-land": {"7"}, "irrigated-rainfed": {"2", "3"}}
+
+
+def test_land_cover_layers_name_their_files_and_class_values():
+    catalogue = load_catalogue(BACKEND_DIR / "catalogue.json")
+    by_id = {layer.id: layer for layer in catalogue.layers}
+    for layer_id, values in LAND_COVER.items():
+        layer = by_id[layer_id]
+        assert (layer.kind, layer.section_id, layer.source) == ("raster", "land-cover", f"{layer_id}.tif")
+        assert {item.value for item in layer.legend.items} == values
+        assert layer.max_zoom in (13, 14)
+
+
+def test_each_land_cover_layer_is_ready_exactly_when_its_file_is_converted():
+    client = _client()
+    served = {layer["id"]: layer for layer in client.get("/api/catalogue").json()["layers"]}
+    for layer_id in LAND_COVER:
+        converted = (BACKEND_DIR / "rasters" / f"{layer_id}.tif").is_file()
+        layer = served[layer_id]
+        assert layer["status"] == ("ready" if converted else "no-data"), layer_id
+        if converted:
+            tile = client.get(layer["tile_url"].format(z=0, x=0, y=0))
+            assert (tile.status_code, tile.headers["content-type"]) == (200, "image/png"), layer_id
+        else:
+            assert layer["tile_url"] is None
 
 
 def test_real_headlines_read_as_findings():

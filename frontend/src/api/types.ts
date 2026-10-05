@@ -41,6 +41,10 @@ export interface Layer {
   property?: string | null
   years: YearRange | null
   default_opacity: number
+  /** For a raster served by TiTiler: where its tiles are, with {z}/{x}/{y} to fill in. */
+  tile_url?: string | null
+  /** The deepest zoom the data has detail for. */
+  max_zoom?: number | null
 }
 
 export interface Catalogue {

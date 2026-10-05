@@ -71,15 +71,33 @@ export function tileUrlTemplate(layerId: string, year: number | null, retry: num
   return `/api/tiles/${layerId}/{z}/{x}/{y}${query}`
 }
 
+/** Where a raster or vector layer's tiles are: its own address if the catalogue gives one. */
+export function layerTileUrl(
+  layer: Pick<Layer, 'id' | 'kind' | 'tile_url'>,
+  year: number | null,
+  retry: number,
+): string {
+  if (!layer.tile_url) return tileUrlTemplate(layer.id, year, retry)
+  if (retry <= 0) return layer.tile_url
+  return `${layer.tile_url}${layer.tile_url.includes('?') ? '&' : '?'}r=${retry}`
+}
+
 export function layerGeojsonUrl(layerId: string, retry: number): string {
   return `/api/layers/${layerId}/geojson${retry > 0 ? `?r=${retry}` : ''}`
 }
 
 /** Learn whether a layer's data can be served: its shapes for a shape layer, its root tile otherwise. */
-export async function probeLayer(layer: Pick<Layer, 'id' | 'kind'>, year: number | null, retry: number): Promise<boolean> {
-  if (layer.kind !== 'geojson') return probeTile(layer.id, year, retry)
+export async function probeLayer(
+  layer: Pick<Layer, 'id' | 'kind' | 'tile_url'>,
+  year: number | null,
+  retry: number,
+): Promise<boolean> {
+  const address =
+    layer.kind === 'geojson'
+      ? layerGeojsonUrl(layer.id, retry)
+      : layerTileUrl(layer, year, retry).replace('{z}/{x}/{y}', '0/0/0')
   try {
-    return (await fetch(layerGeojsonUrl(layer.id, retry))).ok
+    return (await fetch(address)).ok
   } catch {
     return false
   }

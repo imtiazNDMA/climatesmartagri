@@ -2,7 +2,7 @@ import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type StyleS
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef, useState } from 'react'
-import { layerGeojsonUrl, tileUrlTemplate } from '../api/client'
+import { layerGeojsonUrl, layerTileUrl } from '../api/client'
 import { COUNTRY_ID, type Layer } from '../api/types'
 import type { PortalData } from '../data/usePortalData'
 import { fillColour } from '../map/layerStyle'
@@ -132,13 +132,14 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
     })
     return
   }
-  const tiles = [`${window.location.origin}${tileUrlTemplate(layer.id, year, retry)}`]
+  const tiles = [`${window.location.origin}${layerTileUrl(layer, year, retry)}`]
   if (layer.kind === 'vector') {
     const colour = layer.legend?.type === 'classes' ? layer.legend.items[0].colour : '#1d4ed8'
     map.addSource(id, { type: 'vector', tiles })
     map.addLayer({ id, type: 'fill', source: id, 'source-layer': layer.id, paint: { 'fill-color': colour } })
   } else {
-    map.addSource(id, { type: 'raster', tiles, tileSize: 256 })
+    // Beyond the data's own detail the map stretches tiles and asks for no more.
+    map.addSource(id, { type: 'raster', tiles, tileSize: 256, maxzoom: layer.max_zoom ?? 22 })
     map.addLayer({ id, type: 'raster', source: id })
   }
 }

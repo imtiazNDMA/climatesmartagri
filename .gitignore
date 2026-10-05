@@ -14,3 +14,6 @@ node_modules/
 frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
+
+# Converted rasters (large; rebuilt by backend/scripts/prepare_rasters.py)
+backend/rasters/

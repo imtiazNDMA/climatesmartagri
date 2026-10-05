@@ -121,68 +121,85 @@
       "section_id": "land-cover",
       "title": "Forest cover",
       "kind": "raster",
-      "status": "no-data",
-      "default_opacity": 0.8,
+      "status": "ready",
+      "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
             "colour": "#2e7d32",
-            "label": "Forest"
+            "label": "Forest",
+            "value": "2"
           }
         ]
-      }
+      },
+      "source": "forest.tif",
+      "max_zoom": 14
     },
     {
       "id": "shrub-land",
       "section_id": "land-cover",
       "title": "Shrub land",
       "kind": "raster",
-      "status": "no-data",
-      "default_opacity": 0.8,
+      "status": "ready",
+      "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
             "colour": "#9ccc65",
-            "label": "Shrub land"
+            "label": "Shrub land",
+            "value": "3"
           }
         ]
-      }
+      },
+      "source": "shrub-land.tif",
+      "max_zoom": 14
     },
     {
       "id": "bare-land",
       "section_id": "land-cover",
       "title": "Bare land",
       "kind": "raster",
-      "status": "no-data",
-      "default_opacity": 0.8,
+      "status": "ready",
+      "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
             "colour": "#bcaaa4",
-            "label": "Bare land"
+            "label": "Bare land",
+            "value": "7"
           }
         ]
-      }
+      },
+      "source": "bare-land.tif",
+      "max_zoom": 14
     },
     {
       "id": "irrigated-rainfed",
       "section_id": "land-cover",
       "title": "Irrigated and rainfed cropland",
       "kind": "raster",
-      "status": "no-data",
-      "default_opacity": 0.8,
+      "status": "ready",
+      "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
-            "colour": "#1565c0",
-            "label": "Cropland"
+            "colour": "#2a78d6",
+            "label": "Irrigated cropland",
+            "value": "2"
+          },
+          {
+            "colour": "#eda100",
+            "label": "Rainfed cropland",
+            "value": "3"
           }
         ]
-      }
+      },
+      "source": "irrigated-rainfed.tif",
+      "max_zoom": 13
     },
     {
       "id": "irrigation-practice",

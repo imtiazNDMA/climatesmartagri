@@ -1,6 +1,10 @@
 from pathlib import Path
 
-import pytest
+from csa_portal.geoenv import use_bundled_proj
+
+use_bundled_proj()
+
+import pytest  # noqa: E402
 from fastapi.testclient import TestClient
 
 from csa_portal.main import create_app
@@ -32,6 +36,7 @@ def settings():
         boundaries_dir=FIXTURES / "boundaries",
         basemap_style_url="https://example.test/style.json",
         data_dir=FIXTURES / "no-data-here",
+        rasters_dir=FIXTURES / "no-rasters-here",
     )
 
 

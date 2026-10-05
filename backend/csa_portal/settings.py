@@ -16,6 +16,7 @@ class Settings:
     boundaries_dir: Path
     basemap_style_url: str
     data_dir: Path = BACKEND_DIR / "data"
+    rasters_dir: Path = BACKEND_DIR / "rasters"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -30,4 +31,5 @@ class Settings:
                 "CSA_BASEMAP_STYLE_URL", DEFAULT_BASEMAP_STYLE_URL
             ),
             data_dir=Path(os.environ.get("CSA_DATA_DIR", BACKEND_DIR / "data")),
+            rasters_dir=Path(os.environ.get("CSA_RASTERS_DIR", BACKEND_DIR / "rasters")),
         )

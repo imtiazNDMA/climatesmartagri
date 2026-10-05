@@ -75,6 +75,10 @@ class Layer(BaseModel):
     legend: Legend | None = None
     # For a geojson layer: the feature property the legend colours.
     property: str | None = None
+    # For a raster layer served by TiTiler: its converted file's name in the rasters folder.
+    source: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]+\.tif$")
+    # The deepest zoom the data has detail for; the map stretches tiles beyond it.
+    max_zoom: int | None = Field(default=None, ge=0, le=24)
     years: YearRange | None = None
     default_opacity: float = Field(default=1.0, ge=0, le=1)
 
@@ -103,6 +107,8 @@ class Catalogue(BaseModel):
                 raise ValueError(f"layer '{layer.id}' has no legend")
             if layer.kind == "geojson" and not layer.property:
                 raise ValueError(f"geojson layer '{layer.id}' has no property")
+            if layer.source and layer.kind != "raster":
+                raise ValueError(f"layer '{layer.id}' has a raster source but is not a raster layer")
         return self
 
 

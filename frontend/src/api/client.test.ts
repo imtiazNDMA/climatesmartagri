@@ -6,6 +6,7 @@ import {
   fetchCatalogue,
   fetchSectionData,
   layerGeojsonUrl,
+  layerTileUrl,
   probeLayer,
   probeTile,
   tileUrlTemplate,
@@ -137,5 +138,31 @@ describe('shape layers', () => {
   it('reports a shape layer that cannot be loaded', async () => {
     vi.stubGlobal('fetch', respond(404, { detail: { message: 'x', reason: 'no-data' } }))
     expect(await probeLayer(shapes, null, 0)).toBe(false)
+  })
+})
+
+describe('rasters served by TiTiler', () => {
+  const forest = {
+    id: 'forest', kind: 'raster' as const,
+    tile_url: '/api/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?layer=forest',
+  }
+
+  it('uses the address the catalogue gives, adding the retry count', () => {
+    expect(layerTileUrl(forest, null, 0)).toBe('/api/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?layer=forest')
+    expect(layerTileUrl(forest, 2005, 2)).toBe('/api/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?layer=forest&r=2')
+  })
+
+  it('falls back to the portal tile route for a raster without its own address', () => {
+    expect(layerTileUrl({ id: 'old', kind: 'raster' as const }, 2005, 0)).toBe('/api/tiles/old/{z}/{x}/{y}?year=2005')
+    expect(layerTileUrl({ id: 'old', kind: 'raster' as const, tile_url: null }, null, 1)).toBe(
+      '/api/tiles/old/{z}/{x}/{y}?r=1',
+    )
+  })
+
+  it('probes the whole-world tile at that address', async () => {
+    const ok = respond(200, null)
+    vi.stubGlobal('fetch', ok)
+    expect(await probeLayer(forest, null, 0)).toBe(true)
+    expect(ok.mock.calls[0][0]).toBe('/api/cog/tiles/WebMercatorQuad/0/0/0.png?layer=forest')
   })
 })

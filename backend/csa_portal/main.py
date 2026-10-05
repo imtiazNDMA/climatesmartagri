@@ -4,18 +4,27 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Mapping
-from typing import Any, Literal
+from pathlib import Path
+from typing import Annotated, Any, Literal
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from .geoenv import use_bundled_proj
 
-from .catalogue import load_catalogue
-from .places import COUNTRY_ID, BoundaryError, Place, load_places, no_places
-from .sections import GeoJsonProvider, SectionDataProvider, build_providers
-from .settings import Settings
+use_bundled_proj()  # before anything imports rasterio
+
+from fastapi import FastAPI, HTTPException, Query, Response  # noqa: E402
+from titiler.core.dependencies import parse_color  # noqa: E402
+from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers  # noqa: E402
+from titiler.core.factory import TilerFactory  # noqa: E402
+
+from .catalogue import Layer, load_catalogue  # noqa: E402
+from .places import COUNTRY_ID, BoundaryError, Place, load_places, no_places  # noqa: E402
+from .sections import GeoJsonProvider, SectionDataProvider, build_providers  # noqa: E402
+from .settings import Settings  # noqa: E402
 
 TileProvider = Callable[[int, int, int, int | None], tuple[bytes, str] | None]
 
 MAX_ZOOM = 24
+COG_PREFIX = "/api/cog"
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -50,6 +59,50 @@ def create_app(
 
     app = FastAPI(title="CSA Portal")
 
+    # --- Land-cover rasters, served by TiTiler from converted (cloud-optimized) files.
+    def raster_file(layer: Layer) -> Path | None:
+        """The converted file behind a raster layer, if the layer has one and it exists."""
+        if layer.kind != "raster" or not layer.source:
+            return None
+        path = settings.rasters_dir / layer.source
+        return path if path.is_file() else None
+
+    def served(layer: Layer) -> dict[str, Any]:
+        """A layer as the catalogue reports it: a raster is ready only once its file is converted."""
+        body = layer.model_dump()
+        body["tile_url"] = None
+        if layer.kind == "raster" and layer.source:
+            if raster_file(layer) is None:
+                body["status"] = "no-data"
+            elif layer.status == "ready":
+                body["tile_url"] = f"{COG_PREFIX}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}.png?layer={layer.id}"
+        return body
+
+    def cog_layer(layer_id: str) -> Layer:
+        layer = layers.get(layer_id)
+        if layer is None or layer.kind != "raster" or not layer.source:
+            raise _error(404, f"Unknown raster layer '{layer_id}'", "not-found")
+        return layer
+
+    def cog_path(layer: Annotated[str, Query(description="A raster layer id from the catalogue")]) -> str:
+        """TiTiler normally opens any path or URL it is given; here it only opens catalogue layers."""
+        path = raster_file(cog_layer(layer))
+        if path is None:
+            raise _error(404, f"Layer '{layer}' has not been converted yet", "no-data")
+        return str(path)
+
+    def cog_colormap(layer: Annotated[str, Query()]) -> dict[int, tuple[int, int, int, int]] | None:
+        """Colours come from the layer's legend, so the map and its key cannot disagree."""
+        legend = cog_layer(layer).legend
+        if legend is None or legend.type != "classes":
+            return None
+        colours = {int(item.value): parse_color(item.colour) for item in legend.items if item.value is not None}
+        return colours or None
+
+    cog = TilerFactory(router_prefix=COG_PREFIX, path_dependency=cog_path, colormap_dependency=cog_colormap)
+    app.include_router(cog.router, prefix=COG_PREFIX, tags=["Land cover"])
+    add_exception_handlers(app, DEFAULT_STATUS_CODES)
+
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         return {
@@ -57,14 +110,20 @@ def create_app(
             "boundaries_loaded": places.loaded,
             "boundaries_error": boundaries_error,
             "layers": {
-                layer.id: places.loaded if layer.kind == "boundary" else layer.id in tiles or layer.id in geojson
+                layer.id: places.loaded
+                if layer.kind == "boundary"
+                else layer.id in tiles or layer.id in geojson or raster_file(layer) is not None
                 for layer in catalogue.layers
             },
         }
 
     @app.get("/api/catalogue")
     def get_catalogue() -> dict[str, Any]:
-        return {"basemap_style_url": settings.basemap_style_url, **catalogue.model_dump()}
+        return {
+            "basemap_style_url": settings.basemap_style_url,
+            "sections": [section.model_dump() for section in catalogue.sections],
+            "layers": [served(layer) for layer in catalogue.layers],
+        }
 
     @app.get("/api/places")
     def get_places() -> list[dict[str, Any]]:
