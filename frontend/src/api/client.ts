@@ -44,7 +44,12 @@ async function getJson<T>(path: string): Promise<T> {
 export const fetchCatalogue = () => getJson<Catalogue>('/api/catalogue')
 export const fetchPlaces = () => getJson<Place[]>('/api/places')
 export const fetchHealth = () =>
-  getJson<{ status: string; boundaries_loaded: boolean; boundaries_error: string | null }>('/api/health')
+  getJson<{
+    status: string
+    boundaries_loaded: boolean
+    boundaries_error: string | null
+    layers: Record<string, boolean>
+  }>('/api/health')
 
 export async function fetchBoundaries(level: 'province' | 'district'): Promise<FeatureCollection | null> {
   try {

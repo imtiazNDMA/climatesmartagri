@@ -5,7 +5,7 @@ from csa_portal.main import create_app
 from csa_portal.settings import BACKEND_DIR, Settings
 
 EXPECTED = [
-    ("land-cover", "no-data"),
+    ("land-cover", "ready"),
     ("irrigation", "ready"),
     ("emissions", "ready"),
     ("water-balance", "ready"),
@@ -153,3 +153,18 @@ def test_real_headlines_read_as_findings():
     )
     assert titles["food-population"] == "Population grows from 255 to 386 million by 2047"
     assert titles["irrigation-ranking"].endswith("has the most irrigation-ready land of any province")
+
+
+def test_land_cover_figures_come_from_the_rasters():
+    client = _client()
+    country = client.get("/api/sections/land-cover/data").json()
+    figures = {f["label"]: f["value"] for f in country["figures"]}
+    assert 90_000_000 < figures["Land area"] < 105_000_000
+    assert 4_000_000 < figures["Forest"] < 9_000_000
+    assert 15_000_000 < figures["Irrigated cropland"] < 24_000_000
+    places = client.get("/api/places").json()
+    faisalabad = next(p for p in places if p["name"] == "Faisalabad")
+    district = client.get("/api/sections/land-cover/data", params={"place": faisalabad["id"]}).json()
+    assert district["level_used"] == "district"
+    shares = next(c for c in district["charts"] if c["id"] == "land-cover-shares")
+    assert shares["title"].startswith("Irrigated cropland covers")

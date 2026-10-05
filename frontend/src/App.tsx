@@ -20,10 +20,10 @@ import { effectiveYear } from './state/selectors'
 import { useView } from './state/viewState'
 import { useUrlSync } from './state/useUrlSync'
 
-function Portal({ data }: { data: PortalData }) {
+function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: () => void }) {
   useUrlSync(data.catalogue, data.places)
   useLayerProbes(data.catalogue)
-  useBackendWatch()
+  useBackendWatch(data.catalogue, onLayersChanged)
   const [aboutOpen, setAboutOpen] = useState(false)
   const sectionId = useView((s) => s.section)
   const full = useView((s) => s.full)
@@ -61,7 +61,7 @@ function Portal({ data }: { data: PortalData }) {
 }
 
 export default function App() {
-  const { state, retry } = usePortalData()
+  const { state, retry, refreshCatalogue } = usePortalData()
   if (state.status === 'loading') return <div className="splash">Loading the portal…</div>
   if (state.status === 'unreachable') return <BackendDown onRetry={retry} />
   if (state.status === 'error') {
@@ -75,5 +75,5 @@ export default function App() {
       </div>
     )
   }
-  return <Portal data={state.data} />
+  return <Portal data={state.data} onLayersChanged={refreshCatalogue} />
 }

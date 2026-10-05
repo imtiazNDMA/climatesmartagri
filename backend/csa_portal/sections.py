@@ -391,6 +391,110 @@ def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
     return provider
 
 
+# Land-cover classes: label, and the colour its map layer uses, so charts and map agree.
+LAND_COVER = {
+    "forest": ("Forest", "#2e7d32"),
+    "shrub": ("Shrub land", "#9ccc65"),
+    "bare": ("Bare land", "#bcaaa4"),
+    "irrigated": ("Irrigated cropland", "#2a78d6"),
+    "rainfed": ("Rainfed cropland", "#eda100"),
+}
+
+
+def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
+    places = data["places"]
+    classes = [c for c in LAND_COVER if c in data["classes"]]
+    missing = [LAND_COVER[c][0] for c in LAND_COVER if c not in data["classes"]]
+
+    def forest_ranking(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+        if "forest" not in classes:
+            return None
+        if entry["level"] == "national":
+            scope, level, where = COUNTRY_ID, "province", "of any province"
+        else:
+            scope = place_id if entry["level"] == "province" else entry["parent_id"]
+            level, where = "district", f"in {places.get(scope, {}).get('name', 'its province')}"
+        rows = [
+            (pid, p, _share(p["forest"], p["area_ha"])) for pid, p in places.items()
+            if p["level"] == level and p["parent_id"] == scope and p.get("forest") is not None
+        ]
+        rows = [row for row in rows if row[2] is not None]
+        if not rows:
+            return None
+        rows.sort(key=lambda row: row[2], reverse=True)
+        selected = next((n for n, row in enumerate(rows) if row[0] == place_id), None)
+        if selected is None:
+            title = f"{rows[0][1]['name']} has the largest share of forest {where}"
+        else:
+            title = f"{entry['name']} ranks {_ordinal(selected + 1)} of {len(rows)} districts {where} for forest cover"
+        shown = rows[:RANKING_LIMIT]
+        if selected is not None and selected >= RANKING_LIMIT:
+            shown[-1] = rows[selected]
+            selected = RANKING_LIMIT - 1
+        more = f" The {RANKING_LIMIT} highest are shown." if len(rows) > RANKING_LIMIT else ""
+        return _bars(
+            "land-cover-forest-ranking", title,
+            f"Forest as a share of all land in each {level}, highest first.{more}",
+            "%", [row[1]["name"] for row in shown], [row[2] for row in shown],
+            horizontal=True, highlight=selected, series_name="Forest share of land",
+            bar_colours=[LAND_COVER["forest"][1]] * len(shown),
+        )
+
+    def provider(place: Place, year: int | None) -> dict[str, Any]:
+        entry = places.get(place.id)
+        if entry is None:
+            return {
+                "figures": [], "charts": [],
+                "notes": [f"No land-cover figures are available for {place.name}."],
+            }
+        name = entry["name"]
+        measured = [c for c in classes if entry.get(c) is not None]
+        figures = [_figure("Land area", entry["area_ha"], "ha")]
+        figures += [_figure(LAND_COVER[c][0], entry[c], "ha") for c in measured]
+        if not measured:
+            return {
+                "figures": figures, "charts": [],
+                "notes": [f"The land-cover maps do not reach {name}."],
+            }
+
+        notes = [data.get("method", "")] if data.get("method") else []
+        notes.append(
+            "The layers come from separate maps and can overlap, and they do not cover every kind of land, "
+            "so the shares need not add up to 100%."
+        )
+        if missing:
+            notes.append(f"Not measured yet: {', '.join(missing)}.")
+
+        shares = [_share(entry[c], entry["area_ha"]) for c in measured]
+        top = max(range(len(measured)), key=lambda n: shares[n] or 0)
+        charts = [_bars(
+            "land-cover-shares",
+            f"{LAND_COVER[measured[top]][0]} covers {_pct(shares[top] or 0)}% of {name}",
+            f"Each kind of land cover as a share of all land in {name}. "
+            "The colours match the map layers.",
+            "%", [LAND_COVER[c][0] for c in measured], shares,
+            horizontal=True, series_name="Share of land", bar_colours=[LAND_COVER[c][1] for c in measured],
+        )]
+        cropland = (entry.get("irrigated") or 0) + (entry.get("rainfed") or 0)
+        if "irrigated" in measured and "rainfed" in measured and cropland > 0:
+            split = [_share(entry["irrigated"], cropland), _share(entry["rainfed"], cropland)]
+            charts.append(_bars(
+                "land-cover-cropland",
+                f"{_pct(split[0] or 0)}% of the cropland in {name} is irrigated",
+                "Cropland that gets water from canals or wells, next to cropland that depends on rain. "
+                "Rainfed land is the more exposed to drought.",
+                "%", ["Irrigated", "Rainfed"], split,
+                series_name="Share of cropland",
+                bar_colours=[LAND_COVER["irrigated"][1], LAND_COVER["rainfed"][1]],
+            ))
+        ranked = forest_ranking(place.id, entry)
+        if ranked is not None:
+            charts.append(ranked)
+        return {"figures": figures, "notes": notes, "charts": charts}
+
+    return provider
+
+
 def _district_layer(
     boundaries: dict[str, Any], places: dict[str, Any], title: str, value_of: Callable[[dict], Any], unit: str
 ) -> GeoJsonProvider:
@@ -423,6 +527,7 @@ def build_providers(
         "water-balance": ("water_balance.json", _water_balance),
         "food-security": ("food_security.json", _food_security),
         "irrigation": ("irrigation.json", _irrigation),
+        "land-cover": ("land_cover.json", _land_cover),
     }
     loaded: dict[str, Any] = {}
     for section_id, (filename, build) in builders.items():

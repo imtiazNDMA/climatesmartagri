@@ -5,7 +5,7 @@
       "title": "Land cover",
       "icon": "trees",
       "order": 1,
-      "status": "no-data",
+      "status": "ready",
       "place_levels": [
         "national",
         "province",

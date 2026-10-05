@@ -243,3 +243,19 @@ describe('labels that would collide', () => {
     expect(option(bars).grid.left).toBeGreaterThanOrEqual(12)
   })
 })
+
+describe('bars in the colours of their map layers', () => {
+  const cover: ChartSpec = { ...bars, highlight: null, bar_colours: ['#2e7d32', '#2a78d6', '#eda100'] }
+
+  it('uses the colours the chart lists, one per bar', () => {
+    expect(option(cover).series[0].data.map((d: Loose) => d.itemStyle.color)).toEqual(['#2e7d32', '#2a78d6', '#eda100'])
+  })
+
+  it('fades the bars that are not highlighted, keeping their colour', () => {
+    const data = option({ ...cover, highlight: 1 }).series[0].data
+    expect(data.map((d: Loose) => d.itemStyle.color)).toEqual(['#2e7d32', '#2a78d6', '#eda100'])
+    expect(data[1].itemStyle.opacity).toBe(1)
+    expect(data[0].itemStyle.opacity).toBeLessThan(0.6)
+    expect(data[2].itemStyle.opacity).toBeLessThan(0.6)
+  })
+})

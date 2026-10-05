@@ -18,7 +18,7 @@ export type PortalState =
   | { status: 'ready'; data: PortalData }
 
 /** Everything the portal needs before it can draw: catalogue, places, boundaries. */
-export function usePortalData(): { state: PortalState; retry: () => void } {
+export function usePortalData(): { state: PortalState; retry: () => void; refreshCatalogue: () => void } {
   const [state, setState] = useState<PortalState>({ status: 'loading' })
   const [attempt, setAttempt] = useState(0)
 
@@ -57,5 +57,18 @@ export function usePortalData(): { state: PortalState; retry: () => void } {
   }, [attempt])
 
   const retry = useCallback(() => setAttempt((n) => n + 1), [])
-  return { state, retry }
+
+  /** Fetch the layer list again and swap it in, leaving places and boundaries (and so the map) alone. */
+  const refreshCatalogue = useCallback(() => {
+    fetchCatalogue()
+      .then((catalogue) => {
+        const sorted = { ...catalogue, sections: [...catalogue.sections].sort((a, b) => a.order - b.order) }
+        setState((current) =>
+          current.status === 'ready' ? { status: 'ready', data: { ...current.data, catalogue: sorted } } : current,
+        )
+      })
+      .catch(() => undefined)
+  }, [])
+
+  return { state, retry, refreshCatalogue }
 }

@@ -99,6 +99,8 @@ export interface ChartSpec {
   colour_by_sign?: boolean
   /** A colour slot per bar, when each bar is its own thing. */
   bar_slots?: number[]
+  /** A colour per bar, for bars that stand for map layers and wear their colours. */
+  bar_colours?: string[]
 }
 
 export interface SectionData {

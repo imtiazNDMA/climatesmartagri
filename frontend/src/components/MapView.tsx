@@ -216,7 +216,9 @@ export function MapView({ data }: { data: PortalData }) {
       setReady(false)
       setBoundariesDrawn(false)
     }
-  }, [data])
+    // Built from places, boundaries and the background style only: a refreshed layer list must not rebuild the map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.places, data.boundaries, data.catalogue.basemap_style_url])
 
   // Outline the selection and move the map to it.
   useEffect(() => {

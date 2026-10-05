@@ -144,6 +144,7 @@ function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, he
 }
 
 function barColour(spec: ChartSpec, series: ChartSeries, index: number, value: number | null): string {
+  if (spec.bar_colours?.[index]) return spec.bar_colours[index]
   if (spec.colour_by_sign) return (value ?? 0) < 0 ? SHORTFALL : SURPLUS
   if (spec.bar_slots) return SLOT_COLOURS[(spec.bar_slots[index] - 1) % SLOT_COLOURS.length]
   const colour = colourOf(series)
@@ -165,7 +166,11 @@ function barSeries(spec: ChartSpec, large: boolean) {
     },
     data: series.values.map((value, i) => ({
       value,
-      itemStyle: { color: barColour(spec, series, i, value) },
+      itemStyle: {
+        color: barColour(spec, series, i, value),
+        // Bars in their own colours cannot be dimmed by swapping the colour, so the others fade instead.
+        opacity: spec.bar_colours && (spec.highlight ?? null) !== null && spec.highlight !== i ? 0.4 : 1,
+      },
       // A bar below zero hangs down to the axis names, so its label goes at the zero line instead.
       ...(value !== null && value < 0 && !spec.horizontal ? { label: { position: 'top' } } : {}),
     })),

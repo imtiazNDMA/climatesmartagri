@@ -333,3 +333,98 @@ def test_irrigation_story_for_a_province_and_the_country(providers):
     assert _charts(country)["irrigation-source"]["title"] == (
         "Surface water serves 79% of the irrigation-ready land in Pakistan"
     )
+
+
+def _cover(name, level, parent, area, forest, irrigated, rainfed):
+    return {"name": name, "level": level, "parent_id": parent, "area_ha": area,
+            "forest": forest, "irrigated": irrigated, "rainfed": rainfed}
+
+
+@pytest.fixture
+def land_cover(dirs):
+    data, boundaries = dirs
+    (data / "land_cover.json").write_text(json.dumps({
+        "classes": ["forest", "irrigated", "rainfed"],
+        "method": "Measured from the rasters.",
+        "places": {
+            "PK": _cover("Pakistan", "national", None, 10000, 900, 3000, 1000),
+            "p-punjab": _cover("Punjab", "province", "PK", 4000, 300, 2500, 500),
+            "p-sindh": _cover("Sindh", "province", "PK", 6000, 600, 500, 500),
+            "d-punjab-lahore": _cover("Lahore", "district", "p-punjab", 1000, 50, 800, 200),
+            "d-punjab-attock": _cover("Attock", "district", "p-punjab", 3000, 250, 1700, 300),
+            "d-sindh-ghost": _cover("Ghost", "district", "p-sindh", 500, None, None, None),
+        },
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    return sections["land-cover"]
+
+
+def test_land_cover_figures_give_area_and_each_measured_class(land_cover):
+    body = land_cover(LAHORE, None)
+    assert _figures(body) == {
+        "Land area": (1000, "ha"),
+        "Forest": (50, "ha"),
+        "Irrigated cropland": (800, "ha"),
+        "Rainfed cropland": (200, "ha"),
+    }
+    assert "Measured from the rasters." in body["notes"]
+    assert any("add up to 100%" in note for note in body["notes"])
+    assert "Not measured yet: Shrub land, Bare land." in body["notes"]
+
+
+def test_land_cover_share_chart_states_the_largest_cover(land_cover):
+    shares = _charts(land_cover(LAHORE, None))["land-cover-shares"]
+    assert shares["title"] == "Irrigated cropland covers 80% of Lahore"
+    assert shares["categories"] == ["Forest", "Irrigated cropland", "Rainfed cropland"]
+    assert shares["series"][0]["values"] == [5.0, 80.0, 20.0]
+    assert shares["unit"] == "%"
+    # Bars wear the same colours as the map layers.
+    assert shares["bar_colours"] == ["#2e7d32", "#2a78d6", "#eda100"]
+    assert shares["subtitle"].endswith(".")
+
+
+def test_land_cover_cropland_chart_splits_irrigated_from_rainfed(land_cover):
+    cropland = _charts(land_cover(LAHORE, None))["land-cover-cropland"]
+    assert cropland["title"] == "80% of the cropland in Lahore is irrigated"
+    assert cropland["categories"] == ["Irrigated", "Rainfed"]
+    assert cropland["series"][0]["values"] == [80.0, 20.0]
+    assert cropland["bar_colours"] == ["#2a78d6", "#eda100"]
+    mostly_rainfed = _charts(land_cover(Place("p-sindh", "Sindh", "province", "PK", (0, 0, 1, 1)), None))
+    assert mostly_rainfed["land-cover-cropland"]["title"] == "50% of the cropland in Sindh is irrigated"
+
+
+def test_land_cover_ranks_forest_share_within_the_province_or_across_provinces(land_cover):
+    district = _charts(land_cover(LAHORE, None))["land-cover-forest-ranking"]
+    assert district["title"] == "Lahore ranks 2nd of 2 districts in Punjab for forest cover"
+    assert district["categories"] == ["Attock", "Lahore"]
+    assert district["series"][0]["values"] == [8.3, 5.0]
+    assert district["highlight"] == 1
+    province = _charts(land_cover(PUNJAB, None))["land-cover-forest-ranking"]
+    assert province["title"] == "Attock has the largest share of forest in Punjab"
+    assert province["highlight"] is None
+    country = _charts(land_cover(PK, None))["land-cover-forest-ranking"]
+    assert country["title"] == "Sindh has the largest share of forest of any province"
+    assert country["categories"] == ["Sindh", "Punjab"]
+
+
+def test_land_cover_for_a_place_the_maps_do_not_reach(land_cover):
+    body = land_cover(GHOST, None)
+    assert _figures(body) == {"Land area": (500, "ha")}
+    assert "The land-cover maps do not reach Ghost." in body["notes"]
+    assert body["charts"] == []
+
+
+def test_land_cover_for_a_place_missing_from_the_file(land_cover):
+    body = land_cover(Place("d-x", "Nowhere", "district", "p-punjab", (0, 0, 1, 1)), None)
+    assert body["figures"] == []
+    assert body["notes"] == ["No land-cover figures are available for Nowhere."]
+    assert body["charts"] == []
+
+
+def test_land_cover_headlines_are_plain_and_complete(land_cover):
+    for place in (PK, PUNJAB, LAHORE):
+        for chart in land_cover(place, None)["charts"]:
+            assert chart["title"] and not chart["title"].endswith(".")
+            assert len(chart["title"]) <= 110
+            for series in chart["series"]:
+                assert len(series["values"]) == len(chart["categories"])
