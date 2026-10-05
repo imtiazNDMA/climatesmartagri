@@ -16,7 +16,7 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
       <h3>Data sources</h3>
       <ul>
         <li>Irrigation practice and district irrigation figures: project datasets.</li>
-        <li>Land cover: project rasters, loaded in a later release.</li>
+        <li>Land cover: project rasters (forest, shrub land, bare land, irrigated and rainfed cropland).</li>
         <li>Greenhouse-gas emissions: Our World in Data and national inventory figures, 1994–2021.</li>
         <li>Crop water balance and food security projections: project spreadsheets.</li>
         <li>Province and district boundaries: the project's district map, including Jammu and Kashmir.</li>

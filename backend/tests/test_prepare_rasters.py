@@ -105,3 +105,44 @@ def test_signed_byte_rasters_convert_too(tmp_path):
     with rasterio.open(target) as cog:
         np.testing.assert_array_equal(cog.read(1), data)
         assert cog.nodata == 127
+        # The zoomed-out copies must hold the classes too, not just empty cells.
+        for factor in cog.overviews(1):
+            coarse = cog.read(1, out_shape=(cog.height // factor, cog.width // factor))
+            assert 0.05 < float((coarse == 2).mean()) < 0.15, factor
+            assert 0.05 < float((coarse == 3).mean()) < 0.15, factor
+            assert 127 not in coarse, factor
+
+
+def test_a_file_whose_zoomed_out_copies_are_empty_is_caught(tmp_path):
+    """Seen for real: a conversion that kept the full-detail data but lost every zoomed-out copy."""
+    from rasterio.enums import Resampling
+
+    from prepare_rasters import overviews_are_empty
+
+    path = tmp_path / "stale.tif"
+    profile = dict(driver="GTiff", height=1024, width=1024, count=1, dtype="uint8", crs="EPSG:4326",
+                   transform=from_origin(70, 30, 0.001, 0.001), nodata=15, tiled=True, blockxsize=128, blockysize=128)
+    with rasterio.open(path, "w", **profile) as dst:
+        dst.write(np.full((1024, 1024), 15, dtype="uint8"), 1)
+        dst.build_overviews([2, 4, 8], Resampling.nearest)
+    with rasterio.open(path, "r+") as dst:
+        dst.write(np.full((1024, 1024), 2, dtype="uint8"), 1)  # data arrives, overviews stay empty
+    assert overviews_are_empty(path) is True
+
+    good = tmp_path / "good.tif"
+    write_scattered_raster(tmp_path / "scattered.tif")
+    convert(tmp_path / "scattered.tif", good)
+    assert overviews_are_empty(good) is False
+
+
+def test_an_all_empty_raster_is_not_mistaken_for_a_broken_one(tmp_path):
+    from prepare_rasters import overviews_are_empty
+
+    source, target = tmp_path / "empty.tif", tmp_path / "out.tif"
+    with rasterio.open(
+        source, "w", driver="GTiff", height=1024, width=1024, count=1, dtype="uint8", crs="EPSG:4326",
+        transform=from_origin(70, 30, 0.001, 0.001), nodata=15, tiled=True, blockxsize=128, blockysize=128,
+    ) as dst:
+        dst.write(np.full((1024, 1024), 15, dtype="uint8"), 1)
+    convert(source, target)
+    assert overviews_are_empty(target) is False

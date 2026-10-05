@@ -31,6 +31,14 @@ This runs the backend tests (pytest), the frontend logic tests (Vitest) and the 
 - `data/` — source datasets.
 - `docs/superpowers/specs/` — design documents.
 
+## Land-cover rasters
+
+The four land-cover rasters in `data/geospatial/rasters` are served by [TiTiler](https://developmentseed.org/titiler/), which runs inside the backend. They must first be converted to Cloud-Optimized GeoTIFFs:
+
+    uv run python backend/scripts/prepare_rasters.py
+
+This writes `backend/rasters/` (not kept in git; about 1 GB in total) and takes a long time for the 10 m files. A layer shows as "Data not loaded yet" until its file is converted. Restart the portal after converting.
+
 ## Settings
 
 | Variable | Default | Purpose |
@@ -38,3 +46,5 @@ This runs the backend tests (pytest), the frontend logic tests (Vitest) and the 
 | `CSA_CATALOGUE_PATH` | `backend/catalogue.json` | Catalogue file |
 | `CSA_BOUNDARIES_DIR` | `backend/boundaries` | Boundary GeoJSON folder |
 | `CSA_BASEMAP_STYLE_URL` | OpenFreeMap Positron | Background map style |
+| `CSA_DATA_DIR` | `backend/data` | Prepared section data |
+| `CSA_RASTERS_DIR` | `backend/rasters` | Converted land-cover rasters |

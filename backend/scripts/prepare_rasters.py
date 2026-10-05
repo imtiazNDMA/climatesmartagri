@@ -20,6 +20,8 @@ from csa_portal.geoenv import use_bundled_proj  # noqa: E402
 
 use_bundled_proj()
 
+import rasterio  # noqa: E402
+from rasterio.windows import Window  # noqa: E402
 from rio_cogeo.cogeo import cog_translate, cog_validate  # noqa: E402
 from rio_cogeo.profiles import cog_profiles  # noqa: E402
 
@@ -39,7 +41,29 @@ RASTERS = {
 def _up_to_date(source: Path, target: Path) -> bool:
     if not target.exists() or target.stat().st_mtime < source.stat().st_mtime:
         return False
-    return cog_validate(str(target), quiet=True)[0]
+    return cog_validate(str(target), quiet=True)[0] and not overviews_are_empty(target)
+
+
+def overviews_are_empty(path: Path) -> bool:
+    """True if the full-detail data has values but the most zoomed-out copy has none.
+
+    That is a broken file: it looks right up close and draws nothing from far away.
+    """
+    with rasterio.open(path) as raster:
+        if not raster.overviews(1):
+            return False
+        factor = raster.overviews(1)[-1]
+        coarse = raster.read(1, out_shape=(max(1, raster.height // factor), max(1, raster.width // factor)))
+        if (coarse != raster.nodata).any():
+            return False
+        # Look for values in the full-detail data on a grid of small windows.
+        size = 256
+        for row in range(0, raster.height, max(size, raster.height // 12)):
+            for col in range(0, raster.width, max(size, raster.width // 16)):
+                window = Window(col, row, min(size, raster.width - col), min(size, raster.height - row))
+                if (raster.read(1, window=window) != raster.nodata).any():
+                    return True
+        return False
 
 
 def convert(source: Path, target: Path) -> bool:
@@ -62,10 +86,15 @@ def convert(source: Path, target: Path) -> bool:
             # with it: forest on 5% of a plain would be drawn as forest everywhere.
             overview_resampling="nearest",
             in_memory=False,
+            # The conversion writes a temporary file first. Left uncompressed it can pass 4 GB, the
+            # limit of the classic TIFF format, and the zoomed-out copies written past that are lost.
+            allow_intermediate_compression=True,
             quiet=True,
             use_cog_driver=True,
             config={"GDAL_NUM_THREADS": "ALL_CPUS"},
         )
+        if overviews_are_empty(partial):
+            raise RuntimeError(f"{source.name}: the converted file's zoomed-out copies came out empty")
         partial.replace(target)
     finally:
         partial.unlink(missing_ok=True)
