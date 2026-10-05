@@ -19,6 +19,7 @@ export function AboutDialog({ open, onClose }: { open: boolean; onClose: () => v
         <li>Land cover: project rasters (forest, shrub land, bare land, irrigated and rainfed cropland).</li>
         <li>Greenhouse-gas emissions: Our World in Data and national inventory figures, 1994–2021.</li>
         <li>Crop water balance and food security projections: project spreadsheets.</li>
+        <li>Crop calendar: the project's climate-smart crop calendar, by province.</li>
         <li>Province and district boundaries: the project's district map, including Jammu and Kashmir.</li>
         <li>Background map: OpenFreeMap, © OpenStreetMap contributors.</li>
       </ul>

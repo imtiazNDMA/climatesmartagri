@@ -29,6 +29,8 @@ IRRIGATION_FILE = SOURCE / "spreadsheets" / "Complete GHG and Irrigation data 30
 EMISSIONS_FILE = SOURCE / "spreadsheets" / "Pakistan_GHG_1994_2021_Excel_Data.xlsx"
 WATER_FILE = SOURCE / "spreadsheets" / "CRW(efficiency) 25sep.xlsx"
 FOOD_FILE = SOURCE / "spreadsheets" / "food security projection CSA 17 sep.xlsx"
+# The crop calendars live in the standalone calendar app; the portal reads them from there.
+CROP_CALENDAR_FILE = REPO / "apps" / "climate calender 28 sep 2026" / "script.js"
 
 COUNTRY_ID = "PK"
 PRACTICES = {
@@ -38,7 +40,12 @@ PRACTICES = {
     "Drip": "Drip",
 }
 # How the spreadsheet names provinces, against how the map file names them.
-PROVINCE_ALIASES = {"kpk": "Khyber Pakhtunkhwa", "gilgit": "Gilgit Baltistan"}
+PROVINCE_ALIASES = {
+    "kpk": "Khyber Pakhtunkhwa",
+    "kp": "Khyber Pakhtunkhwa",
+    "gilgit": "Gilgit Baltistan",
+    "baluchistan": "Balochistan",
+}
 # Spreadsheet spelling or former name -> the map file's name, for districts that are the same place.
 # Rows that cover several map districts (Karachi, Dir, Chitral, Kohistan, "Mirpurkhas and Umerkot",
 # "Sheikhupura (Nankana)") are deliberately absent: they stay in province totals only.
@@ -289,6 +296,82 @@ def read_food_security(path: Path) -> dict[str, Any]:
     return {"years": [int(y) for y in frame["Year"]], **{key: _column(frame, col) for key, col in columns.items()}}
 
 
+MONTHS = {name: number for number, name in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+)}
+
+
+def _month_point(token: str, is_end: bool) -> float | None:
+    """A position in the year, 0 (start of January) to 12 (end of December), from 'Jul' or 'early Jul'."""
+    match = re.fullmatch(r"(early|mid|late)?\s*([a-z]{3})[a-z]*", token.strip().lower())
+    if not match or match.group(2) not in MONTHS:
+        return None
+    part, month = match.group(1), MONTHS[match.group(2)]
+    if is_end:
+        return month + (0.5 if part in ("early", "mid") else 1.0)
+    return month + (0.5 if part in ("mid", "late") else 0.0)
+
+
+def _month_ranges(text: str) -> list[list[float]]:
+    """Month ranges from 'Oct–Dec', 'Jun', 'Jun–early Jul' or 'Aug–Oct/Nov'; empty if there are no months."""
+    cleaned = re.sub(r"\b(sowing|harvest)\b", "", text, flags=re.IGNORECASE).strip()
+    ends = re.split(r"\s*[–—-]\s*", cleaned)
+    if len(ends) > 2 or not cleaned:
+        return []
+    # "Oct/Nov" means either month: take the wider range.
+    start = _month_point(ends[0].split("/")[0], is_end=False)
+    end = _month_point(ends[-1].split("/")[-1], is_end=True)
+    if start is None or end is None:
+        return []
+    return [[start, end]] if end > start else [[start, 12.0], [0.0, end]]
+
+
+def parse_calendar(text: str) -> dict[str, Any]:
+    """A calendar such as 'Oct–Dec sowing → Mar–Apr harvest' as sowing and harvest month ranges.
+
+    Two ranges separated by ' / ' and no arrow are two planting seasons. Wording with no months
+    keeps its text and gets no ranges.
+    """
+    sides = re.split(r"\s*(?:→|->)\s*", text.strip())
+    sowing = [r for part in re.split(r"\s+/\s+", sides[0]) for r in _month_ranges(part)]
+    harvest = [r for part in re.split(r"\s+/\s+", sides[1]) for r in _month_ranges(part)] if len(sides) > 1 else []
+    return {"text": text, "sowing": sowing, "harvest": harvest}
+
+
+def _sown_earlier(traditional: dict[str, Any], adjusted: dict[str, Any]) -> bool:
+    """True if any sowing season now finishes sooner than it used to."""
+    if len(traditional["sowing"]) != len(adjusted["sowing"]):
+        return False
+    return any(new[1] < old[1] for old, new in zip(traditional["sowing"], adjusted["sowing"]))
+
+
+def read_crop_calendar(path: Path) -> list[dict[str, Any]]:
+    """The crop calendar records from the calendar app's script."""
+    script = Path(path).read_text(encoding="utf-8")
+    block = re.search(r"const records = \[(.*?)\n\];", script, flags=re.DOTALL)
+    if not block:
+        raise ValueError(f"{Path(path).name}: no 'const records = [...]' list found")
+    records = []
+    for body in re.findall(r"\{(.*?)\}", block.group(1), flags=re.DOTALL):
+        fields = dict(re.findall(r"(\w+):\s*'((?:[^'\\]|\\.)*)'", body))
+        missing = [k for k in ("province", "crop", "traditional", "adjusted", "reason") if k not in fields]
+        if missing:
+            raise ValueError(f"{Path(path).name}: a record is missing {missing}")
+        province = canonical_province(fields["province"])
+        traditional, adjusted = parse_calendar(fields["traditional"]), parse_calendar(fields["adjusted"])
+        records.append({
+            "province_id": "p-" + slug(province),
+            "province": province,
+            "crop": fields["crop"],
+            "traditional": traditional,
+            "adjusted": adjusted,
+            "reason": fields["reason"],
+            "changed": fields["traditional"] != fields["adjusted"],
+            "sown_earlier": _sown_earlier(traditional, adjusted),
+        })
+    return records
+
+
 def _rounded(value: Any) -> Any:
     if isinstance(value, float):
         return round(value, 4)
@@ -337,6 +420,9 @@ def main() -> None:
     _write_json(read_emissions(EMISSIONS_FILE), DATA_OUT / "emissions.json")
     _write_json(read_water_balance(WATER_FILE), DATA_OUT / "water_balance.json")
     _write_json(read_food_security(FOOD_FILE), DATA_OUT / "food_security.json")
+
+    print("Crop calendar, from", CROP_CALENDAR_FILE.parent.name)
+    _write_json({"records": read_crop_calendar(CROP_CALENDAR_FILE)}, DATA_OUT / "crop_calendar.json")
 
 
 if __name__ == "__main__":

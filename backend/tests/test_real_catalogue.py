@@ -10,7 +10,7 @@ EXPECTED = [
     ("emissions", "ready"),
     ("water-balance", "ready"),
     ("food-security", "ready"),
-    ("climate-calendar", "no-data"),
+    ("climate-calendar", "ready"),
     ("hazards", "coming-soon"),
     ("exposure", "coming-soon"),
 ]
@@ -72,6 +72,7 @@ def test_every_ready_section_serves_figures_and_charts():
         for chart in body["charts"]:
             for series in chart["series"]:
                 assert len(series["values"]) == len(chart["categories"]), chart["id"]
+            assert chart["series"] or chart["kind"] == "calendar", chart["id"]
 
 
 def test_emissions_match_the_spreadsheet():
@@ -168,3 +169,28 @@ def test_land_cover_figures_come_from_the_rasters():
     assert district["level_used"] == "district"
     shares = next(c for c in district["charts"] if c["id"] == "land-cover-shares")
     assert shares["title"].startswith("Irrigated cropland covers")
+
+
+def test_the_crop_calendar_covers_four_provinces():
+    client = _client()
+    country = client.get("/api/sections/climate-calendar/data").json()
+    assert [chart["id"] for chart in country["charts"]] == [
+        "calendar-punjab", "calendar-sindh", "calendar-khyber-pakhtunkhwa", "calendar-balochistan",
+    ]
+    figures = {f["label"]: f["value"] for f in country["figures"]}
+    assert figures["Crops with a calendar"] == 20
+    punjab = country["charts"][0]
+    assert punjab["title"] == "In Punjab, 4 of 6 crops should be sown earlier than before"
+    assert len(punjab["rows"]) == 6
+
+
+def test_a_district_gets_its_province_calendar_not_the_national_one():
+    client = _client()
+    places = client.get("/api/places").json()
+    lahore = next(p for p in places if p["name"] == "Lahore")
+    body = client.get("/api/sections/climate-calendar/data", params={"place": lahore["id"]}).json()
+    assert (body["place_id"], body["level_used"]) == ("p-punjab", "province")
+    assert [chart["id"] for chart in body["charts"]] == ["calendar-punjab"]
+    # A section with national figures only still falls back to the country.
+    emissions = client.get("/api/sections/emissions/data", params={"place": lahore["id"]}).json()
+    assert (emissions["place_id"], emissions["level_used"]) == ("PK", "national")

@@ -391,6 +391,60 @@ def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
     return provider
 
 
+def _crop_calendar(data: dict[str, Any]) -> SectionDataProvider:
+    by_province: dict[str, list[dict[str, Any]]] = {}
+    for record in data["records"]:
+        by_province.setdefault(record["province_id"], []).append(record)
+
+    def chart(province_id: str, records: list[dict[str, Any]]) -> dict[str, Any]:
+        province = records[0]["province"]
+        earlier = sum(1 for r in records if r["sown_earlier"])
+        title = (
+            f"In {province}, {earlier} of {len(records)} crops should be sown earlier than before"
+            if earlier
+            else f"In {province}, crop calendars keep their traditional sowing dates"
+        )
+        return {
+            "id": f"calendar-{province_id.removeprefix('p-')}", "title": title, "kind": "calendar",
+            "subtitle": (
+                "Each crop has two lines: its traditional calendar on top and its climate-smart calendar below. "
+                "Green is sowing and amber is harvest. A shorter or earlier green bar means sow sooner."
+            ),
+            "unit": "", "time": False, "categories": [], "series": [],
+            "rows": [
+                {
+                    "crop": r["crop"], "traditional": r["traditional"], "adjusted": r["adjusted"],
+                    "changed": r["changed"], "sown_earlier": r["sown_earlier"], "reason": r["reason"],
+                }
+                for r in records
+            ],
+        }
+
+    def counts(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return [
+            _figure("Crops with a calendar", len(records)),
+            _figure("Calendars adjusted for climate", sum(1 for r in records if r["changed"])),
+            _figure("Crops to sow earlier", sum(1 for r in records if r["sown_earlier"])),
+        ]
+
+    def provider(place: Place, year: int | None) -> dict[str, Any]:
+        if place.level == "national":
+            return {
+                "figures": [_figure("Provinces with a calendar", len(by_province)), *counts(data["records"])],
+                "notes": [],
+                "charts": [chart(province_id, records) for province_id, records in by_province.items()],
+            }
+        records = by_province.get(place.id)
+        if not records:
+            return {
+                "figures": [], "charts": [],
+                "notes": [f"No crop calendar is available for {place.name}."],
+            }
+        return {"figures": counts(records), "notes": [], "charts": [chart(place.id, records)]}
+
+    return provider
+
+
 # Land-cover classes: label, and the colour its map layer uses, so charts and map agree.
 LAND_COVER = {
     "forest": ("Forest", "#2e7d32"),
@@ -524,6 +578,7 @@ def build_providers(
         "food-security": ("food_security.json", _food_security),
         "irrigation": ("irrigation.json", _irrigation),
         "land-cover": ("land_cover.json", _land_cover),
+        "climate-calendar": ("crop_calendar.json", _crop_calendar),
     }
     loaded: dict[str, Any] = {}
     for section_id, (filename, build) in builders.items():

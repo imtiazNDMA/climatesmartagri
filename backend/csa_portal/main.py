@@ -196,6 +196,10 @@ def create_app(
                 f"Year {year} is outside {section.years.first}-{section.years.last}",
                 "year-out-of-range",
             )
+        # A section without figures at this level uses the nearest level above that it does have:
+        # a district gets its province's figures if there are any, otherwise the country's.
+        while target.level not in section.place_levels and target.parent_id in places.by_id:
+            target = places.by_id[target.parent_id]
         if target.level not in section.place_levels:
             target = places.by_id[COUNTRY_ID]
         body = provider(target, year)

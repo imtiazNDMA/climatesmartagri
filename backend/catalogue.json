@@ -68,12 +68,13 @@
     },
     {
       "id": "climate-calendar",
-      "title": "Climate calendar",
+      "title": "Climate-smart crop calendar",
       "icon": "calendar-days",
       "order": 6,
-      "status": "no-data",
+      "status": "ready",
       "place_levels": [
-        "national"
+        "national",
+        "province"
       ]
     },
     {

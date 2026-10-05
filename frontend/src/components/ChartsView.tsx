@@ -3,7 +3,7 @@ import type { Place, Section } from '../api/types'
 import { formatNumber } from '../charts/chartOption'
 import type { SectionDataState } from '../data/useSectionData'
 import { viewStore } from '../state/viewState'
-import { Chart } from './Chart'
+import { ChartFigure } from './ChartFigure'
 
 const EMPTY_STATES: Record<string, string> = {
   'no-data': 'Data not loaded yet',
@@ -79,7 +79,7 @@ export function ChartsView({
       {data && data.charts.length > 0 && (
         <div className="charts-view-grid">
           {data.charts.map((chart) => (
-            <Chart key={chart.id} spec={chart} year={data.year} large />
+            <ChartFigure key={chart.id} spec={chart} year={data.year} large />
           ))}
         </div>
       )}

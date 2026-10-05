@@ -78,12 +78,28 @@ export interface ChartSeries {
   emphasis?: 'strong'
 }
 
+/** A crop's dates: month ranges counted from 0 (start of January) to 12, and the original wording. */
+export interface CalendarDates {
+  text: string
+  sowing: number[][]
+  harvest: number[][]
+}
+
+export interface CalendarRow {
+  crop: string
+  traditional: CalendarDates
+  adjusted: CalendarDates
+  changed: boolean
+  sown_earlier: boolean
+  reason: string
+}
+
 export interface ChartSpec {
   id: string
   title: string
   /** How to read the chart, in a sentence or two. */
   subtitle?: string
-  kind: 'line' | 'stacked-area' | 'bar'
+  kind: 'line' | 'stacked-area' | 'bar' | 'calendar'
   unit: string
   /** True when the categories are years. */
   time: boolean
@@ -101,6 +117,8 @@ export interface ChartSpec {
   bar_slots?: number[]
   /** A colour per bar, for bars that stand for map layers and wear their colours. */
   bar_colours?: string[]
+  /** For a calendar chart: one row per crop. */
+  rows?: CalendarRow[]
 }
 
 export interface SectionData {

@@ -429,3 +429,72 @@ def test_land_cover_headlines_are_plain_and_complete(land_cover):
             assert len(chart["title"]) <= 110
             for series in chart["series"]:
                 assert len(series["values"]) == len(chart["categories"])
+
+
+def _calendar_record(province_id, province, crop, old_sowing, new_sowing, earlier):
+    return {
+        "province_id": province_id, "province": province, "crop": crop,
+        "traditional": {"text": "old", "sowing": old_sowing, "harvest": [[2.0, 4.0]]},
+        "adjusted": {"text": "new", "sowing": new_sowing, "harvest": [[2.0, 4.0]]},
+        "reason": f"Why {crop} moves.", "changed": old_sowing != new_sowing, "sown_earlier": earlier,
+    }
+
+
+@pytest.fixture
+def calendar(dirs):
+    data, boundaries = dirs
+    (data / "crop_calendar.json").write_text(json.dumps({"records": [
+        _calendar_record("p-punjab", "Punjab", "Wheat", [[9.0, 12.0]], [[9.0, 11.0]], True),
+        _calendar_record("p-punjab", "Punjab", "Rice", [[4.0, 7.0]], [[4.0, 6.0]], True),
+        _calendar_record("p-punjab", "Punjab", "Sugarcane", [[1.0, 3.0]], [[1.0, 3.0]], False),
+        _calendar_record("p-sindh", "Sindh", "Cotton", [[3.0, 6.0]], [[3.0, 6.0]], False),
+    ]}), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    return sections["climate-calendar"]
+
+
+SINDH = Place("p-sindh", "Sindh", "province", "PK", (66, 23, 71, 28))
+KASHMIR = Place("p-azad-kashmir", "Azad Kashmir", "province", "PK", (73, 33, 75, 35))
+
+
+def test_calendar_for_a_province_is_one_chart_of_its_crops(calendar):
+    body = calendar(PUNJAB, None)
+    assert _figures(body) == {
+        "Crops with a calendar": (3, ""),
+        "Calendars adjusted for climate": (2, ""),
+        "Crops to sow earlier": (2, ""),
+    }
+    assert body["notes"] == []
+    (chart,) = body["charts"]
+    assert chart["id"] == "calendar-punjab"
+    assert chart["kind"] == "calendar"
+    assert chart["title"] == "In Punjab, 2 of 3 crops should be sown earlier than before"
+    assert chart["subtitle"].endswith(".")
+    assert [row["crop"] for row in chart["rows"]] == ["Wheat", "Rice", "Sugarcane"]
+    wheat = chart["rows"][0]
+    assert wheat["traditional"] == {"text": "old", "sowing": [[9.0, 12.0]], "harvest": [[2.0, 4.0]]}
+    assert wheat["adjusted"]["sowing"] == [[9.0, 11.0]]
+    assert (wheat["changed"], wheat["sown_earlier"], wheat["reason"]) == (True, True, "Why Wheat moves.")
+    # Generic chart fields are present and empty, so code that walks every chart keeps working.
+    assert (chart["series"], chart["categories"], chart["time"]) == ([], [], False)
+
+
+def test_calendar_headline_when_nothing_moves(calendar):
+    (chart,) = calendar(SINDH, None)["charts"]
+    assert chart["title"] == "In Sindh, crop calendars keep their traditional sowing dates"
+
+
+def test_calendar_for_the_country_has_a_chart_for_each_province(calendar):
+    body = calendar(PK, None)
+    assert _figures(body) == {
+        "Provinces with a calendar": (2, ""),
+        "Crops with a calendar": (4, ""),
+        "Calendars adjusted for climate": (2, ""),
+        "Crops to sow earlier": (2, ""),
+    }
+    assert [chart["id"] for chart in body["charts"]] == ["calendar-punjab", "calendar-sindh"]
+
+
+def test_calendar_for_a_province_without_one_says_so(calendar):
+    body = calendar(KASHMIR, None)
+    assert body == {"figures": [], "charts": [], "notes": ["No crop calendar is available for Azad Kashmir."]}

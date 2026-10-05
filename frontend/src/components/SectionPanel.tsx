@@ -5,7 +5,7 @@ import { formatNumber } from '../charts/chartOption'
 import type { PortalData } from '../data/usePortalData'
 import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
-import { Chart } from './Chart'
+import { ChartFigure } from './ChartFigure'
 
 const MIN_WIDTH = 280
 const MAX_WIDTH = 760
@@ -55,6 +55,11 @@ export function SectionPanel({ data, sectionData }: { data: PortalData; sectionD
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
   if (!section) return null
   const hasCharts = sectionData.status === 'ready' && sectionData.data.charts.length > 0
+  // The place the figures are actually for, when the section has none for the selected one.
+  const usedPlace =
+    sectionData.status === 'ready' && placeId !== null && sectionData.data.place_id !== placeId
+      ? data.places.find((p) => p.id === sectionData.data.place_id)
+      : undefined
 
   const place = data.places.find((p) => p.id === (placeId ?? COUNTRY_ID))
   const layers = data.catalogue.layers.filter((l) => l.section_id === section.id && l.kind !== 'boundary')
@@ -120,7 +125,9 @@ export function SectionPanel({ data, sectionData }: { data: PortalData; sectionD
             </h3>
             {placeId !== null && (
               <p className="place-scope">
-                These are for the place selected on the map.{' '}
+                {usedPlace && usedPlace.level === 'province'
+                  ? `These are for ${usedPlace.name}, the province ${place?.name ?? 'this place'} is in.`
+                  : 'These are for the place selected on the map.'}{' '}
                 <button type="button" className="link-button" onClick={() => viewStore.getState().selectPlace(null)}>
                   Show all of Pakistan
                 </button>
@@ -146,7 +153,7 @@ export function SectionPanel({ data, sectionData }: { data: PortalData; sectionD
               </p>
             ) : sectionData.status === 'ready' && sectionData.data.charts.length > 0 ? (
               sectionData.data.charts.map((chart) => (
-                <Chart key={chart.id} spec={chart} year={sectionData.data.year} />
+                <ChartFigure key={chart.id} spec={chart} year={sectionData.data.year} />
               ))
             ) : (
               <p className="empty">
