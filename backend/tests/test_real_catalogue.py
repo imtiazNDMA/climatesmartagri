@@ -78,15 +78,15 @@ def test_emissions_match_the_spreadsheet():
 def test_irrigation_figures_for_a_district_and_the_country():
     client = _client()
     country = client.get("/api/sections/irrigation/data").json()
-    equipped = next(f for f in country["figures"] if f["label"] == "Area equipped for irrigation")
+    equipped = next(f for f in country["figures"] if f["label"] == "Land equipped for irrigation")
     assert round(equipped["value"]) == 16725843
     places = client.get("/api/places").json()
     thatta = next(p for p in places if p["name"] == "Thatta")
     district = client.get("/api/sections/irrigation/data", params={"place": thatta["id"]}).json()
     assert district["level_used"] == "district"
     figures = {f["label"]: f["value"] for f in district["figures"]}
-    assert figures["Area equipped for irrigation"] == 376320
-    assert figures["Area actually irrigated"] == 143175
+    assert figures["Land equipped for irrigation"] == 376320
+    assert figures["Land actually irrigated"] == 143175
 
 
 def test_irrigation_layers_are_served_and_match_their_legends():
@@ -110,3 +110,19 @@ def test_irrigation_layers_are_served_and_match_their_legends():
 def test_land_cover_is_still_not_loaded():
     tile = _client().get("/api/tiles/forest/0/0/0")
     assert tile.json()["detail"]["reason"] == "no-data"
+
+
+def test_real_headlines_read_as_findings():
+    client = _client()
+    titles = {
+        chart["id"]: chart["title"]
+        for section in ("emissions", "water-balance", "food-security", "irrigation")
+        for chart in client.get(f"/api/sections/{section}/data").json()["charts"]
+    }
+    assert titles["emissions-by-gas"] == "Pakistan's yearly emissions grew 2.9 times between 1994 and 2021"
+    assert titles["emissions-growth"] == "Nitrous oxide grew fastest: 6.8 times its 1994 level"
+    assert titles["water-need-vs-supply"] == (
+        "At 35% efficiency, crops need more water than is available in every year to 2047"
+    )
+    assert titles["food-population"] == "Population grows from 255 to 386 million by 2047"
+    assert titles["irrigation-ranking"].endswith("has the most irrigation-ready land of any province")

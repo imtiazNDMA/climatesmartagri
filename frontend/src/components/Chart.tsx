@@ -9,12 +9,19 @@ import { viewStore } from '../state/viewState'
 
 use([LineChart, BarChart, GridComponent, LegendComponent, TooltipComponent, MarkLineComponent, SVGRenderer])
 
-/** One interactive chart: hover for values, click a legend entry to hide a series, click a year to select it. */
-export function Chart({ spec, year }: { spec: ChartSpec; year: number | null }) {
+/**
+ * One chart: a headline that states the finding, a line on how to read it, then the plot.
+ * Hover for values, click a legend entry to hide a series, click a year to select it.
+ * `large` is the full view, where lines are labelled at their ends.
+ */
+export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: number | null; large?: boolean }) {
   const plot = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
   const latest = useRef(spec)
-  latest.current = spec
+
+  useEffect(() => {
+    latest.current = spec
+  }, [spec])
 
   useEffect(() => {
     if (!plot.current) return
@@ -37,19 +44,19 @@ export function Chart({ spec, year }: { spec: ChartSpec; year: number | null }) 
   }, [spec.id])
 
   useEffect(() => {
-    chart.current?.setOption(chartOption(spec, year), true)
-  }, [spec, year])
+    chart.current?.setOption(chartOption(spec, year, large), true)
+  }, [spec, year, large])
 
   return (
-    <figure className="chart" aria-label={spec.title}>
+    <figure className={large ? 'chart chart-large' : 'chart'} aria-label={spec.title}>
       <figcaption>
-        {spec.title}
-        {spec.unit && <small> ({spec.unit})</small>}
+        <h4>{spec.title}</h4>
+        {spec.subtitle && <p className="chart-subtitle">{spec.subtitle}</p>}
       </figcaption>
       <div
         ref={plot}
         className="chart-plot"
-        style={{ height: chartHeight(spec) }}
+        style={{ height: chartHeight(spec, large) }}
         data-marked-year={markedYear(spec, year) ?? undefined}
       />
       {spec.note && <p className="chart-note">{spec.note}</p>}

@@ -37,6 +37,7 @@ describe('serializeView', () => {
   it('writes every part in a fixed order', () => {
     const view: View = {
       section: 'yearly',
+      full: true,
       layers: [
         { id: 'forest', opacity: 0.8, hidden: true },
         { id: 'irrigated', opacity: 1, hidden: false },
@@ -45,6 +46,9 @@ describe('serializeView', () => {
       year: 2005,
     }
     expect(serializeView(view)).toBe(
+      '?section=yearly&view=charts&layers=forest:0.8,irrigated:1&hidden=forest&place=PK1&year=2005',
+    )
+    expect(serializeView({ ...view, full: false })).toBe(
       '?section=yearly&layers=forest:0.8,irrigated:1&hidden=forest&place=PK1&year=2005',
     )
   })
@@ -54,6 +58,7 @@ describe('parseView', () => {
   it('round-trips a full view', () => {
     const view: View = {
       section: 'yearly',
+      full: true,
       layers: [
         { id: 'forest', opacity: 0.35, hidden: true },
         { id: 'irrigated', opacity: 1, hidden: false },
@@ -120,5 +125,19 @@ describe('parseView', () => {
       dropped: ['year "1800"'],
     })
     expect(parse('?section=static&year=2005').dropped).toEqual(['year "2005"'])
+  })
+})
+
+describe('full view in the address bar', () => {
+  it('is read when a section is open', () => {
+    expect(parse('?section=yearly&view=charts').view.full).toBe(true)
+    expect(parse('?section=yearly').view.full).toBe(false)
+  })
+  it('is dropped without a section, or with an unknown value', () => {
+    expect(parse('?view=charts')).toEqual({ view: emptyView, dropped: ['view "charts" without a section'] })
+    expect(parse('?section=yearly&view=map3d')).toEqual({
+      view: { ...emptyView, section: 'yearly' },
+      dropped: ['view "map3d"'],
+    })
   })
 })

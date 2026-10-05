@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ChartSpec } from '../api/types'
-import { chartHeight, chartOption, formatNumber, markedYear, SLOT_COLOURS } from './chartOption'
+import { chartHeight, chartOption, endLabelOffsets, formatNumber, markedYear, SLOT_COLOURS } from './chartOption'
 
 const lines: ChartSpec = {
   id: 'lines', title: 'Lines', kind: 'line', unit: 'Mt', time: true,
@@ -22,7 +22,8 @@ const bars: ChartSpec = {
 
 // The option is a plain object; these helpers keep the assertions readable.
 type Loose = Record<string, any> // eslint-disable-line @typescript-eslint/no-explicit-any
-const option = (spec: ChartSpec, year: number | null = null) => chartOption(spec, year) as Loose
+const option = (spec: ChartSpec, year: number | null = null, large = false) =>
+  chartOption(spec, year, large) as Loose
 
 describe('formatNumber', () => {
   it('groups thousands and trims decimals', () => {
@@ -129,6 +130,116 @@ describe('chartOption for bar charts', () => {
 describe('chartHeight', () => {
   it('grows with the number of horizontal bars and is fixed otherwise', () => {
     expect(chartHeight(lines)).toBe(220)
+    expect(chartHeight(lines, true)).toBeGreaterThan(300)
     expect(chartHeight(bars)).toBeLessThan(chartHeight({ ...bars, categories: Array(15).fill('x') }))
+  })
+})
+
+describe('storytelling styles', () => {
+  const story: ChartSpec = {
+    ...lines, end_labels: true,
+    series: [
+      { name: 'Need', slot: 1, values: [1, 2, 3], emphasis: 'strong' },
+      { name: 'Supply', slot: 3, values: [3, 2, 1] },
+    ],
+  }
+
+  it('draws the emphasised series darker and thicker than the others', () => {
+    const [strong, plain] = option(story).series
+    expect(strong.lineStyle.width).toBeGreaterThan(plain.lineStyle.width)
+    expect(strong.itemStyle.color).not.toBe(SLOT_COLOURS[0])
+    expect(plain.itemStyle.color).toBe(SLOT_COLOURS[2])
+  })
+
+  it('labels the line ends, and drops the legend, only in the large view', () => {
+    const large = option(story, null, true)
+    expect(large.series.every((s: Loose) => s.endLabel.show === true)).toBe(true)
+    expect(large.legend.show).toBe(false)
+    expect(large.grid.right).toBeGreaterThan(100)
+    const small = option(story)
+    expect(small.series.every((s: Loose) => !s.endLabel?.show)).toBe(true)
+    expect(small.legend.show).toBe(true)
+  })
+
+  it('keeps the legend in the large view when the chart has no end labels', () => {
+    expect(option(lines, null, true).legend.show).toBe(true)
+  })
+
+  it('colours bars by their own slot when the chart lists them', () => {
+    const o = option({ ...bars, highlight: null, bar_slots: [1, 2, 3] })
+    expect(o.series[0].data.map((d: Loose) => d.itemStyle.color)).toEqual(SLOT_COLOURS.slice(0, 3))
+  })
+
+  it('colours bars by sign when asked: one colour for a shortfall, another for a surplus', () => {
+    const o = option({ ...bars, highlight: null, horizontal: false, colour_by_sign: true,
+      series: [{ name: 'Balance', slot: 1, values: [-5, 0, 7] }] })
+    const colours = o.series[0].data.map((d: Loose) => d.itemStyle.color)
+    expect(colours[0]).not.toBe(colours[2])
+    expect(colours[1]).toBe(colours[2])
+  })
+
+  it('writes bar values the way people say them', () => {
+    const label = (unit: string, value: number | null) =>
+      option({ ...bars, unit }).series[0].label.formatter({ value })
+    expect(label('times', 2.9)).toBe('2.9×')
+    expect(label('%', 53.1)).toBe('53.1%')
+    expect(label('ha', 16725843)).toBe('16,725,843')
+    expect(label('ha', null)).toBe('')
+  })
+
+  it('labels every bar when there are few, and none when there are many', () => {
+    expect(option(bars).series[0].label.show).toBe(true)
+    expect(option({ ...bars, categories: Array(15).fill('x') }).series[0].label.show).toBe(false)
+  })
+})
+
+describe('labels that would collide', () => {
+  const close: ChartSpec = {
+    ...lines, end_labels: true,
+    series: [
+      { name: 'Available', slot: 1, values: [100, 100, 108] },
+      { name: 'Needed at 50%', slot: 3, values: [90, 95, 103] },
+      { name: 'Needed at 70%', slot: 4, values: [60, 62, 73] },
+    ],
+  }
+
+  it('pushes apart end labels of lines that finish close together, and leaves the rest alone', () => {
+    const offsets = endLabelOffsets(close, 360)
+    expect(offsets[0]).toBe(0)
+    expect(offsets[1]).toBeGreaterThan(0)
+    expect(offsets[2]).toBe(0)
+    // 108 and 103 on a 0-108 axis are about 13px apart on a 280px plot; after the push they are 16.
+    expect(offsets[1]).toBeGreaterThanOrEqual(2)
+    expect(offsets[1]).toBeLessThan(16)
+  })
+
+  it('keeps pushing down a run of three close lines so none overlap', () => {
+    const three: ChartSpec = { ...close, series: close.series.map((s, i) => ({ ...s, values: [1, 2, 100 - i] })) }
+    const offsets = endLabelOffsets(three, 360)
+    expect(offsets[1] - offsets[0]).toBeGreaterThan(10)
+    expect(offsets[2] - offsets[1]).toBeGreaterThan(10)
+  })
+
+  it('uses the stacked height for a stacked chart', () => {
+    const stackedClose: ChartSpec = { ...close, kind: 'stacked-area' }
+    // Stacked, the bands end at 108, 211 and 284: far apart, so nothing moves.
+    expect(endLabelOffsets(stackedClose, 360)).toEqual([0, 0, 0])
+  })
+
+  it('applies the offsets to the end labels in the large view', () => {
+    const series = option(close, null, true).series
+    expect(series[1].endLabel.offset[1]).toBeGreaterThan(0)
+    expect(series[0].endLabel.offset).toEqual([0, 0])
+  })
+
+  it('puts the label of a bar below zero at the zero line, clear of the axis names', () => {
+    const o = option({ ...bars, highlight: null, horizontal: false, colour_by_sign: true,
+      series: [{ name: 'Balance', slot: 1, values: [-5, 3, 7] }] })
+    expect(o.series[0].data[0].label.position).toBe('top')
+    expect(o.series[0].data[1].label).toBeUndefined()
+  })
+
+  it('leaves room on the left for the names of horizontal bars', () => {
+    expect(option(bars).grid.left).toBeGreaterThanOrEqual(12)
   })
 })

@@ -116,11 +116,45 @@ describe('replaceView and pickView', () => {
   it('round-trips a whole view', () => {
     const view = {
       section: 'a',
+      full: true,
       layers: [{ id: 'x', opacity: 0.5, hidden: true }],
       place: 'PK1',
       year: 2001,
     }
     store.getState().replaceView(view)
     expect(pickView(store.getState())).toEqual(view)
+  })
+})
+
+describe('full view', () => {
+  it('opens and closes', () => {
+    store.getState().openSection('a')
+    store.getState().setFull(true)
+    expect(store.getState().full).toBe(true)
+    store.getState().setFull(false)
+    expect(store.getState().full).toBe(false)
+  })
+
+  it('stays open when switching to another section', () => {
+    store.getState().openSection('a')
+    store.getState().setFull(true)
+    store.getState().openSection('b')
+    expect(store.getState().full).toBe(true)
+  })
+
+  it('ends when the section is closed, either way', () => {
+    store.getState().openSection('a')
+    store.getState().setFull(true)
+    store.getState().openSection('a')
+    expect(store.getState().full).toBe(false)
+    store.getState().openSection('a')
+    store.getState().setFull(true)
+    store.getState().closeSection()
+    expect(store.getState().full).toBe(false)
+  })
+
+  it('cannot be opened without a section', () => {
+    store.getState().setFull(true)
+    expect(store.getState().full).toBe(false)
   })
 })

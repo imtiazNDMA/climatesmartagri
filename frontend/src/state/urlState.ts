@@ -6,6 +6,7 @@ import type { ActiveLayer, View } from './viewState'
 export function serializeView(view: View): string {
   const parts: string[] = []
   if (view.section) parts.push(`section=${view.section}`)
+  if (view.section && view.full) parts.push('view=charts')
   if (view.layers.length) parts.push(`layers=${view.layers.map((l) => `${l.id}:${l.opacity}`).join(',')}`)
   const hidden = view.layers.filter((l) => l.hidden).map((l) => l.id)
   if (hidden.length) parts.push(`hidden=${hidden.join(',')}`)
@@ -23,6 +24,14 @@ export function parseView(search: string, catalogue: Catalogue, places: Place[])
   if (rawSection) {
     if (catalogue.sections.some((s) => s.id === rawSection)) section = rawSection
     else dropped.push(`section "${rawSection}"`)
+  }
+
+  let full = false
+  const rawView = params.get('view')
+  if (rawView) {
+    if (rawView !== 'charts') dropped.push(`view "${rawView}"`)
+    else if (!section) dropped.push('view "charts" without a section')
+    else full = true
   }
 
   const layers: ActiveLayer[] = []
@@ -61,7 +70,7 @@ export function parseView(search: string, catalogue: Catalogue, places: Place[])
     else dropped.push(`place "${rawPlace}"`)
   }
 
-  const view: View = { section, layers, place, year: null }
+  const view: View = { section, full, layers, place, year: null }
   const rawYear = params.get('year')
   if (rawYear) {
     const year = Number(rawYear)

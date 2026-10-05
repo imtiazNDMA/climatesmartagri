@@ -1,10 +1,9 @@
-import { X } from 'lucide-react'
+import { Maximize2, X } from 'lucide-react'
 import { useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { COUNTRY_ID } from '../api/types'
 import { formatNumber } from '../charts/chartOption'
 import type { PortalData } from '../data/usePortalData'
-import { useSectionData, type SectionDataState } from '../data/useSectionData'
-import { effectiveYear } from '../state/selectors'
+import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { Chart } from './Chart'
 
@@ -46,16 +45,16 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
   )
 }
 
-export function SectionPanel({ data }: { data: PortalData }) {
+export function SectionPanel({ data, sectionData }: { data: PortalData; sectionData: SectionDataState }) {
   const sectionId = useView((s) => s.section)
+  const full = useView((s) => s.full)
   const activeLayers = useView((s) => s.layers)
   const placeId = useView((s) => s.place)
-  const year = useView((s) => s.year)
   const [width, setWidth] = useState(400)
 
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
-  const sectionData = useSectionData(section, placeId, effectiveYear(section?.years, year))
   if (!section) return null
+  const hasCharts = sectionData.status === 'ready' && sectionData.data.charts.length > 0
 
   const place = data.places.find((p) => p.id === (placeId ?? COUNTRY_ID))
   const layers = data.catalogue.layers.filter((l) => l.section_id === section.id && l.kind !== 'boundary')
@@ -122,8 +121,22 @@ export function SectionPanel({ data }: { data: PortalData }) {
             <Figures state={sectionData} placeSelected={placeId !== null} />
           </section>
           <section>
-            <h3>Charts</h3>
-            {sectionData.status === 'ready' && sectionData.data.charts.length > 0 ? (
+            <div className="charts-heading">
+              <h3>Charts</h3>
+              {hasCharts && !full && (
+                <button type="button" className="full-view-button" onClick={() => viewStore.getState().setFull(true)}>
+                  <Maximize2 size={14} aria-hidden /> Open charts in full view
+                </button>
+              )}
+            </div>
+            {hasCharts && full ? (
+              <p className="empty">
+                The charts are open in full view.{' '}
+                <button type="button" className="link-button" onClick={() => viewStore.getState().setFull(false)}>
+                  Back to map
+                </button>
+              </p>
+            ) : sectionData.status === 'ready' && sectionData.data.charts.length > 0 ? (
               sectionData.data.charts.map((chart) => (
                 <Chart key={chart.id} spec={chart} year={sectionData.data.year} />
               ))

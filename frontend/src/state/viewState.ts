@@ -11,6 +11,8 @@ export interface ActiveLayer {
 /** Everything that describes what is on screen. `layers[0]` draws on top. */
 export interface View {
   section: string | null
+  /** True when the open section's charts fill the map area. */
+  full: boolean
   layers: ActiveLayer[]
   place: string | null
   year: number | null
@@ -19,6 +21,7 @@ export interface View {
 export interface ViewActions {
   openSection(id: string): void
   closeSection(): void
+  setFull(full: boolean): void
   toggleLayer(id: string, defaultOpacity: number): void
   removeLayer(id: string): void
   setOpacity(id: string, opacity: number): void
@@ -31,15 +34,16 @@ export interface ViewActions {
 
 export type ViewStore = View & ViewActions
 
-export const emptyView: View = { section: null, layers: [], place: null, year: null }
+export const emptyView: View = { section: null, full: false, layers: [], place: null, year: null }
 
 const tidyOpacity = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 100) / 100
 
 export function createViewStore(initial: View = emptyView): StoreApi<ViewStore> {
   return createStore<ViewStore>()((set) => ({
     ...initial,
-    openSection: (id) => set((s) => ({ section: s.section === id ? null : id })),
-    closeSection: () => set({ section: null }),
+    openSection: (id) => set((s) => (s.section === id ? { section: null, full: false } : { section: id })),
+    closeSection: () => set({ section: null, full: false }),
+    setFull: (full) => set((s) => ({ full: full && s.section !== null })),
     toggleLayer: (id, defaultOpacity) =>
       set((s) =>
         s.layers.some((l) => l.id === id)
@@ -77,5 +81,5 @@ export function useView<T>(selector: (state: ViewStore) => T): T {
 }
 
 export function pickView(state: View): View {
-  return { section: state.section, layers: state.layers, place: state.place, year: state.year }
+  return { section: state.section, full: state.full, layers: state.layers, place: state.place, year: state.year }
 }

@@ -107,19 +107,6 @@ def test_emissions_figures_follow_the_year(providers):
     assert "1994 is an official inventory year." in official["notes"]
 
 
-def test_emissions_charts(providers):
-    sections, _ = providers
-    charts = {c["id"]: c for c in sections["emissions"](PK, 1995)["charts"]}
-    by_gas = charts["emissions-by-gas"]
-    assert by_gas["kind"] == "stacked-area"
-    assert by_gas["time"] is True
-    assert by_gas["categories"] == [1994, 1995, 1996]
-    assert [(s["name"], s["slot"]) for s in by_gas["series"]] == [("CO2", 1), ("CH4", 2), ("N2O", 3)]
-    assert by_gas["series"][0]["values"] == [94.57, 99.88, 105.18]
-    total = charts["emissions-total"]
-    assert total["kind"] == "line"
-    assert total["series"][0]["points"] == [0, 2]
-
 
 def test_year_outside_the_data_uses_the_latest(providers):
     sections, _ = providers
@@ -127,77 +114,15 @@ def test_year_outside_the_data_uses_the_latest(providers):
     assert _figures(sections["emissions"](PK, 1800))["Total emissions"] == (198.63, "MtCO2e")
 
 
-def test_water_balance(providers):
-    sections, _ = providers
-    body = sections["water-balance"](PK, 2027)
-    figures = _figures(body)
-    assert figures["Water availability"] == (109.1, "")
-    assert figures["Requirement at 50% efficiency"] == (93.1, "")
-    assert figures["Balance at 35% efficiency"] == (-23.9, "")
-    assert figures["Balance at 70% efficiency"] == (42.6, "")
-    charts = {c["id"]: c for c in body["charts"]}
-    assert [s["name"] for s in charts["water-availability-requirement"]["series"]] == [
-        "Water availability", "Requirement at 35%", "Requirement at 50%", "Requirement at 70%",
-    ]
-    balance = charts["water-balance"]
-    assert balance["zero_line"] is True
-    assert balance["series"][0]["values"] == [-23.0, -23.9]
-    # A requirement and its balance keep the same colour across the two charts.
-    slots = {s["name"][-3:]: s["slot"] for s in charts["water-availability-requirement"]["series"][1:]}
-    assert {s["name"][-3:]: s["slot"] for s in balance["series"]} == slots
 
-
-def test_food_security(providers):
-    sections, _ = providers
-    body = sections["food-security"](PK, 2027)
-    figures = _figures(body)
-    assert figures["Food demand"] == (95.85, "")
-    assert figures["Food gap with CSA"] == (12.58, "")
-    assert figures["Food gap with traditional practice"] == (16.05, "")
-    assert figures["Population"] == (259.8, "")
-    charts = {c["id"]: c for c in body["charts"]}
-    assert set(charts) == {"food-demand-availability", "food-gap", "food-population"}
-    assert [s["name"] for s in charts["food-gap"]["series"]] == ["With CSA", "With traditional practice"]
-
-
-def test_irrigation_for_a_district(providers):
-    sections, _ = providers
-    body = sections["irrigation"](LAHORE, None)
-    figures = _figures(body)
-    assert figures["Area equipped for irrigation"] == (1000, "ha")
-    assert figures["Equipped with groundwater"] == (400, "ha")
-    assert figures["Equipped with surface water"] == (600, "ha")
-    assert figures["Area actually irrigated"] == (800, "ha")
-    assert figures["Share of equipped area irrigated"] == (80.0, "%")
-    charts = {c["id"]: c for c in body["charts"]}
-    assert charts["irrigation-source"]["categories"] == ["Groundwater", "Surface water"]
-    assert charts["irrigation-source"]["series"][0]["values"] == [400, 600]
-    ranking = charts["irrigation-ranking"]
-    assert ranking["title"] == "Area equipped for irrigation by district, Punjab"
-    assert ranking["categories"] == ["Lahore", "Attock"]
-    assert ranking["series"][0]["values"] == [1000, 500]
-    assert ranking["highlight"] == 0
 
 
 def test_irrigation_with_a_missing_value_leaves_it_out(providers):
     sections, _ = providers
     figures = _figures(sections["irrigation"](ATTOCK, None))
-    assert figures["Area actually irrigated"] == (None, "ha")
-    assert "Share of equipped area irrigated" not in figures
+    assert figures["Land actually irrigated"] == (None, "ha")
+    assert "Share of equipped land irrigated" not in figures
 
-
-def test_irrigation_for_a_province_and_the_country(providers):
-    sections, _ = providers
-    province = sections["irrigation"](PUNJAB, None)
-    assert _figures(province)["Area equipped for irrigation"] == (1500, "ha")
-    assert "Totals from 2 districts reported in the spreadsheet." in province["notes"]
-    assert {c["id"]: c for c in province["charts"]}["irrigation-ranking"]["highlight"] is None
-
-    country = sections["irrigation"](PK, None)
-    ranking = {c["id"]: c for c in country["charts"]}["irrigation-ranking"]
-    assert ranking["title"] == "Area equipped for irrigation by province"
-    assert ranking["categories"] == ["Sindh", "Punjab"]
-    assert any("Nowhere (Sindh)" in note for note in country["notes"])
 
 
 def test_irrigation_for_a_place_with_no_figures(providers):
@@ -235,3 +160,176 @@ def test_district_layers_carry_a_value_and_a_label(providers):
     groundwater = props("groundwater-share")
     assert groundwater["d-punjab-attock"]["value"] == 20.0
     assert len(layers["equipped-area"]()["features"]) == 3
+
+
+def _charts(body):
+    return {c["id"]: c for c in body["charts"]}
+
+
+def test_every_chart_has_a_plain_headline_and_a_how_to_read_line(providers):
+    sections, _ = providers
+    for section_id, place in [("emissions", PK), ("water-balance", PK), ("food-security", PK), ("irrigation", LAHORE)]:
+        for chart in sections[section_id](place, None)["charts"]:
+            assert chart["title"].strip() and not chart["title"].endswith("."), chart["id"]
+            assert len(chart["title"]) <= 110, chart["id"]
+            assert chart["subtitle"].strip().endswith("."), chart["id"]
+            for series in chart["series"]:
+                assert len(series["values"]) == len(chart["categories"]), chart["id"]
+
+
+def test_emissions_story(providers):
+    sections, _ = providers
+    charts = _charts(sections["emissions"](PK, 1995))
+    assert list(charts) == ["emissions-by-gas", "emissions-growth", "emissions-share", "emissions-official"]
+
+    by_gas = charts["emissions-by-gas"]
+    assert by_gas["title"] == "Pakistan's yearly emissions grew 1.1 times between 1994 and 1996"
+    assert by_gas["kind"] == "stacked-area"
+    assert by_gas["end_labels"] is True
+    assert [(s["name"], s["slot"]) for s in by_gas["series"]] == [
+        ("Carbon dioxide", 1), ("Methane", 2), ("Nitrous oxide", 3),
+    ]
+
+    growth = charts["emissions-growth"]
+    assert growth["title"] == "Nitrous oxide grew fastest: 1.3 times its 1994 level"
+    assert growth["categories"] == ["Carbon dioxide", "Methane", "Nitrous oxide"]
+    assert growth["series"][0]["values"] == [1.1, 1.1, 1.3]
+    assert growth["bar_slots"] == [1, 2, 3]
+    assert growth["unit"] == "times"
+
+    share = charts["emissions-share"]
+    assert share["title"] == "In 1995, carbon dioxide made up 53% of emissions"
+    assert share["series"][0]["values"] == [53.1, 40.3, 6.7]
+    assert share["unit"] == "%"
+
+    official = charts["emissions-official"]
+    assert official["title"] == "Only 2 of the 3 years shown are official measurements"
+    assert official["series"][0]["points"] == [0, 2]
+
+
+def test_emissions_share_follows_the_year(providers):
+    sections, _ = providers
+    assert _charts(sections["emissions"](PK, 1994))["emissions-share"]["title"].startswith("In 1994,")
+
+
+def test_water_story(providers):
+    sections, _ = providers
+    body = sections["water-balance"](PK, 2027)
+    figures = _figures(body)
+    assert figures["Water available"] == (109.1, "")
+    assert figures["Water crops need at 50% efficiency"] == (93.1, "")
+    assert figures["Shortfall at 35% efficiency"] == (23.9, "")
+    assert figures["Water to spare at 70% efficiency"] == (42.6, "")
+
+    charts = _charts(body)
+    assert list(charts) == ["water-need-vs-supply", "water-balance-year", "water-balance"]
+    need = charts["water-need-vs-supply"]
+    assert need["title"] == "At 35% efficiency, crops need more water than is available in every year to 2027"
+    assert [(s["name"], s.get("emphasis")) for s in need["series"]] == [
+        ("Water available", "strong"),
+        ("Needed at 35% efficiency", None),
+        ("Needed at 50% efficiency", None),
+        ("Needed at 70% efficiency", None),
+    ]
+    year = charts["water-balance-year"]
+    assert year["title"] == "In 2027: short by 23.9 at 35% efficiency, 16 to spare at 50%"
+    assert year["categories"] == ["35% efficiency", "50% efficiency", "70% efficiency"]
+    assert year["series"][0]["values"] == [-23.9, 16.0, 42.6]
+    assert year["colour_by_sign"] is True
+    balance = charts["water-balance"]
+    assert balance["zero_line"] is True
+    assert balance["series"][0]["values"] == [-23.0, -23.9]
+    # An efficiency level keeps its colour across the charts.
+    slots = {s["name"][-14:]: s["slot"] for s in need["series"][1:]}
+    assert {s["name"][-14:]: s["slot"] for s in balance["series"]} == slots
+
+
+def test_water_headline_when_the_shortfall_is_not_every_year(dirs):
+    import json as _json
+
+    data, boundaries = dirs
+    (data / "water_balance.json").write_text(_json.dumps({
+        "years": [2026, 2027], "availability": [140.0, 109.1],
+        "requirement": {"35": [132.0, 133.0], "50": [92.4, 93.1], "70": [66.0, 66.5]},
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    title = _charts(sections["water-balance"](PK, 2027))["water-need-vs-supply"]["title"]
+    assert title == "At 35% efficiency, crops need more water than is available in 1 of 2 years"
+
+
+def test_food_story(providers):
+    sections, _ = providers
+    body = sections["food-security"](PK, 2027)
+    figures = _figures(body)
+    assert figures["Food needed"] == (95.85, "")
+    assert figures["Food gap with climate smart agriculture"] == (12.58, "")
+    assert figures["Food gap with traditional farming"] == (16.05, "")
+    assert figures["Population"] == (259.8, "million")
+
+    charts = _charts(body)
+    assert list(charts) == ["food-demand-availability", "food-gap", "food-population"]
+    assert charts["food-demand-availability"]["title"] == (
+        "Food needs rise 3% by 2027, while supply with climate smart agriculture rises 0.5%"
+    )
+    assert charts["food-demand-availability"]["series"][0]["emphasis"] == "strong"
+    assert charts["food-gap"]["title"] == (
+        "By 2027, climate smart agriculture makes the food gap 22% smaller than traditional farming"
+    )
+    assert [s["name"] for s in charts["food-gap"]["series"]] == [
+        "With climate smart agriculture", "With traditional farming",
+    ]
+    assert charts["food-population"]["title"] == "Population grows from 255 to 260 million by 2027"
+
+
+def test_irrigation_story_for_a_district(providers):
+    sections, _ = providers
+    body = sections["irrigation"](LAHORE, None)
+    figures = _figures(body)
+    assert figures["Land equipped for irrigation"] == (1000, "ha")
+    assert figures["Served by groundwater"] == (400, "ha")
+    assert figures["Served by surface water"] == (600, "ha")
+    assert figures["Land actually irrigated"] == (800, "ha")
+    assert figures["Share of equipped land irrigated"] == (80.0, "%")
+
+    charts = _charts(body)
+    assert list(charts) == ["irrigation-use", "irrigation-source", "irrigation-ranking"]
+    use = charts["irrigation-use"]
+    assert use["title"] == "80% of Lahore's irrigation-ready land is actually irrigated"
+    assert use["categories"] == ["Equipped for irrigation", "Actually irrigated"]
+    assert use["series"][0]["values"] == [1000, 800]
+    source = charts["irrigation-source"]
+    assert source["title"] == "Surface water serves 60% of the irrigation-ready land in Lahore"
+    assert source["categories"] == ["Groundwater", "Surface water"]
+    assert source["series"][0]["values"] == [40.0, 60.0]
+    assert source["unit"] == "%"
+    ranking = charts["irrigation-ranking"]
+    assert ranking["title"] == "Lahore ranks 1st of 2 districts in Punjab for irrigation-ready land"
+    assert ranking["categories"] == ["Lahore", "Attock"]
+    assert ranking["highlight"] == 0
+
+
+def test_irrigation_story_without_an_irrigated_figure(providers):
+    sections, _ = providers
+    charts = _charts(sections["irrigation"](ATTOCK, None))
+    assert "irrigation-use" not in charts
+    assert charts["irrigation-source"]["title"] == "Surface water serves 80% of the irrigation-ready land in Attock"
+    assert charts["irrigation-ranking"]["title"] == "Attock ranks 2nd of 2 districts in Punjab for irrigation-ready land"
+
+
+def test_irrigation_story_for_a_province_and_the_country(providers):
+    sections, _ = providers
+    province = sections["irrigation"](PUNJAB, None)
+    assert _figures(province)["Land equipped for irrigation"] == (1500, "ha")
+    assert "Totals from 2 districts reported in the spreadsheet." in province["notes"]
+    ranking = _charts(province)["irrigation-ranking"]
+    assert ranking["title"] == "Lahore has the most irrigation-ready land in Punjab"
+    assert ranking["highlight"] is None
+
+    country = sections["irrigation"](PK, None)
+    ranking = _charts(country)["irrigation-ranking"]
+    assert ranking["title"] == "Sindh has the most irrigation-ready land of any province"
+    assert ranking["categories"] == ["Sindh", "Punjab"]
+    assert any("Nowhere (Sindh)" in note for note in country["notes"])
+    assert _charts(country)["irrigation-source"]["title"] == (
+        "Surface water serves 79% of the irrigation-ready land in Pakistan"
+    )

@@ -70,11 +70,15 @@ export interface ChartSeries {
   values: (number | null)[]
   /** Indexes that get a dot, for charts that single out some points. */
   points?: number[]
+  /** 'strong' draws the series darker and thicker: the one the story is about. */
+  emphasis?: 'strong'
 }
 
 export interface ChartSpec {
   id: string
   title: string
+  /** How to read the chart, in a sentence or two. */
+  subtitle?: string
   kind: 'line' | 'stacked-area' | 'bar'
   unit: string
   /** True when the categories are years. */
@@ -85,6 +89,12 @@ export interface ChartSpec {
   highlight?: number | null
   zero_line?: boolean
   note?: string
+  /** Label each line where it ends, in the full view. */
+  end_labels?: boolean
+  /** Colour bars by whether they are below zero. */
+  colour_by_sign?: boolean
+  /** A colour slot per bar, when each bar is its own thing. */
+  bar_slots?: number[]
 }
 
 export interface SectionData {

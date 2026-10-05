@@ -1,4 +1,8 @@
-"""Figures, charts and map layers for each section, built from the prepared files in backend/data."""
+"""Figures, charts and map layers for each section, built from the prepared files in backend/data.
+
+Every chart carries a headline that states its finding in a plain sentence, worked out from the
+data, and a subtitle that says what is shown and how to read it.
+"""
 
 from __future__ import annotations
 
@@ -16,6 +20,7 @@ SectionDataProvider = Callable[[Place, int | None], dict[str, Any]]
 GeoJsonProvider = Callable[[], dict[str, Any]]
 
 RANKING_LIMIT = 15
+NO_UNIT = "The source spreadsheet gives no unit for these amounts."
 
 
 def _read(path: Path) -> Any | None:
@@ -33,6 +38,21 @@ def _index(years: list[int], year: int | None) -> int:
     return years.index(year) if year in years else len(years) - 1
 
 
+def _num(value: float) -> str:
+    """A number as people write it: thousands grouped, at most one decimal, no trailing zero."""
+    return f"{value:,.1f}".rstrip("0").rstrip(".")
+
+
+def _pct(value: float) -> str:
+    """A percentage for a headline: whole numbers, except below 1 where one decimal is kept."""
+    return f"{value:.1f}" if abs(value) < 1 else f"{value:.0f}"
+
+
+def _ordinal(n: int) -> str:
+    suffix = "th" if 10 <= n % 100 <= 20 else {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"{n}{suffix}"
+
+
 def _figure(label: str, value: Any, unit: str = "") -> dict[str, Any]:
     return {"label": label, "value": value, "unit": unit}
 
@@ -41,18 +61,33 @@ def _series(name: str, slot: int, values: list[Any], **extra: Any) -> dict[str, 
     return {"name": name, "slot": slot, "values": values, **extra}
 
 
-def _time_chart(chart_id: str, title: str, kind: str, unit: str, years: list[int], series: list[dict], **extra: Any):
+def _over_time(chart_id: str, title: str, subtitle: str, kind: str, unit: str, years: list[int], series: list[dict], **extra: Any):
     return {
-        "id": chart_id, "title": title, "kind": kind, "unit": unit, "time": True,
-        "categories": years, "series": series, **extra,
+        "id": chart_id, "title": title, "subtitle": subtitle, "kind": kind, "unit": unit, "time": True,
+        "categories": years, "series": series, "end_labels": True, **extra,
+    }
+
+
+def _bars(chart_id: str, title: str, subtitle: str, unit: str, categories: list[str], values: list[Any], **extra: Any):
+    return {
+        "id": chart_id, "title": title, "subtitle": subtitle, "kind": "bar", "unit": unit, "time": False,
+        "categories": categories, "series": [_series(extra.pop("series_name", "Value"), 1, values)], **extra,
     }
 
 
 def _emissions(data: dict[str, Any]) -> SectionDataProvider:
     years, unit = data["years"], data["unit"]
+    gases = [("Carbon dioxide", "co2", 1), ("Methane", "ch4", 2), ("Nitrous oxide", "n2o", 3)]
+    first, last = years[0], years[-1]
+    growth = [round(data[key][-1] / data[key][0], 1) for _, key, _ in gases]
+    fastest = max(range(len(gases)), key=lambda n: data[gases[n][1]][-1] / data[gases[n][1]][0])
+    official_years = sum(data["official"])
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
+        total = data["total"][i]
+        shares = [round(data[key][i] / total * 100, 1) for _, key, _ in gases]
+        top = max(range(len(gases)), key=lambda n: data[gases[n][1]][i])
         status = (
             f"{years[i]} is an official inventory year."
             if data["official"][i]
@@ -60,7 +95,7 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
         )
         return {
             "figures": [
-                _figure("Total emissions", data["total"][i], unit),
+                _figure("Total emissions", total, unit),
                 _figure("Carbon dioxide (CO2)", data["co2"][i], unit),
                 _figure("Methane (CH4)", data["ch4"][i], unit),
                 _figure("Nitrous oxide (N2O)", data["n2o"][i], unit),
@@ -70,15 +105,40 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
                 f"Source: {data['source']}. All gases are in CO2-equivalent ({unit}, million tonnes).",
             ],
             "charts": [
-                _time_chart("emissions-by-gas", "Emissions by gas", "stacked-area", unit, years, [
-                    _series("CO2", 1, data["co2"]),
-                    _series("CH4", 2, data["ch4"]),
-                    _series("N2O", 3, data["n2o"]),
-                ]),
-                _time_chart(
-                    "emissions-total", "Total emissions", "line", unit, years,
-                    [_series("Total", 1, data["total"], points=[n for n, ok in enumerate(data["official"]) if ok])],
-                    note="Dots mark official inventory years; the line between them is interpolated.",
+                _over_time(
+                    "emissions-by-gas",
+                    f"Pakistan's yearly emissions grew {_num(data['total'][-1] / data['total'][0])} times "
+                    f"between {first} and {last}",
+                    "Greenhouse gases released each year, in million tonnes of CO2-equivalent. "
+                    "CO2-equivalent is a common unit that lets different gases be added together. "
+                    "The height of each band is that gas; the top edge is the total.",
+                    "stacked-area", unit, years,
+                    [_series(name, slot, data[key]) for name, key, slot in gases],
+                ),
+                _bars(
+                    "emissions-growth",
+                    f"{gases[fastest][0]} grew fastest: {_num(growth[fastest])} times its {first} level",
+                    f"How many times larger each gas was in {last} than in {first}. "
+                    "A value of 2 means it doubled.",
+                    "times", [name for name, _, _ in gases], growth,
+                    horizontal=True, bar_slots=[slot for _, _, slot in gases], series_name=f"Growth {first} to {last}",
+                ),
+                _bars(
+                    "emissions-share",
+                    f"In {years[i]}, {gases[top][0].lower()} made up {_pct(shares[top])}% of emissions",
+                    f"Each gas as a share of total emissions in {years[i]}. "
+                    "Move the year slider to see another year.",
+                    "%", [name for name, _, _ in gases], shares,
+                    horizontal=True, bar_slots=[slot for _, _, slot in gases], series_name="Share of total",
+                ),
+                _over_time(
+                    "emissions-official",
+                    f"Only {official_years} of the {len(years)} years shown are official measurements",
+                    "Total emissions per year. Dots are officially reported inventory years. "
+                    "The line between dots is an estimate, drawn straight from one official year to the next.",
+                    "line", unit, years,
+                    [_series("Total emissions", 1, data["total"], points=[n for n, ok in enumerate(data["official"]) if ok])],
+                    end_labels=False,
                 ),
             ],
         }
@@ -92,31 +152,74 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
     balance = {
         level: [round(a - r, 4) for a, r in zip(availability, data["requirement"][level])] for level, _ in levels
     }
+    short_years = sum(1 for value in balance["35"] if value < 0)
+    if short_years == len(years):
+        need_title = f"At 35% efficiency, crops need more water than is available in every year to {years[-1]}"
+    else:
+        need_title = (
+            f"At 35% efficiency, crops need more water than is available in {short_years} of {len(years)} years"
+        )
+    start, end = balance["50"][0], balance["50"][-1]
+    if start > end > 0:
+        trend_title = f"The water to spare at 50% efficiency shrinks from {_num(start)} to {_num(end)} by {years[-1]}"
+    else:
+        trend_title = "Water to spare, or missing, at each efficiency level"
+
+    def describe(level: str, value: float) -> str:
+        return f"short by {_num(-value)} at {level}%" if value < 0 else f"{_num(value)} to spare at {level}%"
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
+        now = {level: balance[level][i] for level, _ in levels}
         return {
             "figures": [
-                _figure("Water availability", availability[i]),
-                *[_figure(f"Requirement at {level}% efficiency", data["requirement"][level][i]) for level, _ in levels],
-                *[_figure(f"Balance at {level}% efficiency", balance[level][i]) for level, _ in levels],
+                _figure("Water available", availability[i]),
+                *[
+                    _figure(f"Water crops need at {level}% efficiency", data["requirement"][level][i])
+                    for level, _ in levels
+                ],
+                *[
+                    _figure(
+                        f"{'Shortfall' if now[level] < 0 else 'Water to spare'} at {level}% efficiency",
+                        round(abs(now[level]), 4),
+                    )
+                    for level, _ in levels
+                ],
             ],
             "notes": [
-                "Balance is water availability minus crop water requirement; a negative balance is a shortfall.",
-                "The source spreadsheet gives no unit for these values.",
+                "Irrigation efficiency is the share of water that actually reaches the crop. "
+                "Water to spare is water available minus the water crops need.",
+                NO_UNIT,
             ],
             "charts": [
-                _time_chart(
-                    "water-availability-requirement", "Water availability and crop water requirement", "line", "",
-                    years,
+                _over_time(
+                    "water-need-vs-supply", need_title,
+                    "The dark line is the water available each year. The other lines are the water crops "
+                    "need at three levels of irrigation efficiency. Where a line sits above the dark line, "
+                    "there is not enough water.",
+                    "line", "", years,
                     [
-                        _series("Water availability", 1, availability),
-                        *[_series(f"Requirement at {level}%", slot, data["requirement"][level]) for level, slot in levels],
+                        _series("Water available", 1, availability, emphasis="strong"),
+                        *[
+                            _series(f"Needed at {level}% efficiency", slot, data["requirement"][level])
+                            for level, slot in levels
+                        ],
                     ],
                 ),
-                _time_chart(
-                    "water-balance", "Water balance by irrigation efficiency", "line", "", years,
-                    [_series(f"Balance at {level}%", slot, balance[level]) for level, slot in levels],
+                _bars(
+                    "water-balance-year",
+                    f"In {years[i]}: {describe('35', now['35'])} efficiency, {describe('50', now['50'])}",
+                    f"Water available minus water needed in {years[i]}, at each efficiency level. "
+                    "Bars below zero are a shortfall. Move the year slider to see another year.",
+                    "", [f"{level}% efficiency" for level, _ in levels], [now[level] for level, _ in levels],
+                    colour_by_sign=True, zero_line=True, series_name="Water to spare",
+                ),
+                _over_time(
+                    "water-balance", trend_title,
+                    "Water available minus water needed, year by year. Above the zero line there is "
+                    "water to spare; below it there is not enough.",
+                    "line", "", years,
+                    [_series(f"Balance at {level}% efficiency", slot, balance[level]) for level, slot in levels],
                     zero_line=True,
                 ),
             ],
@@ -127,35 +230,61 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
 
 def _food_security(data: dict[str, Any]) -> SectionDataProvider:
     years = data["years"]
+    last = years[-1]
+
+    def rise(values: list[float]) -> float:
+        return (values[-1] - values[0]) / values[0] * 100
+
+    saved = (data["traditional_gap"][-1] - data["csa_gap"][-1]) / data["traditional_gap"][-1] * 100
+    csa, traditional = "climate smart agriculture", "traditional farming"
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
         return {
             "figures": [
-                _figure("Food demand", data["demand"][i]),
-                _figure("Availability with CSA", data["csa_availability"][i]),
-                _figure("Food gap with CSA", data["csa_gap"][i]),
-                _figure("Availability with traditional practice", data["traditional_availability"][i]),
-                _figure("Food gap with traditional practice", data["traditional_gap"][i]),
-                _figure("Population", data["population"][i]),
+                _figure("Food needed", data["demand"][i]),
+                _figure(f"Food available with {csa}", data["csa_availability"][i]),
+                _figure(f"Food gap with {csa}", data["csa_gap"][i]),
+                _figure(f"Food available with {traditional}", data["traditional_availability"][i]),
+                _figure(f"Food gap with {traditional}", data["traditional_gap"][i]),
+                _figure("Population", data["population"][i], "million"),
             ],
             "notes": [
-                "Food gap is demand minus availability.",
-                "The source spreadsheet gives no unit for these values.",
+                "The food gap is the food needed minus the food available.",
+                "The source spreadsheet gives no unit for the food amounts.",
             ],
             "charts": [
-                _time_chart("food-demand-availability", "Food demand and availability", "line", "", years, [
-                    _series("Food demand", 1, data["demand"]),
-                    _series("Availability with CSA", 3, data["csa_availability"]),
-                    _series("Availability with traditional practice", 2, data["traditional_availability"]),
-                ]),
-                _time_chart("food-gap", "Food gap", "line", "", years, [
-                    _series("With CSA", 3, data["csa_gap"]),
-                    _series("With traditional practice", 2, data["traditional_gap"]),
-                ]),
-                _time_chart("food-population", "Population", "line", "", years, [
-                    _series("Population", 1, data["population"]),
-                ]),
+                _over_time(
+                    "food-demand-availability",
+                    f"Food needs rise {_pct(rise(data['demand']))}% by {last}, while supply with {csa} "
+                    f"rises {_pct(rise(data['csa_availability']))}%",
+                    "The dark line is the food the country needs. The other two lines are the food "
+                    "available under each way of farming. The space between them is the food gap.",
+                    "line", "", years,
+                    [
+                        _series("Food needed", 1, data["demand"], emphasis="strong"),
+                        _series(f"Available with {csa}", 3, data["csa_availability"]),
+                        _series(f"Available with {traditional}", 2, data["traditional_availability"]),
+                    ],
+                ),
+                _over_time(
+                    "food-gap",
+                    f"By {last}, {csa} makes the food gap {_pct(saved)}% smaller than {traditional}",
+                    "The food gap is how far the food needed exceeds the food available. Lower is better.",
+                    "line", "", years,
+                    [
+                        _series(f"With {csa}", 3, data["csa_gap"]),
+                        _series(f"With {traditional}", 2, data["traditional_gap"]),
+                    ],
+                ),
+                _over_time(
+                    "food-population",
+                    f"Population grows from {data['population'][0]:.0f} to {data['population'][-1]:.0f} million by {last}",
+                    "Projected number of people, in millions. More people is the main reason food needs rise.",
+                    "line", "million", years,
+                    [_series("Population", 1, data["population"])],
+                    end_labels=False,
+                ),
             ],
         }
 
@@ -171,29 +300,38 @@ def _share(part: Any, whole: Any) -> float | None:
 def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
     places = data["places"]
 
-    def ranking(place_id: str, entry: dict[str, Any]) -> dict[str, Any]:
+    def ranking(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
         if entry["level"] == "national":
-            scope, title, level = COUNTRY_ID, "Area equipped for irrigation by province", "province"
+            scope, level, where = COUNTRY_ID, "province", "of any province"
         else:
             scope = place_id if entry["level"] == "province" else entry["parent_id"]
-            title = f"Area equipped for irrigation by district, {places.get(scope, {}).get('name', '')}"
-            level = "district"
+            level, where = "district", f"in {places.get(scope, {}).get('name', 'its province')}"
         rows = [
             (pid, p) for pid, p in places.items()
             if p["level"] == level and p["parent_id"] == scope and p["equipped"] is not None
         ]
+        if not rows:
+            return None
         rows.sort(key=lambda item: item[1]["equipped"], reverse=True)
         selected = next((n for n, (pid, _) in enumerate(rows) if pid == place_id), None)
+        if selected is None:
+            title = f"{rows[0][1]['name']} has the most irrigation-ready land {where}"
+        else:
+            title = (
+                f"{entry['name']} ranks {_ordinal(selected + 1)} of {len(rows)} districts "
+                f"{where} for irrigation-ready land"
+            )
         shown = rows[:RANKING_LIMIT]
         if selected is not None and selected >= RANKING_LIMIT:
             shown[-1] = rows[selected]
             selected = RANKING_LIMIT - 1
-        return {
-            "id": "irrigation-ranking", "title": title, "kind": "bar", "unit": "ha", "time": False,
-            "horizontal": True, "highlight": selected,
-            "categories": [p["name"] for _, p in shown],
-            "series": [_series("Area equipped", 1, [p["equipped"] for _, p in shown])],
-        }
+        more = f" The {RANKING_LIMIT} largest are shown." if len(rows) > RANKING_LIMIT else ""
+        return _bars(
+            "irrigation-ranking", title,
+            f"Land equipped for irrigation in each {level}, largest first.{more}",
+            "ha", [p["name"] for _, p in shown], [p["equipped"] for _, p in shown],
+            horizontal=True, highlight=selected, series_name="Land equipped for irrigation",
+        )
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         entry = places.get(place.id)
@@ -202,16 +340,20 @@ def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
                 "figures": [], "charts": [],
                 "notes": [f"No irrigation figures are reported for {place.name}."],
             }
+        name = entry["name"]
         figures = [
-            _figure("Area equipped for irrigation", entry["equipped"], "ha"),
-            _figure("Equipped with groundwater", entry["groundwater"], "ha"),
-            _figure("Equipped with surface water", entry["surface"], "ha"),
-            _figure("Area actually irrigated", entry["irrigated"], "ha"),
+            _figure("Land equipped for irrigation", entry["equipped"], "ha"),
+            _figure("Served by groundwater", entry["groundwater"], "ha"),
+            _figure("Served by surface water", entry["surface"], "ha"),
+            _figure("Land actually irrigated", entry["irrigated"], "ha"),
         ]
-        share = _share(entry["irrigated"], entry["equipped"])
-        if share is not None:
-            figures.append(_figure("Share of equipped area irrigated", share, "%"))
-        notes: list[str] = []
+        used = _share(entry["irrigated"], entry["equipped"])
+        if used is not None:
+            figures.append(_figure("Share of equipped land irrigated", used, "%"))
+        notes: list[str] = [
+            "Land equipped for irrigation has canals, wells or other infrastructure. "
+            "Not all of it is irrigated in practice."
+        ]
         if entry["level"] != "district":
             notes.append(f"Totals from {entry['districts_reported']} districts reported in the spreadsheet.")
         if entry["level"] == "national" and data.get("unmatched"):
@@ -220,18 +362,31 @@ def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
                 f"{len(data['unmatched'])} spreadsheet districts could not be matched to the map and are "
                 f"counted in totals only: {names}."
             )
-        return {
-            "figures": figures,
-            "notes": notes,
-            "charts": [
-                {
-                    "id": "irrigation-source", "title": "Water source of the equipped area", "kind": "bar",
-                    "unit": "ha", "time": False, "categories": ["Groundwater", "Surface water"],
-                    "series": [_series("Area equipped", 1, [entry["groundwater"], entry["surface"]])],
-                },
-                ranking(place.id, entry),
-            ],
-        }
+
+        charts: list[dict[str, Any]] = []
+        if used is not None:
+            charts.append(_bars(
+                "irrigation-use",
+                f"{_pct(used)}% of {name}'s irrigation-ready land is actually irrigated",
+                "Land that has irrigation infrastructure, next to the land that is irrigated in practice.",
+                "ha", ["Equipped for irrigation", "Actually irrigated"], [entry["equipped"], entry["irrigated"]],
+                series_name="Land",
+            ))
+        ground, surface = _share(entry["groundwater"], entry["equipped"]), _share(entry["surface"], entry["equipped"])
+        if ground is not None and surface is not None:
+            lead, lead_share = ("Surface water", surface) if surface >= ground else ("Groundwater", ground)
+            charts.append(_bars(
+                "irrigation-source",
+                f"{lead} serves {_pct(lead_share)}% of the irrigation-ready land in {name}",
+                "Where the water for irrigation-ready land comes from: wells that pump groundwater, "
+                "or canals and rivers that carry surface water.",
+                "%", ["Groundwater", "Surface water"], [ground, surface],
+                series_name="Share of equipped land",
+            ))
+        ranked = ranking(place.id, entry)
+        if ranked is not None:
+            charts.append(ranked)
+        return {"figures": figures, "notes": notes, "charts": charts}
 
     return provider
 
@@ -277,7 +432,7 @@ def build_providers(
         try:
             sections[section_id] = build(data)
             loaded[section_id] = data
-        except (KeyError, TypeError, IndexError) as err:
+        except (KeyError, TypeError, IndexError, ZeroDivisionError) as err:
             logger.error("%s does not have the expected contents: %r", filename, err)
 
     practice = _read(data_dir / "irrigation_practice.geojson")
