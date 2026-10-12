@@ -2,22 +2,26 @@ import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from 'echarts/components'
 import { init, use, type ECharts } from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
+import { Table2 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import type { ChartSpec } from '../api/types'
-import { chartHeight, chartOption, formatNumber, markedYear } from '../charts/chartOption'
+import { chartHeight, chartOption, formatNumber, markedYear, REPLAY_MS } from '../charts/chartOption'
 import { viewStore } from '../state/viewState'
 
 use([LineChart, BarChart, GridComponent, LegendComponent, TooltipComponent, MarkLineComponent, SVGRenderer])
 
 /**
- * One chart: a headline that states the finding, a line on how to read it, then the plot.
+ * One chart: a headline that states the finding, then the plot.
  * Hover for values, click a legend entry to hide a series, click a year to select it.
  * `large` is the full view, where lines are labelled at their ends.
+ * The chart draws itself in again every few seconds, unless the pointer is on it or the reader
+ * has asked their device for less motion.
  */
 export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: number | null; large?: boolean }) {
   const plot = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
   const latest = useRef(spec)
+  const draw = useRef(() => {})
 
   useEffect(() => {
     latest.current = spec
@@ -45,23 +49,51 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
 
   useEffect(() => {
     chart.current?.setOption(chartOption(spec, year, large), true)
+    // Emptying the chart first makes it draw in from nothing, as it did when it first appeared.
+    draw.current = () => {
+      chart.current?.clear()
+      chart.current?.setOption(chartOption(spec, year, large), true)
+    }
   }, [spec, year, large])
+
+  useEffect(() => {
+    const element = plot.current
+    if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    let reading = false
+    const enter = () => { reading = true }
+    const leave = () => { reading = false }
+    element.addEventListener('pointerenter', enter)
+    element.addEventListener('pointerleave', leave)
+    const timer = window.setInterval(() => {
+      if (!reading && !document.hidden && !latest.current.still) draw.current()
+    }, REPLAY_MS)
+    return () => {
+      window.clearInterval(timer)
+      element.removeEventListener('pointerenter', enter)
+      element.removeEventListener('pointerleave', leave)
+    }
+  }, [])
 
   return (
     <figure className={large ? 'chart chart-large' : 'chart'} aria-label={spec.title}>
       <figcaption>
         <h4>{spec.title}</h4>
-        {spec.subtitle && <p className="chart-subtitle">{spec.subtitle}</p>}
+        {/* Bars without an axis still need their unit said once. */}
+        {spec.hide_axis && spec.unit && <p className="chart-unit">Bar length: {spec.unit}</p>}
       </figcaption>
       <div
         ref={plot}
         className="chart-plot"
-        style={{ height: chartHeight(spec, large) }}
+        // In the full view the plot stretches to fill its card, so the height is only a floor.
+        style={large ? { minHeight: chartHeight(spec, large) } : { height: chartHeight(spec, large) }}
         data-marked-year={markedYear(spec, year) ?? undefined}
       />
       {spec.note && <p className="chart-note">{spec.note}</p>}
       <details className="chart-table">
-        <summary>Show table</summary>
+        <summary title="Show table">
+          <Table2 size={17} aria-hidden />
+          <span>Show table</span>
+        </summary>
         <table>
           <thead>
             <tr>

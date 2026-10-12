@@ -26,7 +26,11 @@ TEHSILS_FILE = SOURCE / "geospatial" / "vectors" / "Irr_Prac.shp"
 # The main map: districts and provinces, including the Kashmir region.
 DISTRICTS_FILE = SOURCE / "geospatial" / "vectors" / "sajid(2oct)" / "Join_Irrigated_Full.shp"
 IRRIGATION_FILE = SOURCE / "spreadsheets" / "Complete GHG and Irrigation data 30 Sep.xls"
-EMISSIONS_FILE = SOURCE / "spreadsheets" / "Pakistan_GHG_1994_2021_Excel_Data.xlsx"
+# The emissions sheet of the combined workbook runs to 2025. The older standalone workbook stops at 2021;
+# it is still read for the name of the official source, which the combined workbook does not give.
+EMISSIONS_FILE = IRRIGATION_FILE
+EMISSIONS_SHEET = "Total GHG Emission of Pakistan"
+EMISSIONS_NOTES_FILE = SOURCE / "spreadsheets" / "Pakistan_GHG_1994_2021_Excel_Data.xlsx"
 WATER_FILE = SOURCE / "spreadsheets" / "CRW(efficiency) 25sep.xlsx"
 FOOD_FILE = SOURCE / "spreadsheets" / "food security projection CSA 17 sep.xlsx"
 # The crop calendars live in the standalone calendar app; the portal reads them from there.
@@ -251,22 +255,38 @@ def _column(frame: pd.DataFrame, name: str) -> list[float]:
     return [round(float(v), 4) for v in frame[name]]
 
 
-def read_emissions(path: Path) -> dict[str, Any]:
-    frame = pd.read_excel(path, sheet_name="GHG_1994_2021")
-    columns = ["Year", "CO2 (MtCO2e)", "CH4 (MtCO2e)", "N2O (MtCO2e)", "Total GHG (MtCO2e)", "Data Status"]
+def emissions_status(status: Any) -> str:
+    """What kind of figure a year's emissions are, from the spreadsheet's wording."""
+    text = "" if status is None or (isinstance(status, float) and pd.isna(status)) else str(status).strip().lower()
+    if text.startswith("official"):
+        return "official"
+    if text.startswith("interpolated"):
+        return "interpolated"
+    return "estimate" if text else "unstated"
+
+
+def read_emissions(path: Path, notes_path: Path | None = None) -> dict[str, Any]:
+    frame = pd.read_excel(path, sheet_name=EMISSIONS_SHEET)
+    frame.columns = [str(c).strip() for c in frame.columns]
+    columns = ["Year", "CO2 (Mte)", "CH4 (Mte)", "N2O (Mte)", "Total GHG (Mte)", "Data Status"]
     _require(frame, columns, path)
-    frame = frame[frame["Year"].notna() & frame["Total GHG (MtCO2e)"].notna()]
-    meta = pd.read_excel(path, sheet_name="Metadata")
-    details = {str(item).strip(): str(detail).strip() for item, detail in meta.iloc[:, :2].itertuples(index=False)}
+    frame = frame[frame["Year"].notna() & frame["Total GHG (Mte)"].notna()]
+    source = ""
+    if notes_path is not None and Path(notes_path).is_file():
+        meta = pd.read_excel(notes_path, sheet_name="Metadata")
+        details = {str(item).strip(): str(detail).strip() for item, detail in meta.iloc[:, :2].itertuples(index=False)}
+        source = details.get("Official source", "")
+    status = [emissions_status(value) for value in frame["Data Status"]]
     return {
         "unit": "MtCO2e",
-        "source": details.get("Official source", ""),
+        "source": source,
         "years": [int(y) for y in frame["Year"]],
-        "co2": _column(frame, "CO2 (MtCO2e)"),
-        "ch4": _column(frame, "CH4 (MtCO2e)"),
-        "n2o": _column(frame, "N2O (MtCO2e)"),
-        "total": _column(frame, "Total GHG (MtCO2e)"),
-        "official": [not str(status).lower().startswith("interpolated") for status in frame["Data Status"]],
+        "co2": _column(frame, "CO2 (Mte)"),
+        "ch4": _column(frame, "CH4 (Mte)"),
+        "n2o": _column(frame, "N2O (Mte)"),
+        "total": _column(frame, "Total GHG (Mte)"),
+        "status": status,
+        "official": [kind == "official" for kind in status],
     }
 
 
@@ -417,7 +437,7 @@ def main() -> None:
         print("  not matched:", name)
 
     print("Emissions, water balance and food security")
-    _write_json(read_emissions(EMISSIONS_FILE), DATA_OUT / "emissions.json")
+    _write_json(read_emissions(EMISSIONS_FILE, EMISSIONS_NOTES_FILE), DATA_OUT / "emissions.json")
     _write_json(read_water_balance(WATER_FILE), DATA_OUT / "water_balance.json")
     _write_json(read_food_security(FOOD_FILE), DATA_OUT / "food_security.json")
 

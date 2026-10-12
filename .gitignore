@@ -17,3 +17,13 @@ frontend/playwright-report/
 
 # Converted rasters (large; rebuilt by backend/scripts/prepare_rasters.py)
 backend/rasters/
+
+# Credentials for outside services
+.env
+\#*PMD Monitor*.txt
+
+# Forecast rasters fetched from PMD on demand (a cache; safe to delete)
+backend/forecast/
+
+# Browser automation logs
+.playwright-mcp/

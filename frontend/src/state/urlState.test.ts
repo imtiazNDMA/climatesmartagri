@@ -44,6 +44,7 @@ describe('serializeView', () => {
       ],
       place: 'PK1',
       year: 2005,
+      forecast: null,
     }
     expect(serializeView(view)).toBe(
       '?section=yearly&view=charts&layers=forest:0.8,irrigated:1&hidden=forest&place=PK1&year=2005',
@@ -65,8 +66,36 @@ describe('parseView', () => {
       ],
       place: 'PK1',
       year: 2005,
+      forecast: null,
     }
     expect(parse(serializeView(view))).toEqual({ view, dropped: [] })
+  })
+
+  it('round-trips a forecast, and drops one the layer list does not offer', () => {
+    const forecast = {
+      configured: true,
+      bbox: [55, 18, 85, 42] as [number, number, number, number],
+      models: [{ id: 'model-a', label: 'Model A' }],
+      groups: [{ id: 'heat', title: 'Heat' }],
+      layers: [
+        {
+          id: 'temperature', title: 'Temperature', group: 'heat', unit: '°C', colours: ['#00f', '#f00'],
+          min: 0, max: 40, ranges: {}, levels: { 'model-a': [0, 850] },
+        },
+      ],
+    }
+    const withForecast = { ...catalogue, forecast }
+    const view: View = {
+      ...emptyView,
+      forecast: { layer: 'temperature', model: 'model-a', level: 850, time: '2026101200' },
+    }
+    expect(serializeView(view)).toBe('?forecast=temperature~model-a~850~2026101200')
+    expect(parseView(serializeView(view), withForecast, places)).toEqual({ view, dropped: [] })
+    expect(parseView('?forecast=temperature~model-a~500', withForecast, places)).toEqual({
+      view: emptyView,
+      dropped: ['forecast "temperature~model-a~500"'],
+    })
+    expect(parse('?forecast=temperature~model-a~850').dropped).toEqual(['forecast "temperature~model-a~850"'])
   })
 
   it('returns the empty view for an empty query', () => {

@@ -11,12 +11,20 @@ from .geoenv import use_bundled_proj
 
 use_bundled_proj()  # before anything imports rasterio
 
-from fastapi import FastAPI, HTTPException, Query, Response  # noqa: E402
+from fastapi import FastAPI, HTTPException, Query, Request, Response  # noqa: E402
 from titiler.core.dependencies import parse_color  # noqa: E402
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers  # noqa: E402
 from titiler.core.factory import TilerFactory  # noqa: E402
 
 from .catalogue import Layer, load_catalogue  # noqa: E402
+from .forecast import (  # noqa: E402
+    ForecastService,
+    ForecastSource,
+    RegistryError,
+    add_forecast_routes,
+    load_registry,
+)
+from .pmd import PmdClient  # noqa: E402
 from .places import COUNTRY_ID, BoundaryError, Place, load_places, no_places  # noqa: E402
 from .sections import GeoJsonProvider, SectionDataProvider, build_providers  # noqa: E402
 from .settings import Settings  # noqa: E402
@@ -38,6 +46,7 @@ def create_app(
     section_providers: Mapping[str, SectionDataProvider] | None = None,
     tile_providers: Mapping[str, TileProvider] | None = None,
     geojson_providers: Mapping[str, GeoJsonProvider] | None = None,
+    forecast_source: ForecastSource | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     catalogue = load_catalogue(settings.catalogue_path)
@@ -99,9 +108,33 @@ def create_app(
         colours = {int(item.value): parse_color(item.colour) for item in legend.items if item.value is not None}
         return colours or None
 
+    @app.middleware("http")
+    async def cog_cache_headers(request: Request, call_next: Any) -> Response:
+        """Let a browser keep a land-cover tile for an hour: the rasters change only when they are re-prepared."""
+        response = await call_next(request)
+        if request.url.path.startswith(f"{COG_PREFIX}/tiles/"):
+            response.headers["Cache-Control"] = "public, max-age=3600" if response.status_code == 200 else "no-store"
+        return response
+
     cog = TilerFactory(router_prefix=COG_PREFIX, path_dependency=cog_path, colormap_dependency=cog_colormap)
     app.include_router(cog.router, prefix=COG_PREFIX, tags=["Land cover"])
     add_exception_handlers(app, DEFAULT_STATUS_CODES)
+
+    # --- Weather forecast, fetched from PMD on demand. Only for a catalogue that has a forecast section.
+    forecast: ForecastService | None = None
+    if any(section.kind == "forecast" for section in catalogue.sections):
+        if forecast_source is None and settings.pmd_url and settings.pmd_user:
+            forecast_source = PmdClient(
+                settings.pmd_url, settings.pmd_user, settings.pmd_pass, settings.pmd_cert_sha256
+            )
+        try:
+            forecast = ForecastService(
+                load_registry(settings.forecast_layers_path), forecast_source, settings.forecast_dir
+            )
+            add_forecast_routes(app, forecast)
+        except RegistryError as err:
+            # A bad layer list must not take the portal down; the section shows as having no data.
+            logger.error("Forecast layers could not be loaded: %s", err)
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
@@ -123,6 +156,7 @@ def create_app(
             "basemap_style_url": settings.basemap_style_url,
             "sections": [section.model_dump() for section in catalogue.sections],
             "layers": [served(layer) for layer in catalogue.layers],
+            "forecast": forecast.describe() if forecast else None,
         }
 
     @app.get("/api/places")

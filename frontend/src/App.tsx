@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
 import { ActiveLayers } from './components/ActiveLayers'
 import { BackendDown } from './components/BackendDown'
+import { ForecastSlider } from './components/ForecastSlider'
 import { ChartsView } from './components/ChartsView'
 import { Breadcrumb } from './components/Breadcrumb'
 import { IconRail } from './components/IconRail'
@@ -12,6 +13,7 @@ import { PlaceSearch } from './components/PlaceSearch'
 import { SectionPanel } from './components/SectionPanel'
 import { TimeSlider } from './components/TimeSlider'
 import { useBackendWatch } from './data/useBackendWatch'
+import { useForecastTimes } from './data/useForecastTimes'
 import { useLayerProbes } from './data/useLayerProbes'
 import { usePortalData, type PortalData } from './data/usePortalData'
 import { useSectionData } from './data/useSectionData'
@@ -30,15 +32,19 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
   const placeId = useView((s) => s.place)
   const year = useView((s) => s.year)
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
-  const sectionData = useSectionData(section, placeId, effectiveYear(section?.years, year))
+  // A forecast section has no figures or charts of its own to ask for.
+  const sectionData = useSectionData(
+    section?.kind === 'forecast' ? null : section, placeId, effectiveYear(section?.years, year),
+  )
+  const forecastTimes = useForecastTimes()
   const place = data.places.find((p) => p.id === (placeId ?? COUNTRY_ID))
   const showCharts = full && section !== null
   return (
     <div className="app">
       <IconRail catalogue={data.catalogue} onAbout={() => setAboutOpen(true)} />
-      <SectionPanel data={data} sectionData={sectionData} />
+      <SectionPanel data={data} sectionData={sectionData} forecastTimes={forecastTimes} />
       <main className={showCharts ? 'map-area map-area-full' : 'map-area'}>
-        <MapView data={data} />
+        <MapView data={data} forecastTimes={forecastTimes} />
         {/* In full view the charts take the map's place; the map stays loaded underneath. */}
         {showCharts ? (
           <ChartsView section={section} place={place} sectionData={sectionData} />
@@ -53,6 +59,7 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
           </>
         )}
         <TimeSlider catalogue={data.catalogue} />
+        {!showCharts && <ForecastSlider times={forecastTimes} />}
         <Notices />
       </main>
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />

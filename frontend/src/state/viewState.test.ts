@@ -27,6 +27,32 @@ describe('sections', () => {
   })
 })
 
+describe('maximizing one chart', () => {
+  it('opens the full view on that chart, and minimizing keeps the full view', () => {
+    store.getState().openSection('a')
+    store.getState().maximize('trend')
+    expect(store.getState()).toMatchObject({ full: true, maximized: 'trend' })
+    store.getState().maximize(null)
+    expect(store.getState()).toMatchObject({ full: true, maximized: null })
+  })
+
+  it('ends when the full view, or the section, is left', () => {
+    store.getState().openSection('a')
+    store.getState().maximize('trend')
+    store.getState().setFull(false)
+    expect(store.getState().maximized).toBeNull()
+    store.getState().maximize('trend')
+    store.getState().openSection('b')
+    expect(store.getState().maximized).toBeNull()
+  })
+
+  it('does nothing without an open section, and stays out of links', () => {
+    store.getState().maximize('trend')
+    expect(store.getState()).toMatchObject({ full: false, maximized: null })
+    expect(pickView(store.getState())).not.toHaveProperty('maximized')
+  })
+})
+
 describe('layers', () => {
   it('adds new layers on top with their default opacity', () => {
     store.getState().toggleLayer('x', 0.8)
@@ -120,9 +146,35 @@ describe('replaceView and pickView', () => {
       layers: [{ id: 'x', opacity: 0.5, hidden: true }],
       place: 'PK1',
       year: 2001,
+      forecast: { layer: 'temperature', model: 'model-a', level: 850, time: '2026101200' },
     }
     store.getState().replaceView(view)
     expect(pickView(store.getState())).toEqual(view)
+  })
+})
+
+describe('the forecast on the map', () => {
+  const choice = { layer: 'temperature', model: 'model-a', level: 0, time: null }
+
+  it('is set, moved in time and cleared', () => {
+    store.getState().setForecast(choice)
+    expect(store.getState().forecast).toEqual(choice)
+    store.getState().setForecastTime('2026101200')
+    expect(store.getState().forecast).toEqual({ ...choice, time: '2026101200' })
+    store.getState().setForecast(null)
+    expect(store.getState().forecast).toBeNull()
+  })
+
+  it('has no time to move when there is none', () => {
+    store.getState().setForecastTime('2026101200')
+    expect(store.getState().forecast).toBeNull()
+  })
+
+  it('stays on the map when its section is closed', () => {
+    store.getState().openSection('a')
+    store.getState().setForecast(choice)
+    store.getState().closeSection()
+    expect(store.getState().forecast).toEqual(choice)
   })
 })
 

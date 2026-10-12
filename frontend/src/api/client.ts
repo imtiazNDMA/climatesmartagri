@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson'
-import type { Catalogue, Layer, Place, SectionData } from './types'
+import type { Catalogue, ForecastTime, Layer, Place, SectionData } from './types'
 
 export class ApiError extends Error {
   status: number
@@ -66,6 +66,36 @@ export function fetchSectionData(sectionId: string, placeId: string | null, year
   if (year !== null) params.push(`year=${year}`)
   const query = params.length ? `?${params.join('&')}` : ''
   return getJson<SectionData>(`/api/sections/${sectionId}/data${query}`)
+}
+
+interface ForecastAddress {
+  layer: string
+  model: string
+  level: number
+}
+
+const forecastQuery = ({ layer, model, level }: ForecastAddress) => `layer=${layer}&model=${model}&level=${level}`
+
+/** The times a forecast layer can be shown for, earliest first. */
+export async function fetchForecastTimes(choice: ForecastAddress): Promise<ForecastTime[]> {
+  return (await getJson<{ times: ForecastTime[] }>(`/api/forecast/times?${forecastQuery(choice)}`)).times
+}
+
+/**
+ * Where a forecast layer's tiles are for one time, smoothed between the model's grid points. The address
+ * names the model run, so what it answers can never change and the browser keeps it without asking again.
+ */
+export function forecastTileUrl(choice: ForecastAddress, time: string, run: string): string {
+  const query = `${forecastQuery(choice)}&time=${time}&run=${run}&resampling=bilinear&reproject=bilinear`
+  return `/api/forecast/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${query}`
+}
+
+/**
+ * Ask the backend to get a forecast time ready, without waiting for the answer. The first request for a
+ * time has to fetch it from PMD, so asking ahead of the slider keeps playback from stalling.
+ */
+export function warmForecast(choice: ForecastAddress, time: string, run: string): void {
+  fetch(`/api/forecast/cog/info?${forecastQuery(choice)}&time=${time}&run=${run}`).catch(() => {})
 }
 
 export function tileUrlTemplate(layerId: string, year: number | null, retry: number): string {

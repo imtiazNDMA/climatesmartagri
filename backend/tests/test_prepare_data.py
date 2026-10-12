@@ -216,27 +216,35 @@ def test_summarise_irrigation_totals_by_district_province_and_country(tmp_path):
 
 
 def test_read_emissions(tmp_path):
-    path = tmp_path / "ghg.xlsx"
+    path = tmp_path / "combined.xlsx"
     frame = pd.DataFrame(
         {
-            "Year": [1994, 1995],
-            "CO2 (MtCO2e)": [94.57, 99.88],
-            "CH4 (MtCO2e)": [72.27, 75.84],
-            "N2O (MtCO2e)": [11.0, 12.52],
-            "Total GHG (MtCO2e)": [177.84, 188.24],
-            "Data Status": ["Official reported inventory", "Interpolated between official inventory years"],
-            "stray": [None, None],
+            "Year": [1994, 1995, 2024, 2025, None],
+            "CO2 (Mte)": [94.57, 99.88, 279.34, 281.61, None],
+            "CH4 (Mte)": [72.27, 75.84, 179.2, 181.5, None],
+            "N2O (Mte)": [11.0, 12.52, 106.54, 109.34, None],
+            "Total GHG (Mte)": [177.84, 188.24, 565.08, 572.45, None],
+            "Data Status": [
+                "Official reported inventory", "Interpolated between official inventory years",
+                "Latest official estimate", None, None,
+            ],
+            "stray": [None] * 5,
         }
     )
+    notes = tmp_path / "notes.xlsx"
     meta = pd.DataFrame({"Item": ["Official source", "Unit"], "Details": ["NC3, UNFCCC, 2025", "MtCO2e = million tonnes"]})
     with pd.ExcelWriter(path) as writer:
-        frame.to_excel(writer, sheet_name="GHG_1994_2021", index=False)
+        frame.to_excel(writer, sheet_name="Total GHG Emission of Pakistan", index=False)
+    with pd.ExcelWriter(notes) as writer:
         meta.to_excel(writer, sheet_name="Metadata", index=False)
-    data = read_emissions(path)
-    assert data["years"] == [1994, 1995]
-    assert data["co2"] == [94.57, 99.88]
-    assert data["total"] == [177.84, 188.24]
-    assert data["official"] == [True, False]
+    data = read_emissions(path, notes)
+    assert data["years"] == [1994, 1995, 2024, 2025]
+    assert data["co2"] == [94.57, 99.88, 279.34, 281.61]
+    assert data["total"] == [177.84, 188.24, 565.08, 572.45]
+    # Only reported inventory years count as official; an estimate, or a year with no status, does not.
+    assert data["status"] == ["official", "interpolated", "estimate", "unstated"]
+    assert data["official"] == [True, False, False, False]
+    assert read_emissions(path)["source"] == ""
     assert data["unit"] == "MtCO2e"
     assert data["source"] == "NC3, UNFCCC, 2025"
 

@@ -2,13 +2,20 @@ import { Map as MapLibreMap, NavigationControl, Popup, setWorkerUrl, type StyleS
 import 'maplibre-gl/dist/maplibre-gl.css'
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { useEffect, useRef, useState } from 'react'
-import { layerGeojsonUrl, layerTileUrl } from '../api/client'
+import { flushSync } from 'react-dom'
+import { createRoot } from 'react-dom/client'
+import { forecastTileUrl, layerGeojsonUrl, layerTileUrl } from '../api/client'
 import { COUNTRY_ID, type Layer } from '../api/types'
+import type { ForecastTimesState } from '../data/useForecastTimes'
 import type { PortalData } from '../data/usePortalData'
-import { fillColour } from '../map/layerStyle'
+import { runOf } from '../forecast/choice'
+import { ForecastFrames, type FrameMap } from '../map/forecastFrames'
+import { extremeColours, fillColour, glowStrength, shapeColour } from '../map/layerStyle'
+import { tooltipTable } from '../map/tooltip'
 import { clickTarget, effectiveYear } from '../state/selectors'
 import { uiStore, useUi } from '../state/uiState'
 import { useView, viewStore } from '../state/viewState'
+import { MapPopup, type PopupBlock } from './MapPopup'
 
 // MapLibre looks for its worker beside its own module, which a bundler moves; point it at the bundled copy.
 setWorkerUrl(workerUrl)
@@ -20,6 +27,19 @@ const BLANK_STYLE: StyleSpecification = {
 }
 
 const dataId = (layerId: string) => `data-${layerId}`
+/** The weather forecast: rasters drawn over the data layers and under the boundaries, one per time. */
+const FORECAST_ID = 'forecast'
+const FORECAST_OPACITY = 0.75
+/** How long one forecast time takes to blend into the next. */
+const FORECAST_FADE_MS = 450
+/**
+ * What is drawn on the shapes a layer marks as extreme: a pale wash and a fill in the shape's own colour,
+ * which take turns so the shape dims and brightens, then a soft halo and a crisp edge round it.
+ */
+const washId = (layerId: string) => `${dataId(layerId)}-wash`
+const pulseId = (layerId: string) => `${dataId(layerId)}-pulse`
+const glowId = (layerId: string) => `${dataId(layerId)}-glow`
+const edgeId = (layerId: string) => `${dataId(layerId)}-edge`
 
 /** Use the online background map if it answers, otherwise a plain background. */
 async function resolveStyle(url: string): Promise<{ style: string | StyleSpecification; fallback: boolean }> {
@@ -74,7 +94,10 @@ function addBoundaries(map: MapLibreMap, data: PortalData) {
 function wireInteractions(map: MapLibreMap, data: PortalData) {
   if (!map.getLayer('districts-fill')) return
   let hovered: string | null = null
-  const popup = new Popup({ closeButton: false, closeOnClick: false })
+  // Opened by a click and left open until it is closed or another spot is clicked.
+  const popup = new Popup({ closeButton: true, closeOnClick: false, maxWidth: '700px', className: 'map-popup' })
+  const card = document.createElement('div')
+  const cardRoot = createRoot(card)
   const clearHover = () => {
     if (hovered) map.setFeatureState({ source: 'districts', id: hovered }, { hover: false })
     hovered = null
@@ -90,41 +113,52 @@ function wireInteractions(map: MapLibreMap, data: PortalData) {
       map.setFeatureState({ source: 'districts', id }, { hover: true })
     }
     map.getCanvas().style.cursor = 'pointer'
-    // The district's name, then what each visible shape layer says about this spot.
-    const content = document.createElement('div')
-    const heading = document.createElement('strong')
-    heading.textContent = String(feature.properties.name)
-    content.append(heading)
-    const seen = new Set<string>()
-    for (const under of map.queryRenderedFeatures(event.point)) {
-      const label = under.properties?.label
-      if (!under.layer.id.startsWith('data-') || typeof label !== 'string' || seen.has(under.layer.id)) continue
-      seen.add(under.layer.id)
-      const line = document.createElement('div')
-      line.textContent = label
-      content.append(line)
-    }
-    popup.setLngLat(event.lngLat).setDOMContent(content).addTo(map)
   })
   map.on('mouseleave', 'districts-fill', () => {
     clearHover()
     map.getCanvas().style.cursor = ''
-    popup.remove()
   })
-  // A click on the map that lands outside every district clears the selection.
+  // A click on the map that lands outside every district clears the selection and closes the popup.
   map.on('click', (event) => {
-    if (viewStore.getState().place === null) return
-    if (map.queryRenderedFeatures(event.point, { layers: ['districts-fill'] }).length === 0) {
-      viewStore.getState().selectPlace(null)
-    }
+    if (map.queryRenderedFeatures(event.point, { layers: ['districts-fill'] }).length > 0) return
+    popup.remove()
+    if (viewStore.getState().place !== null) viewStore.getState().selectPlace(null)
   })
   map.on('click', 'districts-fill', (event) => {
     const feature = event.features?.[0]
     if (!feature) return
+    // The district and its province, then what each visible shape layer says about this spot.
+    const district = data.places.find((p) => p.id === String(feature.properties.id))
+    const province = data.places.find((p) => p.id === district?.parent_id)
+    const blocks: PopupBlock[] = []
+    for (const under of map.queryRenderedFeatures(event.point)) {
+      const label = under.properties?.label
+      const layer = data.catalogue.layers.find((l) => dataId(l.id) === under.layer.id)
+      if (!layer || typeof label !== 'string' || blocks.some((b) => b.layerId === layer.id)) continue
+      blocks.push({
+        layerId: layer.id,
+        layerTitle: layer.title,
+        colour: shapeColour(layer, under.properties),
+        label,
+        // A shape that carries a table shows it in place of its one-line label.
+        table: tooltipTable(under.properties),
+      })
+    }
+    // Drawn at once, so the popup is placed by the size of what it actually holds.
+    flushSync(() =>
+      cardRoot.render(
+        <MapPopup place={String(feature.properties.name)} parent={province?.name ?? null} blocks={blocks} />,
+      ),
+    )
+    popup.setLngLat(event.lngLat).setDOMContent(card).addTo(map)
     const target = clickTarget(data.places, viewStore.getState().place, String(feature.properties.id))
     if (target) viewStore.getState().selectPlace(target)
   })
 }
+
+/** How solid the shape's own colour is at the bright end of a blink, and how much it is paled at the dim end. */
+const PULSE_FILL = 1
+const PULSE_WASH = 0.6
 
 function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry: number) {
   const id = dataId(layer.id)
@@ -137,6 +171,31 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
       // The expression is built from the catalogue's legend, so it is typed loosely here.
       paint: { 'fill-color': fillColour(layer) as never, 'fill-outline-color': 'rgba(255, 255, 255, 0.7)' },
     })
+    // Shapes the data marks as extreme blink as a whole, each in its own shade: paled by a wash, then
+    // filled solid. Their outline glows in the colour of their end of the ramp.
+    const ends = extremeColours(layer)
+    if (ends) {
+      const colour = ['match', ['get', 'extreme'], 'low', ends.low, ends.high] as never
+      const marked = ['has', 'extreme'] as never
+      map.addLayer({
+        id: washId(layer.id), type: 'fill', source: id, filter: marked,
+        paint: { 'fill-color': '#ffffff', 'fill-opacity': 0 },
+      })
+      map.addLayer({
+        id: pulseId(layer.id), type: 'fill', source: id, filter: marked,
+        paint: { 'fill-color': fillColour(layer) as never, 'fill-opacity': PULSE_FILL },
+      })
+      map.addLayer({
+        id: glowId(layer.id), type: 'line', source: id, filter: marked,
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': colour, 'line-width': 16, 'line-blur': 12, 'line-opacity': 1 },
+      })
+      map.addLayer({
+        id: edgeId(layer.id), type: 'line', source: id, filter: marked,
+        layout: { 'line-join': 'round' },
+        paint: { 'line-color': colour, 'line-width': 3, 'line-opacity': 1 },
+      })
+    }
     return
   }
   const tiles = [`${window.location.origin}${layerTileUrl(layer, year, retry)}`]
@@ -153,7 +212,9 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
 
 function removeDataLayer(map: MapLibreMap, layerId: string) {
   const id = dataId(layerId)
-  if (map.getLayer(id)) map.removeLayer(id)
+  for (const part of [glowId(layerId), edgeId(layerId), pulseId(layerId), washId(layerId), id]) {
+    if (map.getLayer(part)) map.removeLayer(part)
+  }
   if (map.getSource(id)) map.removeSource(id)
 }
 
@@ -162,16 +223,22 @@ function boundaryAnchor(map: MapLibreMap): string | undefined {
   return ['districts-fill', 'provinces-line'].find((id) => map.getLayer(id))
 }
 
-export function MapView({ data }: { data: PortalData }) {
+export function MapView({ data, forecastTimes }: { data: PortalData; forecastTimes: ForecastTimesState }) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const built = useRef(new Map<string, string>())
+  const framesRef = useRef<ForecastFrames | null>(null)
+  const shownForecast = useRef<string | null>(null)
+  const frameChoice = useRef<string | null>(null)
   const [ready, setReady] = useState(false)
   const [boundariesDrawn, setBoundariesDrawn] = useState(false)
   const layers = useView((s) => s.layers)
   const place = useView((s) => s.place)
   const year = useView((s) => s.year)
   const retryCounts = useUi((s) => s.retryCounts)
+  const forecast = useView((s) => s.forecast)
+  const forecastRun =
+    forecastTimes.status === 'ready' ? runOf(forecastTimes.times, forecast?.time ?? null) : null
 
   useEffect(() => {
     let cancelled = false
@@ -205,13 +272,22 @@ export function MapView({ data }: { data: PortalData }) {
         mapRef.current = created
         setReady(true)
       })
+      // A frame whose tiles were all in hand already reports no further progress; idle catches it.
+      created.on('idle', () => {
+        if (!cancelled) framesRef.current?.settle()
+      })
       created.on('sourcedata', (event) => {
         if (!cancelled && event.sourceId === 'districts' && event.isSourceLoaded) setBoundariesDrawn(true)
+        if (!cancelled && ForecastFrames.owns(event.sourceId)) framesRef.current?.settle()
       })
       // Best effort: flag a layer whose tiles start failing after its first check passed.
       created.on('error', (event) => {
         const sourceId = (event as { sourceId?: string }).sourceId
         if (sourceId?.startsWith('data-')) uiStore.getState().setLayerError(sourceId.slice(5))
+        if (framesRef.current?.shows(sourceId)) {
+          uiStore.getState().setLayerError(FORECAST_ID)
+          uiStore.getState().setForecastLoading(false)
+        }
       })
     })
 
@@ -220,6 +296,9 @@ export function MapView({ data }: { data: PortalData }) {
       map?.remove()
       mapRef.current = null
       builtLayers.clear()
+      framesRef.current = null
+      shownForecast.current = null
+      frameChoice.current = null
       setReady(false)
       setBoundariesDrawn(false)
     }
@@ -269,8 +348,82 @@ export function MapView({ data }: { data: PortalData }) {
       map.moveLayer(id, anchor)
       map.setLayoutProperty(id, 'visibility', active.hidden ? 'none' : 'visible')
       map.setPaintProperty(id, layer.kind === 'raster' ? 'raster-opacity' : 'fill-opacity', active.opacity)
+      // The glow stays with its layer: just above it, and hidden when it is.
+      for (const part of [washId(layer.id), pulseId(layer.id), glowId(layer.id), edgeId(layer.id)]) {
+        if (!map.getLayer(part)) continue
+        map.moveLayer(part, anchor)
+        map.setLayoutProperty(part, 'visibility', active.hidden ? 'none' : 'visible')
+      }
     }
   }, [ready, layers, year, retryCounts, data])
+
+  // Keep the forecast in step with the chosen layer, model, level and time, blending from one time to the next.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    if (!framesRef.current) {
+      framesRef.current = new ForecastFrames(map as unknown as FrameMap, {
+        opacity: FORECAST_OPACITY,
+        fadeMs: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : FORECAST_FADE_MS,
+        // The models' grids are coarse; beyond zoom 7 the map stretches tiles and asks for no more.
+        maxzoom: 7,
+        bounds: data.catalogue.forecast?.bbox,
+        anchor: () => boundaryAnchor(map),
+        onLoading: (loading) => uiStore.getState().setForecastLoading(loading),
+      })
+    }
+    // A time is drawn once the run it comes from is known; until then whatever is on screen stays.
+    const tiles =
+      forecast?.time && forecastRun
+        ? `${window.location.origin}${forecastTileUrl(forecast, forecast.time, forecastRun)}`
+        : null
+    const choiceKey = forecast ? `${forecast.layer}|${forecast.model}|${forecast.level}` : null
+    const sameChoice = choiceKey === frameChoice.current
+    frameChoice.current = choiceKey
+    if (forecast?.time && !forecastRun) {
+      // Still waiting to learn the run. Another time of the same layer stays up meanwhile; a frame of some
+      // other layer, model or level does not, since the key and panel no longer describe it.
+      if (!sameChoice) {
+        shownForecast.current = null
+        framesRef.current.show(null)
+      }
+      return
+    }
+    if (tiles !== shownForecast.current) {
+      uiStore.getState().clearLayerError(FORECAST_ID)
+      shownForecast.current = tiles
+    }
+    framesRef.current.show(tiles)
+    // Load the time after this one out of sight, so stepping or playing on to it starts blending at once.
+    const offered = forecastTimes.status === 'ready' ? forecastTimes.times : []
+    const next = forecast?.time ? offered[(offered.findIndex((t) => t.time === forecast.time) + 1) % (offered.length || 1)] : undefined
+    framesRef.current.preload(
+      forecast && tiles && next && next.time !== forecast.time
+        ? `${window.location.origin}${forecastTileUrl(forecast, next.time, next.run)}`
+        : null,
+    )
+    // Placed after the data layers each time they change, so it stays above them.
+    framesRef.current.restack()
+  }, [ready, forecast, forecastRun, forecastTimes, layers, year, retryCounts, data])
+
+  // Extreme shapes blink, fill and outline together, unless the reader has asked for less motion.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !ready || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const glowing = layers.filter((active) => !active.hidden && map.getLayer(glowId(active.id)))
+    if (glowing.length === 0) return
+    const timer = window.setInterval(() => {
+      const strength = glowStrength(performance.now())
+      for (const active of glowing) {
+        if (!map.getLayer(glowId(active.id))) continue
+        map.setPaintProperty(washId(active.id), 'fill-opacity', PULSE_WASH * (1 - strength))
+        map.setPaintProperty(pulseId(active.id), 'fill-opacity', PULSE_FILL * strength)
+        map.setPaintProperty(glowId(active.id), 'line-opacity', strength)
+        map.setPaintProperty(edgeId(active.id), 'line-opacity', 0.35 + 0.65 * strength)
+      }
+    }, 50)
+    return () => window.clearInterval(timer)
+  }, [ready, layers, data])
 
   return <div ref={container} className="map" data-map-ready={ready} data-boundaries-drawn={boundariesDrawn} />
 }

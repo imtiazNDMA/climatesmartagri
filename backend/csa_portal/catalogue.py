@@ -9,6 +9,8 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 SectionStatus = Literal["ready", "no-data", "coming-soon"]
+# A forecast section takes its layers from the forecast layer list, not from this catalogue.
+SectionKind = Literal["standard", "forecast"]
 LayerStatus = Literal["ready", "no-data"]
 LayerKind = Literal["raster", "vector", "geojson", "boundary"]
 PlaceLevel = Literal["national", "province", "district"]
@@ -50,6 +52,11 @@ class RampLegend(BaseModel):
     min: float
     max: float
     unit: str = ""
+    # For a ramp with a neutral middle colour: the value that colour stands for, zero for a balance.
+    mid: float | None = None
+    # What each end of the ramp means, when the numbers alone do not say.
+    min_label: str = ""
+    max_label: str = ""
 
 
 Legend = Annotated[ClassLegend | RampLegend, Field(discriminator="type")]
@@ -61,6 +68,7 @@ class Section(BaseModel):
     icon: str
     order: int
     status: SectionStatus
+    kind: SectionKind = "standard"
     summary: str = ""
     place_levels: list[PlaceLevel] = Field(min_length=1)
     years: YearRange | None = None

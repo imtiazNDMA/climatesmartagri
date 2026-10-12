@@ -54,3 +54,13 @@ describe('backend lost', () => {
     expect(store.getState().backendLost).toBe(false)
   })
 })
+
+describe('forecast loading', () => {
+  it('sets and clears', () => {
+    expect(store.getState().forecastLoading).toBe(false)
+    store.getState().setForecastLoading(true)
+    expect(store.getState().forecastLoading).toBe(true)
+    store.getState().setForecastLoading(false)
+    expect(store.getState().forecastLoading).toBe(false)
+  })
+})

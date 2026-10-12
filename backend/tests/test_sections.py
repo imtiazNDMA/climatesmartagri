@@ -55,7 +55,7 @@ def dirs(tmp_path):
     (data / "irrigation_practice.geojson").write_text(json.dumps({
         "type": "FeatureCollection",
         "features": [{"type": "Feature", "geometry": SQUARE, "properties": {
-            "id": "t-1", "name": "Lahore City", "practice": "Drip, SP", "label": "Recommended practice: Drip, Sprinkler",
+            "id": "t-punjab-lahore-city", "name": "Lahore City", "practice": "Drip, SP", "label": "Recommended practice: Drip, Sprinkler",
         }}],
     }), encoding="utf-8")
     (boundaries / "districts.geojson").write_text(json.dumps({
@@ -101,11 +101,8 @@ def test_emissions_figures_follow_the_year(providers):
         "Methane (CH4)": (75.84, "MtCO2e"),
         "Nitrous oxide (N2O)": (12.52, "MtCO2e"),
     }
-    assert "1995 is an interpolated estimate, not an official inventory value." in body["notes"]
-    assert any("NC3, UNFCCC, 2025" in note for note in body["notes"])
-    official = sections["emissions"](PK, 1994)
-    assert "1994 is an official inventory year." in official["notes"]
-
+    # The figures speak for themselves: nothing is written under them.
+    assert body["notes"] == []
 
 
 def test_year_outside_the_data_uses_the_latest(providers):
@@ -120,7 +117,7 @@ def test_year_outside_the_data_uses_the_latest(providers):
 def test_irrigation_with_a_missing_value_leaves_it_out(providers):
     sections, _ = providers
     figures = _figures(sections["irrigation"](ATTOCK, None))
-    assert figures["Land actually irrigated"] == (None, "ha")
+    assert figures["Land actually irrigated"] == (None, "million acres")
     assert "Share of equipped land irrigated" not in figures
 
 
@@ -139,16 +136,77 @@ def test_practice_layer_is_served_as_prepared(providers):
     assert collection["features"][0]["properties"]["practice"] == "Drip, SP"
 
 
+def test_practice_layer_gives_each_tehsil_a_table_of_its_practices(providers):
+    _, layers = providers
+    table = layers["irrigation-practice"]()["features"][0]["properties"]["table"]
+    assert table["title"] == "Recommended for Lahore City tehsil"
+    assert table["columns"] == ["Irrigation type", "Why it is needed and how it helps"]
+    # One row per recommended practice, in the order the recommendation lists them.
+    assert [row["name"] for row in table["rows"]] == ["Drip irrigation", "Sprinkler irrigation"]
+    assert [row["icon"] for row in table["rows"]] == ["drip", "sprinkler"]
+    # Each practice says what it is, then where it suits and how it helps.
+    for row in table["rows"]:
+        assert [point.get("label") for point in row["points"]] == [None, "Suits", "Helps by"]
+        assert all(point["text"].endswith(".") for point in row["points"])
+        assert [point.get("tone") for point in row["points"]] == [None, "condition", "benefit"]
+        # The highlights only cut the sentence up; put back together it reads the same, with no markers left.
+        for point in row["points"]:
+            assert "".join(part["text"] for part in point["parts"]) == point["text"]
+            assert not set("{}+~") & set(point["text"])
+
+
+def test_marked_words_become_highlights_in_their_tone():
+    from csa_portal.sections import _highlighted
+
+    assert _highlighted("It {+saves water+}, but {!costs more!} where {~water is scarce~}.") == {
+        "text": "It saves water, but costs more where water is scarce.",
+        "parts": [
+            {"text": "It "}, {"text": "saves water", "tone": "benefit"}, {"text": ", but "},
+            {"text": "costs more", "tone": "caution"}, {"text": " where "},
+            {"text": "water is scarce", "tone": "condition"}, {"text": "."},
+        ],
+    }
+    assert _highlighted("Nothing to pick out.") == {
+        "text": "Nothing to pick out.", "parts": [{"text": "Nothing to pick out."}],
+    }
+
+
+def test_every_practice_picks_out_a_few_words_and_no_more():
+    from csa_portal.sections import PRACTICE_GUIDE, _practice_row
+
+    for code in PRACTICE_GUIDE:
+        tones = [part["tone"] for point in _practice_row(code)["points"] for part in point["parts"] if "tone" in part]
+        assert 2 <= len(tones) <= 4, code
+        assert "condition" in tones and "benefit" in tones, code
+
+
+def test_a_tehsil_without_a_recommendation_gets_no_table():
+    from csa_portal.sections import _with_practice_tables
+
+    collection = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "geometry": None, "properties": {"id": "t-1", "name": "A", "practice": None}},
+        {"type": "Feature", "geometry": None, "properties": {"id": "t-2", "name": "B", "practice": "AWD, Other"}},
+    ]}
+    first, second = [f["properties"] for f in _with_practice_tables(collection)["features"]]
+    assert "table" not in first
+    # A code the guide does not know is left out rather than shown without an explanation.
+    assert [row["name"] for row in second["table"]["rows"]] == ["Alternate wetting and drying"]
+
+
 def test_district_layers_carry_a_value_and_a_label(providers):
     _, layers = providers
-    assert set(layers) == {"irrigation-practice", "equipped-area", "irrigated-share", "groundwater-share"}
+    assert set(layers) == {
+        "irrigation-practice", "equipped-area", "irrigated-share", "groundwater-share",
+        "surface-water-area", "groundwater-area", "irrigation-balance",
+    }
 
     def props(layer_id):
         return {f["properties"]["id"]: f["properties"] for f in layers[layer_id]()["features"]}
 
     equipped = props("equipped-area")
-    assert equipped["d-punjab-lahore"]["value"] == 1000
-    assert equipped["d-punjab-lahore"]["label"] == "Area equipped for irrigation: 1,000 ha"
+    # Areas are in million acres, like every other area in the portal.
+    assert equipped["d-punjab-lahore"]["value"] == 1000 * 2.47105 / 1_000_000
+    assert equipped["d-punjab-lahore"]["label"] == "Area equipped for irrigation: 0.0025 million acres"
     assert "value" not in equipped["d-sindh-ghost"]
     assert equipped["d-sindh-ghost"]["label"] == "Area equipped for irrigation: no figures reported"
 
@@ -161,18 +219,69 @@ def test_district_layers_carry_a_value_and_a_label(providers):
     assert groundwater["d-punjab-attock"]["value"] == 20.0
     assert len(layers["equipped-area"]()["features"]) == 3
 
+    surface, ground, balance = props("surface-water-area"), props("groundwater-area"), props("irrigation-balance")
+    assert surface["d-punjab-lahore"]["value"] == 600 * 2.47105 / 1_000_000
+    assert surface["d-punjab-lahore"]["label"] == "Surface water irrigation: 0.0015 million acres"
+    assert ground["d-punjab-lahore"]["value"] == 400 * 2.47105 / 1_000_000
+    assert ground["d-punjab-lahore"]["label"] == "Groundwater irrigation: 0.00099 million acres"
+    # The balance is surface water minus groundwater, and its label says which is ahead.
+    assert balance["d-punjab-lahore"]["value"] == 200 * 2.47105 / 1_000_000
+    assert balance["d-punjab-lahore"]["label"] == "Surface water irrigates 0.00049 million acres more than groundwater"
+    assert "value" not in balance["d-sindh-ghost"]
+
+
+def test_a_district_layer_marks_the_districts_furthest_each_way():
+    from csa_portal.sections import _district_layer
+
+    ids = "abcdefg"
+    values = dict(zip(ids, [-9, -4, -1, 0, 2, 5, 8]))
+    boundaries = {"features": [
+        {"geometry": None, "properties": {"id": i, "name": i.upper()}} for i in [*ids, "none"]
+    ]}
+    places = {i: {"v": v} for i, v in values.items()} | {"none": {"v": None}}
+    layer = _district_layer(boundaries, places, "Balance", lambda e: e["v"], "", extremes=2)
+    marks = {f["properties"]["id"]: f["properties"].get("extreme") for f in layer()["features"]}
+    assert marks == {"a": "low", "b": "low", "c": None, "d": None, "e": None, "f": "high", "g": "high", "none": None}
+    # Fewer districts on one side than asked for: only those are marked, never one from the other side.
+    lopsided = _district_layer(boundaries, places | {"a": {"v": 1}, "b": {"v": 3}, "c": {"v": 4}}, "B", lambda e: e["v"], "", extremes=2)
+    assert [f["properties"]["id"] for f in lopsided()["features"] if f["properties"].get("extreme") == "low"] == []
+    # Other layers mark nothing.
+    plain = _district_layer(boundaries, places, "Balance", lambda e: e["v"], "")
+    assert not any("extreme" in f["properties"] for f in plain()["features"])
+
+
+def test_the_balance_label_names_the_larger_source():
+    from csa_portal.sections import _water_balance_label
+
+    assert _water_balance_label(-0.4958) == "Groundwater irrigates 0.5 million acres more than surface water"
+    assert _water_balance_label(1.663) == "Surface water irrigates 1.66 million acres more than groundwater"
+    # Less than half a hectare apart counts as equal.
+    assert _water_balance_label(0.0000002) == "Surface water and groundwater irrigate the same area"
+
+
+def test_amounts_keep_at_most_two_decimals_or_their_first_two_digits():
+    from csa_portal.sections import _amount
+
+    assert _amount(1.663) == "1.66"
+    assert _amount(1234.5) == "1,234.5"
+    assert _amount(80.0) == "80"
+    assert _amount(0.34) == "0.34"
+    assert _amount(0.0478) == "0.048"
+    assert _amount(0.00123) == "0.0012"
+    assert _amount(0) == "0"
+
 
 def _charts(body):
     return {c["id"]: c for c in body["charts"]}
 
 
-def test_every_chart_has_a_plain_headline_and_a_how_to_read_line(providers):
+def test_every_chart_has_a_plain_headline_and_no_line_of_explanation(providers):
     sections, _ = providers
     for section_id, place in [("emissions", PK), ("water-balance", PK), ("food-security", PK), ("irrigation", LAHORE)]:
         for chart in sections[section_id](place, None)["charts"]:
             assert chart["title"].strip() and not chart["title"].endswith("."), chart["id"]
             assert len(chart["title"]) <= 110, chart["id"]
-            assert chart["subtitle"].strip().endswith("."), chart["id"]
+            assert "subtitle" not in chart, chart["id"]
             for series in chart["series"]:
                 assert len(series["values"]) == len(chart["categories"]), chart["id"]
 
@@ -222,38 +331,48 @@ def test_water_story(providers):
     assert figures["Water to spare at 70% efficiency"] == (42.6, "")
 
     charts = _charts(body)
-    assert list(charts) == ["water-need-vs-supply", "water-balance-year", "water-balance"]
-    need = charts["water-need-vs-supply"]
-    assert need["title"] == "At 35% efficiency, crops need more water than is available in every year to 2027"
-    assert [(s["name"], s.get("emphasis")) for s in need["series"]] == [
-        ("Water available", "strong"),
-        ("Needed at 35% efficiency", None),
-        ("Needed at 50% efficiency", None),
-        ("Needed at 70% efficiency", None),
+    assert list(charts) == ["water-buffer", "water-breakeven", "water-pressure"]
+    buffer = charts["water-buffer"]
+    assert (buffer["kind"], buffer["time"], buffer["categories"]) == ("balance", True, [2026, 2027])
+    assert buffer["title"] == "Higher efficiency protects the water buffer"
+    # A balance for each efficiency level in every year: below zero is a deficit, above it a buffer.
+    assert [(s["name"], s["values"]) for s in buffer["series"]] == [
+        ("35% efficiency", [-23.0, -23.9]), ("50% efficiency", [16.6, 16.0]), ("70% efficiency", [43.0, 42.6]),
     ]
-    year = charts["water-balance-year"]
-    assert year["title"] == "In 2027: short by 23.9 at 35% efficiency, 16 to spare at 50%"
-    assert year["categories"] == ["35% efficiency", "50% efficiency", "70% efficiency"]
-    assert year["series"][0]["values"] == [-23.9, 16.0, 42.6]
-    assert year["colour_by_sign"] is True
-    balance = charts["water-balance"]
-    assert balance["zero_line"] is True
-    assert balance["series"][0]["values"] == [-23.0, -23.9]
-    # An efficiency level keeps its colour across the charts.
-    slots = {s["name"][-14:]: s["slot"] for s in need["series"][1:]}
-    assert {s["name"][-14:]: s["slot"] for s in balance["series"]} == slots
+    # The two amounts behind each balance are there for the reader who points at a bar.
+    assert buffer["balance"]["available"] == [109.0, 109.1]
+    assert buffer["balance"]["needed"] == [[132.0, 133.0], [92.4, 93.1], [66.0, 66.5]]
+    assert (buffer["balance"]["negative"], buffer["balance"]["positive"]) == ("Water deficit", "Water buffer")
+    # The efficiency at which need would equal supply: 132 x 35% / 109, then 133 x 35% / 109.1.
+    breakeven = charts["water-breakeven"]
+    assert breakeven["title"] == "Breaking even takes 43% irrigation efficiency by 2027, up from 42% in 2026"
+    assert [(s["name"], s["values"]) for s in breakeven["series"]] == [
+        ("Needed to break even", [42.4, 42.7]),
+        ("35% efficiency", [35, 35]), ("50% efficiency", [50, 50]), ("70% efficiency", [70, 70]),
+    ]
+    assert breakeven["series"][0]["emphasis"] == "strong"
+    assert (breakeven["unit"], breakeven["axis_min"], breakeven["axis_max"]) == ("%", 30, 75)
+
+    # How far need and supply have each moved since the first year, in percent.
+    pressure = charts["water-pressure"]
+    assert pressure["title"] == "Crops will need 0.8% more water by 2027, while supply rises 0.1%"
+    assert [(s["name"], s["values"]) for s in pressure["series"]] == [
+        ("Water crops need", [0.0, 0.8]), ("Water available", [0.0, 0.1]),
+    ]
+    assert pressure["zero_line"] is True
 
 
-def test_water_headline_when_the_shortfall_is_not_every_year(dirs):
+def test_the_water_headline_falls_back_when_more_efficiency_does_not_always_leave_more(dirs):
     import json as _json
 
     data, boundaries = dirs
     (data / "water_balance.json").write_text(_json.dumps({
         "years": [2026, 2027], "availability": [140.0, 109.1],
-        "requirement": {"35": [132.0, 133.0], "50": [92.4, 93.1], "70": [66.0, 66.5]},
+        # In 2027 the 50% level needs more than the 35% level: the plain finding does not hold.
+        "requirement": {"35": [132.0, 133.0], "50": [92.4, 140.0], "70": [66.0, 66.5]},
     }), encoding="utf-8")
     sections, _ = build_providers(data, boundaries)
-    title = _charts(sections["water-balance"](PK, 2027))["water-need-vs-supply"]["title"]
+    title = _charts(sections["water-balance"](PK, 2027))["water-buffer"]["title"]
     assert title == "At 35% efficiency, crops need more water than is available in 1 of 2 years"
 
 
@@ -285,54 +404,99 @@ def test_irrigation_story_for_a_district(providers):
     sections, _ = providers
     body = sections["irrigation"](LAHORE, None)
     figures = _figures(body)
-    assert figures["Land equipped for irrigation"] == (1000, "ha")
-    assert figures["Served by groundwater"] == (400, "ha")
-    assert figures["Served by surface water"] == (600, "ha")
-    assert figures["Land actually irrigated"] == (800, "ha")
+    assert figures["Land equipped for irrigation"] == (1000 * 2.47105 / 1_000_000, "million acres")
+    assert figures["Served by groundwater"] == (400 * 2.47105 / 1_000_000, "million acres")
+    assert figures["Served by surface water"] == (600 * 2.47105 / 1_000_000, "million acres")
+    assert figures["Land actually irrigated"] == (800 * 2.47105 / 1_000_000, "million acres")
     assert figures["Share of equipped land irrigated"] == (80.0, "%")
 
     charts = _charts(body)
-    assert list(charts) == ["irrigation-use", "irrigation-source", "irrigation-ranking"]
-    use = charts["irrigation-use"]
-    assert use["title"] == "80% of Lahore's irrigation-ready land is actually irrigated"
-    assert use["categories"] == ["Equipped for irrigation", "Actually irrigated"]
-    assert use["series"][0]["values"] == [1000, 800]
-    source = charts["irrigation-source"]
-    assert source["title"] == "Surface water serves 60% of the irrigation-ready land in Lahore"
-    assert source["categories"] == ["Groundwater", "Surface water"]
-    assert source["series"][0]["values"] == [40.0, 60.0]
-    assert source["unit"] == "%"
-    ranking = charts["irrigation-ranking"]
-    assert ranking["title"] == "Lahore ranks 1st of 2 districts in Punjab for irrigation-ready land"
-    assert ranking["categories"] == ["Lahore", "Attock"]
-    assert ranking["highlight"] == 0
+    assert list(charts) == ["irrigation-source", "irrigation-practices"]
+    assert [charts[c]["kind"] for c in charts] == ["diverging", "counts"]
+
+
+def _acres(hectares):
+    return hectares * 2.47105 / 1_000_000
+
+
+def test_water_sources_run_either_side_of_a_centre_line(providers):
+    sections, _ = providers
+    country = _charts(sections["irrigation"](PK, None))["irrigation-source"]
+    assert [side["label"] for side in country["sides"]] == ["Groundwater", "Surface water"]
+    # The sides wear the colours of the two ends of the irrigation balance map.
+    assert [side["colour"] for side in country["sides"]] == ["#3b4cc0", "#b40426"]
+    sindh, punjab = country["splits"]
+    assert (sindh["name"], sindh["left"], sindh["right"]) == ("Sindh", 0.5, 99.5)
+    assert (punjab["name"], punjab["left"], punjab["right"]) == ("Punjab", 33.3, 66.7)
+    # Rows are weighted by how much land each has equipped.
+    assert (sindh["weight"], punjab["weight"]) == (_acres(2050), _acres(1500))
+    assert country["title"] == (
+        "Punjab draws 33% of its irrigation from groundwater; Sindh takes 100% from surface water"
+    )
+    assert [split["highlight"] for split in country["splits"]] == [True, True]
+
+    lahore = _charts(sections["irrigation"](LAHORE, None))["irrigation-source"]
+    assert [split["name"] for split in lahore["splits"]] == ["Lahore", "Attock"]
+    assert lahore["title"] == "Lahore takes 60% of its irrigation water from surface water"
+    assert [split["highlight"] for split in lahore["splits"]] == [True, False]
+
+
+def test_practices_are_counted_by_the_tehsils_they_are_recommended_in(dirs):
+    data, boundaries = dirs
+
+    def tehsil(tehsil_id, practice):
+        return {"type": "Feature", "geometry": SQUARE, "properties": {"id": tehsil_id, "name": tehsil_id, "practice": practice}}
+
+    (data / "irrigation_practice.geojson").write_text(json.dumps({"type": "FeatureCollection", "features": [
+        tehsil("t-punjab-lahore-city", "Drip, SP"), tehsil("t-punjab-lahore-cantt", "SP"),
+        tehsil("t-punjab-kasur-kasur", "AWD, SP"), tehsil("t-sindh-thatta-thatta", "FI"),
+        # No recommendation: not counted at all.
+        tehsil("t-sindh-thatta-sujawal", None),
+    ]}), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    country = _charts(sections["irrigation"](PK, None))["irrigation-practices"]
+    assert (country["kind"], country["total"], country["unit"]) == ("counts", 4, "tehsils")
+    # A tehsil recommended two practices counts towards both; the most recommended comes first.
+    assert [(item["icon"], item["name"], item["value"]) for item in country["items"]] == [
+        ("sprinkler", "Sprinkler irrigation", 3), ("drip", "Drip irrigation", 1),
+        ("paddy", "Alternate wetting and drying", 1), ("flood", "Flood irrigation", 1),
+    ]
+    assert [item["highlight"] for item in country["items"]] == [True, False, False, False]
+    assert country["title"] == "Sprinkler irrigation is recommended in 3 of 4 tehsils; flood irrigation in only 1"
+
+    # A province or district counts its own tehsils.
+    punjab = _charts(sections["irrigation"](PUNJAB, None))["irrigation-practices"]
+    assert (punjab["total"], punjab["title"]) == (3, "Sprinkler irrigation is recommended in 3 of 3 tehsils in Punjab")
+    lahore = _charts(sections["irrigation"](LAHORE, None))["irrigation-practices"]
+    assert (lahore["total"], lahore["title"]) == (2, "Sprinkler irrigation is recommended in 2 of 2 tehsils in Lahore")
+    # A district the tehsil map does not know by that name shows its province's count instead.
+    attock = _charts(sections["irrigation"](ATTOCK, None))["irrigation-practices"]
+    assert attock["title"] == "Sprinkler irrigation is recommended in 3 of 3 tehsils in Punjab"
+    sindh = _charts(sections["irrigation"](Place("p-sindh", "Sindh", "province", "PK", (0, 0, 1, 1)), None))
+    assert sindh["irrigation-practices"]["title"] == "Flood irrigation is recommended in 1 of 1 tehsil in Sindh"
 
 
 def test_irrigation_story_without_an_irrigated_figure(providers):
     sections, _ = providers
     charts = _charts(sections["irrigation"](ATTOCK, None))
-    assert "irrigation-use" not in charts
-    assert charts["irrigation-source"]["title"] == "Surface water serves 80% of the irrigation-ready land in Attock"
-    assert charts["irrigation-ranking"]["title"] == "Attock ranks 2nd of 2 districts in Punjab for irrigation-ready land"
+    assert charts["irrigation-source"]["title"] == "Attock takes 80% of its irrigation water from surface water"
 
 
 def test_irrigation_story_for_a_province_and_the_country(providers):
     sections, _ = providers
     province = sections["irrigation"](PUNJAB, None)
-    assert _figures(province)["Land equipped for irrigation"] == (1500, "ha")
-    assert "Totals from 2 districts reported in the spreadsheet." in province["notes"]
-    ranking = _charts(province)["irrigation-ranking"]
-    assert ranking["title"] == "Lahore has the most irrigation-ready land in Punjab"
-    assert ranking["highlight"] is None
+    assert _figures(province)["Land equipped for irrigation"] == (1500 * 2.47105 / 1_000_000, "million acres")
+    # The figures speak for themselves: nothing is written under them.
+    assert province["notes"] == []
 
     country = sections["irrigation"](PK, None)
-    ranking = _charts(country)["irrigation-ranking"]
-    assert ranking["title"] == "Sindh has the most irrigation-ready land of any province"
-    assert ranking["categories"] == ["Sindh", "Punjab"]
-    assert any("Nowhere (Sindh)" in note for note in country["notes"])
-    assert _charts(country)["irrigation-source"]["title"] == (
-        "Surface water serves 79% of the irrigation-ready land in Pakistan"
-    )
+    country_figures = _figures(country)
+    assert country_figures["Land equipped for irrigation"] == (3850 * 2.47105 / 1_000_000, "million acres")
+    assert country_figures["Served by groundwater"] == (810 * 2.47105 / 1_000_000, "million acres")
+    assert country_figures["Served by surface water"] == (3040 * 2.47105 / 1_000_000, "million acres")
+    assert country_figures["Land actually irrigated"] == (1975 * 2.47105 / 1_000_000, "million acres")
+    assert country["notes"] == []
+    assert "irrigation-use" not in _charts(country)
 
 
 def _cover(name, level, parent, area, forest, irrigated, rainfed):
@@ -362,10 +526,10 @@ def land_cover(dirs):
 def test_land_cover_figures_give_area_and_each_measured_class(land_cover):
     body = land_cover(LAHORE, None)
     assert _figures(body) == {
-        "Land area": (1000, "ha"),
-        "Forest": (50, "ha"),
-        "Irrigated cropland": (800, "ha"),
-        "Rainfed cropland": (200, "ha"),
+        "Land area": (1000 * 2.47105 / 1_000_000, "million acres"),
+        "Forest": (50 * 2.47105 / 1_000_000, "million acres"),
+        "Irrigated cropland": (800 * 2.47105 / 1_000_000, "million acres"),
+        "Rainfed cropland": (200 * 2.47105 / 1_000_000, "million acres"),
     }
     # How the areas were measured is documentation, not something to repeat under every set of figures.
     assert "Measured from the rasters." not in body["notes"]
@@ -373,44 +537,145 @@ def test_land_cover_figures_give_area_and_each_measured_class(land_cover):
     assert body["notes"] == ["Not measured yet: Shrub land, Bare land."]
 
 
-def test_land_cover_share_chart_states_the_largest_cover(land_cover):
+def test_land_cover_is_drawn_as_a_hundred_squares_in_the_map_colours(land_cover):
     shares = _charts(land_cover(LAHORE, None))["land-cover-shares"]
+    assert shares["kind"] == "shares"
     assert shares["title"] == "Irrigated cropland covers 80% of Lahore"
-    assert shares["categories"] == ["Forest", "Irrigated cropland", "Rainfed cropland"]
-    assert shares["series"][0]["values"] == [5.0, 80.0, 20.0]
-    assert shares["unit"] == "%"
-    # Bars wear the same colours as the map layers.
-    assert shares["bar_colours"] == ["#2e7d32", "#2a78d6", "#eda100"]
-    assert shares["subtitle"].endswith(".")
+    cells = shares["cells"]
+    # Largest first, each in the colour its layer has on the map, with its true percentage.
+    assert [(c["label"], c["colour"], c["share"]) for c in cells] == [
+        ("Irrigated cropland", "#2a78d6", 80.0), ("Rainfed cropland", "#eda100", 20.0), ("Forest", "#2e7d32", 5.0),
+    ]
+    # Lahore's classes overlap and add up to 105%, so they are scaled back to fill exactly a hundred squares.
+    assert sum(c["squares"] for c in cells) == 100
+    assert [c["squares"] for c in cells] == [76, 19, 5]
 
 
-def test_land_cover_cropland_chart_splits_irrigated_from_rainfed(land_cover):
-    cropland = _charts(land_cover(LAHORE, None))["land-cover-cropland"]
-    assert cropland["title"] == "80% of the cropland in Lahore is irrigated"
-    assert cropland["categories"] == ["Irrigated", "Rainfed"]
-    assert cropland["series"][0]["values"] == [80.0, 20.0]
-    assert cropland["bar_colours"] == ["#2a78d6", "#eda100"]
-    mostly_rainfed = _charts(land_cover(Place("p-sindh", "Sindh", "province", "PK", (0, 0, 1, 1)), None))
-    assert mostly_rainfed["land-cover-cropland"]["title"] == "50% of the cropland in Sindh is irrigated"
+def test_squares_show_what_is_not_mapped_and_always_number_a_hundred():
+    from csa_portal.sections import _squares
+
+    cells = _squares([("Forest", "#1", 6.3), ("Bare", "#2", 51.0), ("Crop", "#3", 27.6), ("Shrub", "#4", 6.6)])
+    assert [c["label"] for c in cells] == ["Bare", "Crop", "Shrub", "Forest", "Not mapped"]
+    assert cells[-1]["share"] == 8.5
+    assert sum(c["squares"] for c in cells) == 100
+    assert [c["squares"] for c in cells] == [51, 28, 7, 6, 8]
+    # Parts that fill the whole leave no "Not mapped".
+    assert [c["label"] for c in _squares([("A", "#1", 60.0), ("B", "#2", 40.0)])] == ["A", "B"]
 
 
-def test_land_cover_ranks_forest_share_within_the_province_or_across_provinces(land_cover):
-    district = _charts(land_cover(LAHORE, None))["land-cover-forest-ranking"]
-    assert district["title"] == "Lahore ranks 2nd of 2 districts in Punjab for forest cover"
+def test_the_land_cover_headline_adds_cropland_when_something_else_is_larger(dirs):
+    data, boundaries = dirs
+    (data / "land_cover.json").write_text(json.dumps({
+        "classes": ["forest", "irrigated", "rainfed"],
+        "places": {"PK": _cover("Pakistan", "national", None, 1000, 510, 199, 77)},
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    shares = _charts(sections["land-cover"](PK, None))["land-cover-shares"]
+    assert shares["title"] == "Forest covers 51% of Pakistan; cropland covers 28%"
+
+
+def test_land_cover_charts_carry_a_headline_and_no_line_of_explanation(land_cover):
+    for chart in land_cover(LAHORE, None)["charts"]:
+        assert chart["title"].strip(), chart["id"]
+        assert "subtitle" not in chart, chart["id"]
+
+
+def test_land_cover_areas_are_given_in_million_acres_whatever_their_size(dirs):
+    data, boundaries = dirs
+    (data / "land_cover.json").write_text(json.dumps({
+        "classes": ["forest", "irrigated", "rainfed"],
+        "places": {"PK": _cover("Pakistan", "national", None, 100_000_000, 6_000_000, 20_000_000, 1000)},
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    assert _figures(sections["land-cover"](PK, None)) == {
+        "Land area": (100_000_000 * 2.47105 / 1_000_000, "million acres"),
+        "Forest": (6_000_000 * 2.47105 / 1_000_000, "million acres"),
+        "Irrigated cropland": (20_000_000 * 2.47105 / 1_000_000, "million acres"),
+        "Rainfed cropland": (1000 * 2.47105 / 1_000_000, "million acres"),
+    }
+
+
+def test_cropland_is_compared_across_the_group_and_split_by_where_its_water_comes_from(land_cover):
+    country = _charts(land_cover(PK, None))["land-cover-cropland"]
+    # Provinces, the one with the most cropland first, each bar split into irrigated and rainfed acres.
+    assert country["categories"] == ["Punjab", "Sindh"]
+    assert (country["stacked"], country["horizontal"], country["unit"]) == (True, True, "million acres")
+    irrigated, rainfed = country["series"]
+    assert (irrigated["name"], irrigated["colour"]) == ("Irrigated cropland", "#2a78d6")
+    assert (rainfed["name"], rainfed["colour"]) == ("Rainfed cropland", "#eda100")
+    assert irrigated["values"] == [2500 * 2.47105 / 1_000_000, 500 * 2.47105 / 1_000_000]
+    assert rainfed["values"] == [500 * 2.47105 / 1_000_000, 500 * 2.47105 / 1_000_000]
+    assert country["bar_notes"] == ["17% rainfed", "50% rainfed"]
+    # No province is mostly rainfed here, so the headline names the one that leans on rain the most.
+    assert country["title"] == "Sindh depends most on rain: 50% of its cropland is rainfed"
+    assert country["highlights"] == [1]
+    # These bars are for comparing lengths, so they hold still and need no axis beside their labels.
+    assert country["still"] is True and country["hide_axis"] is True
+
+    district = _charts(land_cover(LAHORE, None))["land-cover-cropland"]
     assert district["categories"] == ["Attock", "Lahore"]
-    assert district["series"][0]["values"] == [8.3, 5.0]
-    assert district["highlight"] == 1
-    province = _charts(land_cover(PUNJAB, None))["land-cover-forest-ranking"]
-    assert province["title"] == "Attock has the largest share of forest in Punjab"
-    assert province["highlight"] is None
+    assert district["title"] == "20% of Lahore's cropland depends on rain"
+    assert district["highlights"] == [1]
+
+
+def test_the_rain_headline_names_places_that_farm_mostly_on_rain_and_ignores_tiny_ones(dirs):
+    data, boundaries = dirs
+    (data / "land_cover.json").write_text(json.dumps({
+        "classes": ["forest", "irrigated", "rainfed"],
+        "places": {
+            "PK": _cover("Pakistan", "national", None, 100000, 100, 50000, 20000),
+            "p-a": _cover("Alpha", "province", "PK", 40000, 10, 30000, 4000),
+            "p-b": _cover("Beta", "province", "PK", 30000, 10, 2000, 3000),
+            "p-c": _cover("Gamma", "province", "PK", 20000, 10, 3000, 7000),
+            # All rainfed, but far too little cropland to be the story.
+            "p-d": _cover("Delta", "province", "PK", 10000, 10, 0, 10),
+        },
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    chart = _charts(sections["land-cover"](PK, None))["land-cover-cropland"]
+    assert chart["categories"] == ["Alpha", "Gamma", "Beta", "Delta"]
+    assert chart["title"] == "Gamma and Beta farm mostly on rain"
+    assert chart["highlights"] == [1, 2]
+
+
+def test_forest_is_shown_where_it_is_with_how_forested_each_place_is(land_cover):
     country = _charts(land_cover(PK, None))["land-cover-forest-ranking"]
-    assert country["title"] == "Sindh has the largest share of forest of any province"
+    # By forest area, largest first: Sindh has 600 of the 900 hectares.
     assert country["categories"] == ["Sindh", "Punjab"]
+    assert country["series"][0]["values"] == [600 * 2.47105 / 1_000_000, 300 * 2.47105 / 1_000_000]
+    assert country["unit"] == "million acres"
+    assert country["bar_notes"] == ["10% of its land", "8% of its land"]
+    assert country["title"] == "Sindh holds 67% of Pakistan's forest"
+    assert country["highlights"] == [0]
+
+    district = _charts(land_cover(LAHORE, None))["land-cover-forest-ranking"]
+    assert district["categories"] == ["Attock", "Lahore"]
+    assert district["title"] == "Lahore holds 17% of Punjab's forest, 2nd of 2 districts"
+    assert district["highlights"] == [1]
+    assert _charts(land_cover(PUNJAB, None))["land-cover-forest-ranking"]["title"] == "Attock holds 83% of Punjab's forest"
+
+
+def test_the_forest_chart_points_out_a_large_place_with_almost_no_forest(dirs):
+    data, boundaries = dirs
+    (data / "land_cover.json").write_text(json.dumps({
+        "classes": ["forest", "irrigated", "rainfed"],
+        "places": {
+            "PK": _cover("Pakistan", "national", None, 100000, 1000, 100, 100),
+            "p-a": _cover("Alpha", "province", "PK", 30000, 500, 10, 10),
+            "p-b": _cover("Beta", "province", "PK", 20000, 490, 10, 10),
+            "p-c": _cover("Gamma", "province", "PK", 50000, 10, 10, 10),
+        },
+    }), encoding="utf-8")
+    sections, _ = build_providers(data, boundaries)
+    chart = _charts(sections["land-cover"](PK, None))["land-cover-forest-ranking"]
+    assert chart["title"] == "Alpha and Beta hold 99% of Pakistan's forest"
+    assert chart["highlights"] == [0, 1]
+    assert chart["note"] == "Gamma is 50% of Pakistan's land and holds 1% of its forest."
 
 
 def test_land_cover_for_a_place_the_maps_do_not_reach(land_cover):
     body = land_cover(GHOST, None)
-    assert _figures(body) == {"Land area": (500, "ha")}
+    assert _figures(body) == {"Land area": (500 * 2.47105 / 1_000_000, "million acres")}
     assert "The land-cover maps do not reach Ghost." in body["notes"]
     assert body["charts"] == []
 
@@ -469,7 +734,7 @@ def test_calendar_for_a_province_is_one_chart_of_its_crops(calendar):
     assert chart["id"] == "calendar-punjab"
     assert chart["kind"] == "calendar"
     assert chart["title"] == "In Punjab, 2 of 3 crops should be sown earlier than before"
-    assert chart["subtitle"].endswith(".")
+    assert "subtitle" not in chart
     assert [row["crop"] for row in chart["rows"]] == ["Wheat", "Rice", "Sugarcane"]
     wheat = chart["rows"][0]
     assert wheat["traditional"] == {"text": "old", "sowing": [[9.0, 12.0]], "harvest": [[2.0, 4.0]]}

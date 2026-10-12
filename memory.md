@@ -1,0 +1,116 @@
+# CSA Portal — session memory
+
+Written 2026-10-05. A record of what was built in this session, the decisions behind it, and what is still open, so the next session can pick up without re-deriving it.
+
+## What this is
+
+A map-first Climate Smart Agriculture portal for Pakistan, for disaster management stakeholders. One large map, an icon rail of sections, a sliding panel with layers, figures and charts, and a full view where charts replace the map. Runs on localhost: FastAPI backend, React frontend.
+
+## Running it
+
+- **Start:** double-click `start-portal.cmd`, or `npm run dev` from the repo root.
+- **Addresses:** frontend `http://127.0.0.1:9080`, backend on port 9988. The user chose these ports.
+- **Tests:** `npm test` (pytest, Vitest, Playwright). Browser tests use their own ports (8010 and 5183) and a fixture catalogue, so they can run while the portal is open.
+- **At the end of the session:** 159 backend, 124 frontend logic and 58 browser tests passing.
+
+## State of the code
+
+- **Branch:** `feat/portal-data`, on top of `feat/portal-shell`, on top of `docs/csa-portal-shell-spec`, on top of `main`. Nothing is pushed or merged. Last commit `5de1d5f`.
+- **Uncommitted and not mine to touch:** `CLAUDE.md`, `docs/agents/`, the deleted `crop_water_balance_trend.png`, `.vscode/`, and the untracked `data/geospatial/vectors/sajid(2oct)/` folder (about 700 MB).
+- **Design documents:** spec and plan for the shell only, under `docs/superpowers/`. Everything after the shell was built from short designs agreed in chat.
+
+## Sections
+
+| Section | State | Source |
+| --- | --- | --- |
+| Land cover | Live: 4 raster layers, figures and charts per district | `data/geospatial/rasters/*.tif` |
+| Irrigation practices | Live: 4 map layers, figures and charts per district | `Irr_Prac.shp`, irrigation sheet |
+| Greenhouse-gas emissions | Live: charts, 1994–2021, national | `Pakistan_GHG_1994_2021_Excel_Data.xlsx` |
+| Crop water balance | Live: charts, 2026–2047, national | `CRW(efficiency) 25sep.xlsx` |
+| Food security projections | Live: charts, 2026–2047, national | `food security projection CSA 17 sep.xlsx` |
+| Climate-smart crop calendar | Live: calendar chart per province | `apps/climate calender 28 sep 2026/script.js` |
+| Weather forecast | Live since 2026-10-12: 47 layers from 8 models, fetched from PMD on demand | PMD early warning platform, `backend/forecast_layers.json` |
+| Hazards | Coming soon | No data yet |
+| Exposure and vulnerability | Coming soon | No data yet |
+
+## How data gets in
+
+Three scripts turn source files into what the backend serves. Source files are never changed. Restart the portal after running any of them.
+
+1. `uv run python backend/scripts/prepare_data.py` — boundaries, irrigation, emissions, water, food, crop calendar. Writes `backend/boundaries/` and `backend/data/`. About a minute.
+2. `uv run python backend/scripts/prepare_rasters.py` — converts the four rasters to Cloud-Optimized GeoTIFFs in `backend/rasters/` (not in git, about 1.1 GB). The 10 m files take 27 to 29 minutes each.
+3. `uv run python backend/scripts/prepare_land_cover.py` — measures each land-cover class per district from the converted rasters. Under a minute. Run after step 2.
+
+## Architecture in one page
+
+- **Layer catalogue** (`backend/catalogue.json`): every section and layer. The frontend builds the rail, panels, legends and time slider from it. Adding a layer is a catalogue entry plus data.
+- **Layer kinds:** `geojson` (shapes coloured from the legend by a feature property), `raster` with a `source` file (served by TiTiler), `boundary`.
+- **TiTiler** is mounted inside the backend at `/api/cog`. It only opens catalogue layers, never an arbitrary path, and colours tiles from the layer's legend.
+- **Section data** (`backend/csa_portal/sections.py`): one provider per section returns figures, notes and chart specs. Charts are described by the backend and drawn generically by the frontend.
+- **Chart kinds:** `line`, `stacked-area`, `bar` (ECharts, SVG renderer) and `calendar` (custom component).
+- **View state:** one Zustand store (open section, full view, active layers, place, year), mirrored to the URL: `section`, `view=charts`, `layers`, `hidden`, `place`, `year`.
+- **Place fallback:** a section without figures at the selected level uses the nearest level above that has them (district → province → country).
+
+## Weather forecast (added 2026-10-12)
+
+- **Source:** PMD's "Cloud-based Early Warning Supporting System" at `https://115.186.56.181:12304`, Forecasting tab. The account is in `.env` at the repo root (git-ignored), read by `settings.py`. The user's original credentials file is still in the repo root and is git-ignored too.
+- **How it works:** `backend/csa_portal/pmd.py` signs in and lists runs and files. `backend/csa_portal/forecast.py` picks, for each forecast time, the newest run that has a file, downloads that file on first request, cuts it to 55-85E, 18-42N and stores it under `backend/forecast/` (not in git) as an 8-bit file of colour positions. TiTiler serves it at `/api/forecast/cog`. Files older than 10 days are deleted.
+- **Layer list:** `backend/forecast_layers.json`: each layer's PMD code, unit, colours, value range (per pressure level where needed) and which models and levels offer it. Changing a value range re-fetches, because the range is part of the stored file's name.
+- **Frontend:** the section has `kind: "forecast"` in the catalogue. One forecast is on the map at a time, held in the view store as `forecast` and in the URL as `forecast=layer~model~level~time`. `ForecastPanel`, `ForecastSlider`, `useForecastTimes`, `forecast/choice.ts`.
+- **PMD's certificate is self-signed.** The client does not switch verification off; it accepts only the certificate whose SHA-256 is in `CSA_PMD_CERT_SHA256`. If PMD renews its certificate the forecast stops with a certificate error until that value is updated.
+- **PMD's server is slow and drops connections.** It reset partial-read requests, timed out a login when three browser sessions ran at once, and took over a minute to list times at its worst. Do not run several scripts against it at once.
+- **PMD failures answer 424, not 502-504:** the frontend reads 502-504 as the portal's own backend being down.
+- **What PMD had on 2026-10-12:** newest runs were 9 October, three days old; runs are often missing forecast hours. FENGWU had no data. PMD-ICON surface temperature files were a single row of cells (broken at the source). CIN, theta-se and integrated vapour transport exist only as August 2025 archive, so they are listed as having no current data.
+- **Colour scales were tuned on 2026-10-12 against one real file for each of the 203 model-and-level choices.** A layer can have `stops` (a value per colour, for skewed quantities: all precipitation, CAPE, visibility, precipitation anomaly percent), `ranges` per pressure level, `model_ranges` and `model_factors` per model, and `ignore_above`. The tuning files were from a dry October week, so ranges were kept wide enough for other seasons rather than fitted to that week.
+- **Models disagree on units for the same layer.** ECMWF specific humidity is kg/kg where the others are g/kg (factor 1000). PMD-WRF low cloud is a fraction where the others are percent (factor 100). ECMWF thickness is 316-490 where FENGQING and PANGU give 553-585 (own range; what ECMWF's figure measures is unknown). PMD-WRF wind files mark missing cells with 9999 in each component (`ignore_above`).
+- **Choices left out because PMD had no usable file:** PMD-ICON wind, temperature, max and min temperature, dew point, relative humidity and max 10 m wind (single-row files), PMD-ICON geopotential height and PMD-WRF total cloud (runs listed, no files), FENGQING and PANGU specific humidity at 200 hPa (all zeros at the stored precision). Put them back in `forecast_layers.json` if PMD fixes them.
+- **Playback blends one time into the next** (`frontend/src/map/forecastFrames.ts`): each time is its own raster layer, added invisibly, shown only once its tiles have loaded, cross-faded over 450 ms with the one before. The time after the one on screen is loaded out of sight in advance, and playing waits for a time still loading. Removing the layer and adding a new one per time is what made it jerk.
+- **Caching, by layer:** forecast tile addresses name the model run, so they never change and are sent `immutable` for a week; the browser replays an animation without asking the server. A list of times is used for 10 minutes, then still handed out at once while a fresh one is fetched behind it, and is saved under `backend/forecast/_listings/` so a restart or a PMD outage does not lose it. A file already on disk is served by its run without asking PMD anything. A failed fetch is remembered for a minute (ten for an unusable file) so the tiles of one view do not each retry it. Land-cover tiles are kept by the browser for an hour. Failures are always `no-store`.
+- **Not built:** wind arrows, geopotential contour lines, the City/Position text bulletins, a click-for-value popup on forecast layers.
+
+## Decisions the user made
+
+- Audience is general disaster management stakeholders; everything must be interactive.
+- Localhost, FastAPI and React. Ports 9988 and 9080.
+- Layout: fixed icon rail, sliding panel, bottom time slider. Layers persist across sections.
+- `Join_Irrigated_Full.shp` is the main district map, including the Kashmir region: 167 districts in 8 provinces and territories.
+- The Kashmir region displays as "Jammu and Kashmir". That name came from edits made in the repo outside this session, and was kept.
+- Charts open in a full view that replaces the map.
+- Charts are written for storytelling in plain language: a headline that states the finding, labels on the lines. The line of explanation under each headline was removed at the user's request on 2026-10-07, in every section.
+- Rasters are served with TiTiler.
+- Notes under the land cover figures were removed at the user's request, both of them.
+- For builds after the shell: a short design in chat, then build. No separate spec and plan documents.
+
+## Decisions I made that the user has not confirmed
+
+- **Irrigation practice codes:** SP = sprinkler, AWD = alternate wetting and drying, FI = flood irrigation.
+- **District name matching:** 20 spreadsheet names mapped to map names by spelling or former name (`DISTRICT_SPELLINGS` in `prepare_data.py`), for example Attok → Attock, Nawabshah → Shaheed Benazir Abad, Bolan → Kachhi.
+- **Seven spreadsheet rows are not placed on the map** and count in totals only: Karachi, Dir, Chitral, Kohistan, Gahkuch, "Sheikhupura (Nankana)", "Mirpurkhas and Umerkot".
+- **Population is labelled "million".** Water and food amounts show no unit because the sources give none.
+- **Emissions uses the sheet in the combined workbook** (`Complete GHG and Irrigation data 30 Sep.xls`), which runs to 2025, since 2026-10-07 at the user's request. Its nitrous oxide and totals differ from the standalone workbook from 2016 on; the standalone one is read only for the source's name.
+- **Land cover is measured on a one-in-64 sample** of the 10 m rasters' cells.
+- **Crop calendar:** "Oct/Nov" draws as the wider range; "early" and "mid" draw as half a month; "sow earlier" means a sowing window now ends sooner.
+- **The capital shows as "Federal Capital",** as the district map names it.
+
+## Things learned the hard way
+
+- **Never stop processes by port.** Early on I killed everything listening on ports 8000 and 5173 and took down the user's unrelated "Seismic Intelligence Platform". Since then I stop only processes whose command line is inside this project (`stop.ps1` in the session scratchpad did this; it is not in the repo).
+- **`PROJ_LIB` on this machine points at PostgreSQL/PostGIS's older projection database** and breaks rasterio. `backend/csa_portal/geoenv.py` switches to the bundled copy; it must run before rasterio is imported.
+- **Raster overviews must be built by sampling ("nearest").** Voting overviews that skip empty cells painted Punjab and Sindh as solid forest from far out.
+- **A raster conversion can silently lose its zoomed-out copies** if the temporary file passes 4 GB. The script now compresses the temporary file and rejects a result whose overviews are empty.
+- **MapLibre 6 under Vite needs its worker URL set explicitly** (`setWorkerUrl` with a `?worker&url` import), and has no default export.
+- **The backend caches raster files and section data.** Restart it after re-running a preparation script. Since 2026-10-07 `npm run dev` runs `backend/scripts/dev_server.py`, which restarts the backend by itself when its code, `catalogue.json`, prepared data or boundaries change. Do not use uvicorn's `--reload` here: on Windows it stops the old server with a console Ctrl+C, which also kills the frontend and launcher in the same window.
+- **Tests do not judge whether a chart reads well.** Looking at screenshots of the real portal caught overlapping labels, clipped names and the forest overstatement.
+
+## Open items
+
+- **Delete `backend\rasters\tmpyt2t2_d9.tif`** (5.6 GB), left from a conversion I stopped. A safety check blocked my clean-up, so it is the user's to remove.
+- **Hazards and exposure** have no data. The district map carries a population figure per district (about 313 million in total) that would suit exposure.
+- **The background map draws its own borders** and Kashmir labels beneath the project's boundaries. The style is a setting (`CSA_BASEMAP_STYLE_URL`).
+- **The tehsil practice layer uses a different boundary set** from the district map, so edges do not line up exactly, and it has no tehsils in Jammu and Kashmir.
+- **Nothing on the page says why land cover shares exceed or fall short of 100%** now that the notes are gone.
+- **Units for water and food** are still unknown.
+- **Only the shell had an independent code review.** Everything on `feat/portal-data` has tests but no second reviewer.
+- **Deferred from the shell review:** search says "No places match" when boundaries are missing; lenient number parsing in the URL; the URL is rewritten on every change; some validation errors use a different shape; "Check again" gives no feedback when the backend is still down.
+- **Branches are unmerged and unpushed.** The user has not said whether to merge to `main` or open a pull request.
+- **GitHub triage labels** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) were created on `imtiazNDMA/climatesmartagri` at the start of the session.

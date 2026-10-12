@@ -1,6 +1,7 @@
 import { useStore } from 'zustand'
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { COUNTRY_ID } from '../api/types'
+import type { ForecastChoice } from '../forecast/choice'
 
 export interface ActiveLayer {
   id: string
@@ -16,12 +17,22 @@ export interface View {
   layers: ActiveLayer[]
   place: string | null
   year: number | null
+  /** The weather forecast on the map, if one is. */
+  forecast: ForecastChoice | null
+}
+
+/** What is on screen but not worth keeping in a link. */
+export interface Passing {
+  /** The one chart that fills the full view, by id, or null when every chart is shown. */
+  maximized: string | null
 }
 
 export interface ViewActions {
   openSection(id: string): void
   closeSection(): void
   setFull(full: boolean): void
+  /** Opens the full view on one chart alone; null brings the others back. */
+  maximize(chartId: string | null): void
   toggleLayer(id: string, defaultOpacity: number): void
   removeLayer(id: string): void
   setOpacity(id: string, opacity: number): void
@@ -29,21 +40,30 @@ export interface ViewActions {
   moveLayer(id: string, toIndex: number): void
   selectPlace(id: string | null): void
   setYear(year: number | null): void
+  setForecast(choice: ForecastChoice | null): void
+  /** Moves the forecast on the map to another time; does nothing when there is none. */
+  setForecastTime(time: string | null): void
   replaceView(view: View): void
 }
 
-export type ViewStore = View & ViewActions
+export type ViewStore = View & Passing & ViewActions
 
-export const emptyView: View = { section: null, full: false, layers: [], place: null, year: null }
+export const emptyView: View = {
+  section: null, full: false, layers: [], place: null, year: null, forecast: null,
+}
 
 const tidyOpacity = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 100) / 100
 
 export function createViewStore(initial: View = emptyView): StoreApi<ViewStore> {
   return createStore<ViewStore>()((set) => ({
     ...initial,
-    openSection: (id) => set((s) => (s.section === id ? { section: null, full: false } : { section: id })),
-    closeSection: () => set({ section: null, full: false }),
-    setFull: (full) => set((s) => ({ full: full && s.section !== null })),
+    maximized: null,
+    openSection: (id) =>
+      set((s) => (s.section === id ? { section: null, full: false, maximized: null } : { section: id, maximized: null })),
+    closeSection: () => set({ section: null, full: false, maximized: null }),
+    setFull: (full) => set((s) => ({ full: full && s.section !== null, maximized: null })),
+    maximize: (chartId) =>
+      set((s) => (s.section === null ? s : chartId === null ? { maximized: null } : { full: true, maximized: chartId })),
     toggleLayer: (id, defaultOpacity) =>
       set((s) =>
         s.layers.some((l) => l.id === id)
@@ -70,6 +90,9 @@ export function createViewStore(initial: View = emptyView): StoreApi<ViewStore> 
       }),
     selectPlace: (id) => set({ place: id === COUNTRY_ID ? null : id }),
     setYear: (year) => set({ year }),
+    setForecast: (forecast) => set({ forecast }),
+    setForecastTime: (time) =>
+      set((s) => (s.forecast && s.forecast.time !== time ? { forecast: { ...s.forecast, time } } : s)),
     replaceView: (view) => set({ ...view }),
   }))
 }
@@ -81,5 +104,8 @@ export function useView<T>(selector: (state: ViewStore) => T): T {
 }
 
 export function pickView(state: View): View {
-  return { section: state.section, full: state.full, layers: state.layers, place: state.place, year: state.year }
+  return {
+    section: state.section, full: state.full, layers: state.layers, place: state.place, year: state.year,
+    forecast: state.forecast,
+  }
 }

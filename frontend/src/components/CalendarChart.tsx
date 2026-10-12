@@ -1,3 +1,4 @@
+import { Table2 } from 'lucide-react'
 import type { CalendarDates, ChartSpec } from '../api/types'
 import { barPosition, describeRanges, MONTH_LETTERS, yearFraction } from '../charts/calendar'
 
@@ -43,7 +44,6 @@ export function CalendarChart({ spec, large = false }: { spec: ChartSpec; large?
     <figure className={large ? 'chart calendar-chart chart-large' : 'chart calendar-chart'} aria-label={spec.title}>
       <figcaption>
         <h4>{spec.title}</h4>
-        {spec.subtitle && <p className="chart-subtitle">{spec.subtitle}</p>}
       </figcaption>
 
       <ul className="calendar-key" aria-label="Key">
@@ -87,7 +87,10 @@ export function CalendarChart({ spec, large = false }: { spec: ChartSpec; large?
       </div>
 
       <details className="chart-table">
-        <summary>Show table</summary>
+        <summary title="Show table">
+          <Table2 size={17} aria-hidden />
+          <span>Show table</span>
+        </summary>
         <table>
           <thead>
             <tr>

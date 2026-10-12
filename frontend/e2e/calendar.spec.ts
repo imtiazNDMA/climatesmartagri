@@ -4,7 +4,6 @@ import { openPortal } from './helpers'
 const CHART = {
   id: 'calendar-punjab', kind: 'calendar', unit: '', time: false, categories: [], series: [],
   title: 'In Punjab, 1 of 3 crops should be sown earlier than before',
-  subtitle: 'Each crop has two lines: its traditional calendar on top and its climate-smart calendar below.',
   rows: [
     {
       crop: 'Wheat', changed: true, sown_earlier: true, reason: 'Timely sowing avoids severe spring heat.',
@@ -36,6 +35,8 @@ async function mockCalendar(page: Page, extra: object = {}) {
 }
 
 test('the crop calendar draws each crop with its traditional and climate-smart dates', async ({ page }) => {
+  // The bars grow in on a loop; with reduced motion they hold still, so their widths can be measured.
+  await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.clock.setFixedTime(new Date(2026, 9, 5, 12))
   await mockCalendar(page)
   await openPortal(page, '/?section=alpha-section')
@@ -80,7 +81,7 @@ test('the calendar has a table of the dates in words, with the reason for each s
   await mockCalendar(page)
   await openPortal(page, '/?section=alpha-section')
   const calendar = page.getByRole('figure', { name: CHART.title })
-  await calendar.getByText('Show table').click()
+  await calendar.getByTitle('Show table').click()
   const row = calendar.getByRole('row', { name: /Wheat/ })
   await expect(row).toContainText('Oct–Dec sowing → Mar–Apr harvest')
   await expect(row).toContainText('Oct–Nov sowing → Mar–Apr harvest')

@@ -158,3 +158,9 @@ def test_only_raster_layers_may_have_a_source(tmp_path):
     path.write_text(json.dumps(_catalogue([shapes])), encoding="utf-8")
     with pytest.raises(CatalogueError, match="shapes"):
         load_catalogue(path)
+
+
+def test_a_tile_may_be_kept_by_the_browser_for_an_hour_and_a_failure_not_at_all(client):
+    assert client.get(_tile(70.4, 29.7, 9)).headers["cache-control"] == "public, max-age=3600"
+    missing = client.get(TILE_URL.format(z=0, x=0, y=0).replace("layer=forest", "layer=shrub-land"))
+    assert (missing.status_code, missing.headers["cache-control"]) == (404, "no-store")

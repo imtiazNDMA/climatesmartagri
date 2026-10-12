@@ -50,11 +50,11 @@ test('charts draw with a title, a legend and a table view', async ({ page }) => 
   await openPortal(page, '/?section=alpha-section')
   const trend = page.getByRole('figure', { name: 'Demand and supply' })
   await expect(trend).toBeVisible()
-  await expect(trend.locator('svg')).toContainText('Demand')
-  await expect(trend.locator('svg')).toContainText('Supply')
-  await expect(page.getByRole('figure', { name: 'Area by province' }).locator('svg')).toContainText('Sindh')
+  await expect(trend.locator('.chart-plot svg')).toContainText('Demand')
+  await expect(trend.locator('.chart-plot svg')).toContainText('Supply')
+  await expect(page.getByRole('figure', { name: 'Area by province' }).locator('.chart-plot svg')).toContainText('Sindh')
 
-  await trend.getByText('Show table').click()
+  await trend.getByTitle('Show table').click()
   const rows = trend.getByRole('row')
   await expect(rows).toHaveCount(YEARS.length + 1)
   await expect(rows.nth(1)).toHaveText(/2000\s*10\s*12/)
@@ -91,7 +91,7 @@ test('a section with figures but no charts for the place says so', async ({ page
   await expect(page.getByText('No charts for this selection.')).toBeVisible()
 })
 
-test('a shape layer draws from its own data, with a legend and hover labels', async ({ page }) => {
+test('a shape layer draws from its own data, with a legend and a label in the popup', async ({ page }) => {
   const requested: string[] = []
   page.on('request', (request) => {
     if (request.url().includes('/api/layers/')) requested.push(request.url())
@@ -116,10 +116,11 @@ test('a shape layer draws from its own data, with a legend and hover labels', as
   const y = box.y + box.height / 2
   const popup = page.locator('.maplibregl-popup')
   await expect(async () => {
-    await page.mouse.move(x - 6, y)
-    await page.mouse.move(x, y, { steps: 3 })
+    await page.mouse.click(x, y)
     await expect(popup).toContainText('District One', { timeout: 500 })
-    await expect(popup).toContainText('Kind: A', { timeout: 500 })
+    // The label is laid out as what is measured, then its value.
+    await expect(popup.locator('.popup-measure')).toHaveText('Kind', { timeout: 500 })
+    await expect(popup.locator('.popup-value')).toHaveText('A', { timeout: 500 })
   }).toPass()
 })
 
@@ -131,4 +132,67 @@ test('a shape layer whose data cannot be loaded shows a warning', async ({ page 
   await page.getByRole('button', { name: 'Beta section' }).click()
   await page.getByRole('switch', { name: 'Fake shapes' }).check()
   await expect(page.getByRole('region', { name: 'Active layers' }).getByText('Could not load')).toBeVisible()
+})
+
+test('a shape that carries a table shows it in the popup instead of its one-line label', async ({ page }) => {
+  await openPortal(page)
+  await page.route('**/api/layers/*/geojson**', (route) =>
+    route.fulfill({
+      json: {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            properties: {
+              id: 'shape-a', name: 'Shape A', kind: 'a', label: 'Kind: A',
+              table: {
+                title: 'Recommended for Shape A tehsil',
+                columns: ['Irrigation type', 'Why it is needed and how it helps'],
+                rows: [
+                  {
+                    icon: 'drip', name: 'Drip irrigation',
+                    points: [
+                      { text: 'Feeds the roots.' },
+                      {
+                        label: 'Suits', tone: 'condition', text: 'Orchards where water is scarce.',
+                        parts: [{ text: 'Orchards where ' }, { text: 'water is scarce', tone: 'condition' }, { text: '.' }],
+                      },
+                    ],
+                  },
+                  { icon: 'sprinkler', name: 'Sprinkler irrigation', points: [{ text: 'Sprays like rain.' }] },
+                ],
+              },
+            },
+            geometry: { type: 'Polygon', coordinates: [[[66, 26], [70, 26], [70, 30], [66, 30], [66, 26]]] },
+          },
+        ],
+      },
+    }),
+  )
+  await page.locator('[data-boundaries-drawn="true"]').waitFor()
+  await page.getByRole('button', { name: 'Beta section' }).click()
+  await page.getByRole('switch', { name: 'Fake shapes' }).check()
+  await page.getByRole('button', { name: 'Beta section' }).click()
+
+  const box = (await page.locator('.map').boundingBox())!
+  const x = box.x + box.width * 0.15
+  const y = box.y + box.height / 2
+  const table = page.locator('.maplibregl-popup table')
+  await expect(async () => {
+    await page.mouse.click(x, y)
+    await expect(table.getByRole('columnheader')).toHaveText(
+      ['Irrigation type', 'Why it is needed and how it helps'],
+      { timeout: 500 },
+    )
+  }).toPass()
+  await expect(table.locator('caption')).toHaveText('Recommended for Shape A tehsil')
+  await expect(table.getByRole('rowheader')).toHaveText(['Drip irrigation', 'Sprinkler irrigation'])
+  await expect(table.getByRole('cell')).toHaveText(['Feeds the roots.SuitsOrchards where water is scarce.', 'Sprays like rain.'])
+  // The label is a pill and the key words are picked out, both in the colour of their kind.
+  await expect(table.locator('.popup-pill-condition')).toHaveText('Suits')
+  await expect(table.locator('mark.popup-mark-condition')).toHaveText('water is scarce')
+  // Each kind of irrigation has its picture, and the card names the district.
+  await expect(table.locator('.popup-icon svg')).toHaveCount(2)
+  await expect(page.locator('.maplibregl-popup .popup-head strong')).toHaveText('District One')
+  await expect(page.locator('.maplibregl-popup')).not.toContainText('Kind: A')
 })

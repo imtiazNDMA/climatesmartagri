@@ -11,10 +11,14 @@ EXPECTED = [
     ("water-balance", "ready"),
     ("food-security", "ready"),
     ("climate-calendar", "ready"),
+    ("forecast", "ready"),
     ("hazards", "coming-soon"),
     ("exposure", "coming-soon"),
 ]
-IRRIGATION_LAYERS = ["irrigation-practice", "irrigated-share", "equipped-area", "groundwater-share"]
+IRRIGATION_LAYERS = [
+    "irrigation-practice", "irrigated-share", "equipped-area", "groundwater-share",
+    "surface-water-area", "groundwater-area", "irrigation-balance",
+]
 
 
 def _client():
@@ -25,7 +29,7 @@ def test_shipped_catalogue_is_valid_and_complete():
     catalogue = load_catalogue(BACKEND_DIR / "catalogue.json")
     ordered = sorted(catalogue.sections, key=lambda s: s.order)
     assert [(s.id, s.status) for s in ordered] == EXPECTED
-    assert [s.order for s in ordered] == list(range(1, 9))
+    assert [s.order for s in ordered] == list(range(1, 10))
     assert all(s.summary for s in ordered if s.status == "coming-soon")
     boundary_ids = {layer.id for layer in catalogue.layers if layer.kind == "boundary"}
     assert boundary_ids == {"provinces", "districts"}
@@ -35,7 +39,7 @@ def test_shipped_catalogue_is_valid_and_complete():
             "geojson", "ready", "irrigation",
         )
     years = {s.id: s.years for s in catalogue.sections}
-    assert (years["emissions"].first, years["emissions"].last) == (1994, 2021)
+    assert (years["emissions"].first, years["emissions"].last) == (1994, 2025)
     assert (years["water-balance"].first, years["water-balance"].last) == (2026, 2047)
     assert (years["food-security"].first, years["food-security"].last) == (2026, 2047)
 
@@ -61,6 +65,8 @@ def test_boundaries_are_loaded_from_the_prepared_files():
 def test_every_ready_section_serves_figures_and_charts():
     client = _client()
     for section_id, status in EXPECTED:
+        if section_id == "forecast":
+            continue  # its layers come from the forecast layer list; it has no figures or charts
         response = client.get(f"/api/sections/{section_id}/data")
         if status != "ready":
             assert response.json()["detail"]["reason"] == status
@@ -72,27 +78,30 @@ def test_every_ready_section_serves_figures_and_charts():
         for chart in body["charts"]:
             for series in chart["series"]:
                 assert len(series["values"]) == len(chart["categories"]), chart["id"]
-            assert chart["series"] or chart["kind"] == "calendar", chart["id"]
+            assert chart["series"] or chart["kind"] in ("calendar", "shares", "diverging", "counts"), chart["id"]
 
 
 def test_emissions_match_the_spreadsheet():
-    body = _client().get("/api/sections/emissions/data", params={"year": 2021}).json()
+    body = _client().get("/api/sections/emissions/data", params={"year": 2025}).json()
     total = next(f for f in body["figures"] if f["label"] == "Total emissions")
-    assert (total["value"], total["unit"]) == (521.46, "MtCO2e")
+    assert (total["value"], total["unit"]) == (572.45, "MtCO2e")
+    assert body["year"] == 2025
 
 
 def test_irrigation_figures_for_a_district_and_the_country():
     client = _client()
     country = client.get("/api/sections/irrigation/data").json()
     equipped = next(f for f in country["figures"] if f["label"] == "Land equipped for irrigation")
-    assert round(equipped["value"]) == 16725843
+    assert round(equipped["value"], 2) == 41.33
+    assert equipped["unit"] == "million acres"
     places = client.get("/api/places").json()
     thatta = next(p for p in places if p["name"] == "Thatta")
     district = client.get("/api/sections/irrigation/data", params={"place": thatta["id"]}).json()
     assert district["level_used"] == "district"
     figures = {f["label"]: f["value"] for f in district["figures"]}
-    assert figures["Land equipped for irrigation"] == 376320
-    assert figures["Land actually irrigated"] == 143175
+    assert round(figures["Land equipped for irrigation"], 2) == round(376320 * 2.47105 / 1_000_000, 2)
+    assert round(figures["Land actually irrigated"], 2) == round(143175 * 2.47105 / 1_000_000, 2)
+    assert all(f["unit"] in ("million acres", "%") for f in district["figures"])
 
 
 def test_irrigation_layers_are_served_and_match_their_legends():
@@ -104,6 +113,11 @@ def test_irrigation_layers_are_served_and_match_their_legends():
     legend_values = {item.value for item in by_id["irrigation-practice"].legend.items}
     found = {f["properties"].get("practice") for f in practice["features"]} - {None}
     assert found <= legend_values
+    # Every tehsil with a recommendation explains each practice in it.
+    for feature in practice["features"]:
+        props = feature["properties"]
+        if props.get("practice"):
+            assert len(props["table"]["rows"]) == len(props["practice"].split(",")), props["id"]
     for layer_id in IRRIGATION_LAYERS[1:]:
         collection = client.get(f"/api/layers/{layer_id}/geojson").json()
         assert len(collection["features"]) == 167
@@ -111,6 +125,17 @@ def test_irrigation_layers_are_served_and_match_their_legends():
         assert len(values) >= 80, layer_id
         legend = by_id[layer_id].legend
         assert legend.min <= min(values) and max(values) <= legend.max, layer_id
+    # The balance has districts on both sides of its neutral middle.
+    balance = by_id["irrigation-balance"].legend
+    assert balance.min < balance.mid == 0 < balance.max
+    # Five districts are picked out at each end of the balance, and none on the other layers.
+    marked = [f["properties"] for f in client.get("/api/layers/irrigation-balance/geojson").json()["features"]
+              if "extreme" in f["properties"]]
+    assert sorted(p["extreme"] for p in marked) == ["high"] * 5 + ["low"] * 5
+    assert all((p["value"] > 0) == (p["extreme"] == "high") for p in marked)
+    assert "Tharparkar" in {p["name"] for p in marked}
+    surface = client.get("/api/layers/surface-water-area/geojson").json()["features"]
+    assert not any("extreme" in f["properties"] for f in surface)
 
 
 LAND_COVER = {"forest": {"2"}, "shrub-land": {"3"}, "bare-land": {"7"}, "irrigated-rainfed": {"2", "3"}}
@@ -147,28 +172,46 @@ def test_real_headlines_read_as_findings():
         for section in ("emissions", "water-balance", "food-security", "irrigation")
         for chart in client.get(f"/api/sections/{section}/data").json()["charts"]
     }
-    assert titles["emissions-by-gas"] == "Pakistan's yearly emissions grew 2.9 times between 1994 and 2021"
-    assert titles["emissions-growth"] == "Nitrous oxide grew fastest: 6.8 times its 1994 level"
-    assert titles["water-need-vs-supply"] == (
-        "At 35% efficiency, crops need more water than is available in every year to 2047"
-    )
+    assert titles["emissions-by-gas"] == "Pakistan's yearly emissions grew 3.2 times between 1994 and 2025"
+    assert titles["emissions-growth"] == "Nitrous oxide grew fastest: 9.9 times its 1994 level"
+    assert titles["water-buffer"] == "Higher efficiency protects the water buffer"
+    assert titles["water-breakeven"] == "Breaking even takes 48% irrigation efficiency by 2047, up from 42% in 2026"
+    assert titles["water-pressure"] == "Crops will need 11% more water by 2047, while supply falls 1%"
     assert titles["food-population"] == "Population grows from 255 to 386 million by 2047"
-    assert titles["irrigation-ranking"].endswith("has the most irrigation-ready land of any province")
+    assert titles["irrigation-source"] == (
+        "Punjab draws 47% of its irrigation from groundwater; Sindh takes 96% from surface water"
+    )
+    assert titles["irrigation-practices"] == (
+        "Sprinkler irrigation is recommended in 480 of 558 tehsils; flood irrigation in only 25"
+    )
+    assert all(len(title) <= 110 for title in titles.values())
 
 
 def test_land_cover_figures_come_from_the_rasters():
     client = _client()
     country = client.get("/api/sections/land-cover/data").json()
     figures = {f["label"]: f["value"] for f in country["figures"]}
-    assert 90_000_000 < figures["Land area"] < 105_000_000
-    assert 4_000_000 < figures["Forest"] < 9_000_000
-    assert 15_000_000 < figures["Irrigated cropland"] < 24_000_000
+    assert 222 < figures["Land area"] < 260
+    assert 9.8 < figures["Forest"] < 22.3
+    assert 37 < figures["Irrigated cropland"] < 59.5
+    assert all(f["unit"] == "million acres" for f in country["figures"])
     places = client.get("/api/places").json()
     faisalabad = next(p for p in places if p["name"] == "Faisalabad")
     district = client.get("/api/sections/land-cover/data", params={"place": faisalabad["id"]}).json()
     assert district["level_used"] == "district"
     shares = next(c for c in district["charts"] if c["id"] == "land-cover-shares")
     assert shares["title"].startswith("Irrigated cropland covers")
+    assert sum(cell["squares"] for cell in shares["cells"]) == 100
+    # The country as a whole: what the charts say, from the real figures.
+    titles = {c["id"]: c["title"] for c in country["charts"]}
+    assert titles["land-cover-shares"] == "Bare land covers 51% of Pakistan; cropland covers 28%"
+    assert titles["land-cover-cropland"] == "Balochistan and Khyber Pakhtunkhwa farm mostly on rain"
+    assert titles["land-cover-forest-ranking"] == (
+        "Khyber Pakhtunkhwa and Jammu and Kashmir hold 58% of Pakistan's forest"
+    )
+    forest = next(c for c in country["charts"] if c["id"] == "land-cover-forest-ranking")
+    assert forest["note"] == "Balochistan is 35% of Pakistan's land and holds 0.8% of its forest."
+    assert all(len(title) <= 110 for title in titles.values())
 
 
 def test_the_crop_calendar_covers_four_provinces():
@@ -194,3 +237,21 @@ def test_a_district_gets_its_province_calendar_not_the_national_one():
     # A section with national figures only still falls back to the country.
     emissions = client.get("/api/sections/emissions/data", params={"place": lahore["id"]}).json()
     assert (emissions["place_id"], emissions["level_used"]) == ("PK", "national")
+
+
+def test_the_shipped_forecast_layer_list_is_valid_and_served():
+    from csa_portal.forecast import load_registry
+
+    registry = load_registry(BACKEND_DIR / "forecast_layers.json")
+    assert len(registry.layers) == 47
+    assert {model.id for model in registry.models} == {
+        "cma-gfs", "cma-gowfs", "pmd-icon", "pmd-wrf", "ecmwf-ifs", "fengqing", "pangu", "fengshun",
+    }
+    # Every level with its own value range is a level some model offers.
+    for layer in registry.layers:
+        offered = {level for levels in layer.levels.values() for level in levels}
+        assert set(layer.ranges) <= offered, layer.id
+    served = _client().get("/api/catalogue").json()["forecast"]
+    assert [layer["id"] for layer in served["layers"]] == [layer.id for layer in registry.layers]
+    without_data = [layer["id"] for layer in served["layers"] if not any(layer["levels"].values())]
+    assert without_data == ["max-wind-10m", "cin", "theta-se", "vapour-transport"]

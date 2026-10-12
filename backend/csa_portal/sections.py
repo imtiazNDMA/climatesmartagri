@@ -1,13 +1,15 @@
 """Figures, charts and map layers for each section, built from the prepared files in backend/data.
 
 Every chart carries a headline that states its finding in a plain sentence, worked out from the
-data, and a subtitle that says what is shown and how to read it.
+data, and nothing else above the plot.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import math
+import re
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -20,7 +22,6 @@ SectionDataProvider = Callable[[Place, int | None], dict[str, Any]]
 GeoJsonProvider = Callable[[], dict[str, Any]]
 
 RANKING_LIMIT = 15
-NO_UNIT = "The source spreadsheet gives no unit for these amounts."
 
 
 def _read(path: Path) -> Any | None:
@@ -53,24 +54,31 @@ def _ordinal(n: int) -> str:
     return f"{n}{suffix}"
 
 
-def _figure(label: str, value: Any, unit: str = "") -> dict[str, Any]:
-    return {"label": label, "value": value, "unit": unit}
+def _figure(
+    label: str, value: Any, unit: str = "", share: float | None = None, share_of: str = ""
+) -> dict[str, Any]:
+    """A figure for the panel. `share` is the part of a whole it makes up, in percent, and `share_of`
+    names that whole in a few words ("of equipped land"); both are left out when there is none."""
+    figure = {"label": label, "value": value, "unit": unit}
+    if share is not None:
+        figure |= {"share": share, "share_of": share_of}
+    return figure
 
 
 def _series(name: str, slot: int, values: list[Any], **extra: Any) -> dict[str, Any]:
     return {"name": name, "slot": slot, "values": values, **extra}
 
 
-def _over_time(chart_id: str, title: str, subtitle: str, kind: str, unit: str, years: list[int], series: list[dict], **extra: Any):
+def _over_time(chart_id: str, title: str, kind: str, unit: str, years: list[int], series: list[dict], **extra: Any):
     return {
-        "id": chart_id, "title": title, "subtitle": subtitle, "kind": kind, "unit": unit, "time": True,
+        "id": chart_id, "title": title, "kind": kind, "unit": unit, "time": True,
         "categories": years, "series": series, "end_labels": True, **extra,
     }
 
 
-def _bars(chart_id: str, title: str, subtitle: str, unit: str, categories: list[str], values: list[Any], **extra: Any):
+def _bars(chart_id: str, title: str, unit: str, categories: list[str], values: list[Any], **extra: Any):
     return {
-        "id": chart_id, "title": title, "subtitle": subtitle, "kind": "bar", "unit": unit, "time": False,
+        "id": chart_id, "title": title, "kind": "bar", "unit": unit, "time": False,
         "categories": categories, "series": [_series(extra.pop("series_name", "Value"), 1, values)], **extra,
     }
 
@@ -88,11 +96,6 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
         total = data["total"][i]
         shares = [round(data[key][i] / total * 100, 1) for _, key, _ in gases]
         top = max(range(len(gases)), key=lambda n: data[gases[n][1]][i])
-        status = (
-            f"{years[i]} is an official inventory year."
-            if data["official"][i]
-            else f"{years[i]} is an interpolated estimate, not an official inventory value."
-        )
         return {
             "figures": [
                 _figure("Total emissions", total, unit),
@@ -100,42 +103,30 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
                 _figure("Methane (CH4)", data["ch4"][i], unit),
                 _figure("Nitrous oxide (N2O)", data["n2o"][i], unit),
             ],
-            "notes": [
-                status,
-                f"Source: {data['source']}. All gases are in CO2-equivalent ({unit}, million tonnes).",
-            ],
+            "notes": [],
             "charts": [
                 _over_time(
                     "emissions-by-gas",
                     f"Pakistan's yearly emissions grew {_num(data['total'][-1] / data['total'][0])} times "
                     f"between {first} and {last}",
-                    "Greenhouse gases released each year, in million tonnes of CO2-equivalent. "
-                    "CO2-equivalent is a common unit that lets different gases be added together. "
-                    "The height of each band is that gas; the top edge is the total.",
                     "stacked-area", unit, years,
                     [_series(name, slot, data[key]) for name, key, slot in gases],
                 ),
                 _bars(
                     "emissions-growth",
                     f"{gases[fastest][0]} grew fastest: {_num(growth[fastest])} times its {first} level",
-                    f"How many times larger each gas was in {last} than in {first}. "
-                    "A value of 2 means it doubled.",
                     "times", [name for name, _, _ in gases], growth,
                     horizontal=True, bar_slots=[slot for _, _, slot in gases], series_name=f"Growth {first} to {last}",
                 ),
                 _bars(
                     "emissions-share",
                     f"In {years[i]}, {gases[top][0].lower()} made up {_pct(shares[top])}% of emissions",
-                    f"Each gas as a share of total emissions in {years[i]}. "
-                    "Move the year slider to see another year.",
                     "%", [name for name, _, _ in gases], shares,
                     horizontal=True, bar_slots=[slot for _, _, slot in gases], series_name="Share of total",
                 ),
                 _over_time(
                     "emissions-official",
                     f"Only {official_years} of the {len(years)} years shown are official measurements",
-                    "Total emissions per year. Dots are officially reported inventory years. "
-                    "The line between dots is an estimate, drawn straight from one official year to the next.",
                     "line", unit, years,
                     [_series("Total emissions", 1, data["total"], points=[n for n, ok in enumerate(data["official"]) if ok])],
                     end_labels=False,
@@ -159,14 +150,66 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
         need_title = (
             f"At 35% efficiency, crops need more water than is available in {short_years} of {len(years)} years"
         )
-    start, end = balance["50"][0], balance["50"][-1]
-    if start > end > 0:
-        trend_title = f"The water to spare at 50% efficiency shrinks from {_num(start)} to {_num(end)} by {years[-1]}"
-    else:
-        trend_title = "Water to spare, or missing, at each efficiency level"
+    # More efficiency leaves more water in every year: the plain finding, when the figures bear it out.
+    ordered = all(
+        balance[low][n] < balance[high][n]
+        for (low, _), (high, _) in zip(levels, levels[1:]) for n in range(len(years))
+    )
+    buffer_chart = {
+        "id": "water-buffer", "kind": "balance", "unit": "", "time": True, "categories": years,
+        "title": "Higher efficiency protects the water buffer" if ordered else need_title,
+        "series": [_series(f"{level}% efficiency", slot, balance[level]) for level, slot in levels],
+        "balance": {
+            "available": availability, "needed": [data["requirement"][level] for level, _ in levels],
+            "negative": "Water deficit", "positive": "Water buffer", "zero": "Water limit",
+            "negative_word": "deficit", "positive_word": "buffer",
+            "caption": "Water balance = available water − crop water requirement",
+        },
+    }
+    first, last = years[0], years[-1]
 
-    def describe(level: str, value: float) -> str:
-        return f"short by {_num(-value)} at {level}%" if value < 0 else f"{_num(value)} to spare at {level}%"
+    # The efficiency at which the water crops need would exactly equal the water available. What a crop
+    # must actually receive is the requirement times the efficiency it was worked out at.
+    base_level = levels[0][0]
+    breakeven = [
+        round(need * int(base_level) / available, 1)
+        for need, available in zip(data["requirement"][base_level], availability)
+    ]
+    direction = "up from" if breakeven[-1] > breakeven[0] else "down from" if breakeven[-1] < breakeven[0] else "as in"
+    breakeven_chart = _over_time(
+        "water-breakeven",
+        f"Breaking even takes {_pct(breakeven[-1])}% irrigation efficiency by {last}, "
+        f"{direction} {_pct(breakeven[0])}% in {first}",
+        "line", "%", years,
+        [
+            _series("Needed to break even", 1, breakeven, emphasis="strong"),
+            *[_series(f"{level}% efficiency", slot, [int(level)] * len(years)) for level, slot in levels],
+        ],
+        axis_min=30, axis_max=75,
+    )
+
+    # Why the balance worsens: how far need and supply have each moved since the first year.
+    def change(values: list[float]) -> list[float]:
+        return [round((value / values[0] - 1) * 100, 1) for value in values]
+
+    need_change, supply_change = change(data["requirement"][base_level]), change(availability)
+    supply = (
+        f"supply falls {_pct(-supply_change[-1])}%" if supply_change[-1] < 0
+        else f"supply rises {_pct(supply_change[-1])}%" if supply_change[-1] > 0
+        else "supply stays the same"
+    )
+    if need_change[-1] > 0:
+        pressure_title = f"Crops will need {_pct(need_change[-1])}% more water by {last}, while {supply}"
+    else:
+        pressure_title = f"How the water crops need and the water available change from {first}"
+    pressure_chart = _over_time(
+        "water-pressure", pressure_title, "line", "%", years,
+        [
+            _series("Water crops need", 2, need_change, emphasis="strong"),
+            _series("Water available", 1, supply_change),
+        ],
+        zero_line=True,
+    )
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
@@ -186,42 +229,11 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
                     for level, _ in levels
                 ],
             ],
-            "notes": [
-                "Irrigation efficiency is the share of water that actually reaches the crop. "
-                "Water to spare is water available minus the water crops need.",
-                NO_UNIT,
-            ],
+            "notes": [],
             "charts": [
-                _over_time(
-                    "water-need-vs-supply", need_title,
-                    "The dark line is the water available each year. The other lines are the water crops "
-                    "need at three levels of irrigation efficiency. Where a line sits above the dark line, "
-                    "there is not enough water.",
-                    "line", "", years,
-                    [
-                        _series("Water available", 1, availability, emphasis="strong"),
-                        *[
-                            _series(f"Needed at {level}% efficiency", slot, data["requirement"][level])
-                            for level, slot in levels
-                        ],
-                    ],
-                ),
-                _bars(
-                    "water-balance-year",
-                    f"In {years[i]}: {describe('35', now['35'])} efficiency, {describe('50', now['50'])}",
-                    f"Water available minus water needed in {years[i]}, at each efficiency level. "
-                    "Bars below zero are a shortfall. Move the year slider to see another year.",
-                    "", [f"{level}% efficiency" for level, _ in levels], [now[level] for level, _ in levels],
-                    colour_by_sign=True, zero_line=True, series_name="Water to spare",
-                ),
-                _over_time(
-                    "water-balance", trend_title,
-                    "Water available minus water needed, year by year. Above the zero line there is "
-                    "water to spare; below it there is not enough.",
-                    "line", "", years,
-                    [_series(f"Balance at {level}% efficiency", slot, balance[level]) for level, slot in levels],
-                    zero_line=True,
-                ),
+                buffer_chart,
+                breakeven_chart,
+                pressure_chart,
             ],
         }
 
@@ -249,17 +261,12 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
                 _figure(f"Food gap with {traditional}", data["traditional_gap"][i]),
                 _figure("Population", data["population"][i], "million"),
             ],
-            "notes": [
-                "The food gap is the food needed minus the food available.",
-                "The source spreadsheet gives no unit for the food amounts.",
-            ],
+            "notes": [],
             "charts": [
                 _over_time(
                     "food-demand-availability",
                     f"Food needs rise {_pct(rise(data['demand']))}% by {last}, while supply with {csa} "
                     f"rises {_pct(rise(data['csa_availability']))}%",
-                    "The dark line is the food the country needs. The other two lines are the food "
-                    "available under each way of farming. The space between them is the food gap.",
                     "line", "", years,
                     [
                         _series("Food needed", 1, data["demand"], emphasis="strong"),
@@ -270,7 +277,6 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
                 _over_time(
                     "food-gap",
                     f"By {last}, {csa} makes the food gap {_pct(saved)}% smaller than {traditional}",
-                    "The food gap is how far the food needed exceeds the food available. Lower is better.",
                     "line", "", years,
                     [
                         _series(f"With {csa}", 3, data["csa_gap"]),
@@ -280,7 +286,6 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
                 _over_time(
                     "food-population",
                     f"Population grows from {data['population'][0]:.0f} to {data['population'][-1]:.0f} million by {last}",
-                    "Projected number of people, in millions. More people is the main reason food needs rise.",
                     "line", "million", years,
                     [_series("Population", 1, data["population"])],
                     end_labels=False,
@@ -297,41 +302,122 @@ def _share(part: Any, whole: Any) -> float | None:
     return round(part / whole * 100, 1)
 
 
-def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
+def _irrigation(data: dict[str, Any], practice: dict[str, Any] | None = None) -> SectionDataProvider:
     places = data["places"]
+    # Each tehsil that has a recommendation: its id and the practices recommended for it.
+    tehsils = [
+        (str(f["properties"].get("id", "")), [c.strip() for c in str(f["properties"]["practice"]).split(",")])
+        for f in (practice or {}).get("features", []) if f["properties"].get("practice")
+    ]
 
-    def ranking(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+    unit = "million acres"
+
+    def area(hectares: Any) -> Any:
+        return None if hectares is None else _million_acres(hectares)
+
+    def group(place_id: str, entry: dict[str, Any]) -> tuple[str, str, list[tuple[str, dict[str, Any]]]]:
+        """The places a chart compares: the provinces for the country, otherwise the districts of the
+        province in question, largest first. With them, that whole's name and what its parts are called."""
         if entry["level"] == "national":
-            scope, level, where = COUNTRY_ID, "province", "of any province"
+            scope, level = COUNTRY_ID, "province"
         else:
-            scope = place_id if entry["level"] == "province" else entry["parent_id"]
-            level, where = "district", f"in {places.get(scope, {}).get('name', 'its province')}"
+            scope, level = (place_id if entry["level"] == "province" else entry["parent_id"]), "district"
         rows = [
             (pid, p) for pid, p in places.items()
-            if p["level"] == level and p["parent_id"] == scope and p["equipped"] is not None
+            if p["level"] == level and p["parent_id"] == scope and p["equipped"]
         ]
-        if not rows:
-            return None
-        rows.sort(key=lambda item: item[1]["equipped"], reverse=True)
-        selected = next((n for n, (pid, _) in enumerate(rows) if pid == place_id), None)
-        if selected is None:
-            title = f"{rows[0][1]['name']} has the most irrigation-ready land {where}"
-        else:
-            title = (
-                f"{entry['name']} ranks {_ordinal(selected + 1)} of {len(rows)} districts "
-                f"{where} for irrigation-ready land"
-            )
+        rows.sort(key=lambda row: row[1]["equipped"], reverse=True)
+        return places.get(scope, {}).get("name", "its province"), level, rows
+
+    def shown_rows(rows: list, place_id: str) -> tuple[list, int | None]:
+        """The largest rows that fit, always with the selected place among them, and where it sits."""
+        selected = next((n for n, row in enumerate(rows) if row[0] == place_id), None)
         shown = rows[:RANKING_LIMIT]
         if selected is not None and selected >= RANKING_LIMIT:
             shown[-1] = rows[selected]
             selected = RANKING_LIMIT - 1
-        more = f" The {RANKING_LIMIT} largest are shown." if len(rows) > RANKING_LIMIT else ""
-        return _bars(
-            "irrigation-ranking", title,
-            f"Land equipped for irrigation in each {level}, largest first.{more}",
-            "ha", [p["name"] for _, p in shown], [p["equipped"] for _, p in shown],
-            horizontal=True, highlight=selected, series_name="Land equipped for irrigation",
+        return shown, selected
+
+    def water_source(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+        """Each place's equipped land by where its water comes from: groundwater one way, surface the other."""
+        whole, level, rows = group(place_id, entry)
+        rows = [(pid, p) for pid, p in rows if p["groundwater"] is not None and p["surface"] is not None]
+        if not rows:
+            return None
+        shown, selected = shown_rows(rows, place_id)
+        ground = [_share(p["groundwater"], p["equipped"]) or 0 for _, p in shown]
+        surface = [_share(p["surface"], p["equipped"]) or 0 for _, p in shown]
+        total = sum(p["equipped"] for _, p in rows)
+        weighty = [n for n, (_, p) in enumerate(shown) if p["equipped"] / total * 100 >= HEADLINE_FLOOR] or list(range(len(shown)))
+        if selected is not None:
+            source, share = ("surface water", surface[selected]) if surface[selected] >= ground[selected] else ("groundwater", ground[selected])
+            title = f"{entry['name']} takes {_pct(share)}% of its irrigation water from {source}"
+            leads = [selected]
+        else:
+            pumps = max(weighty, key=lambda n: ground[n])
+            canals = max(weighty, key=lambda n: surface[n])
+            if pumps == canals:
+                source, share = ("surface water", surface[canals]) if surface[canals] >= ground[pumps] else ("groundwater", ground[pumps])
+                title = f"{shown[pumps][1]['name']} takes {_pct(share)}% of its irrigation water from {source}"
+            else:
+                title = (
+                    f"{shown[pumps][1]['name']} draws {_pct(ground[pumps])}% of its irrigation from groundwater; "
+                    f"{shown[canals][1]['name']} takes {_pct(surface[canals])}% from surface water"
+                )
+            leads = sorted({pumps, canals})
+        return {
+            "id": "irrigation-source", "title": title, "kind": "diverging", "unit": "%", "time": False,
+            "categories": [], "series": [],
+            # The two sides wear the colours of the two ends of the irrigation balance map.
+            "sides": [
+                {"label": "Groundwater", "colour": BALANCE_ENDS[0]},
+                {"label": "Surface water", "colour": BALANCE_ENDS[1]},
+            ],
+            "splits": [
+                {
+                    "name": p["name"], "left": ground[n], "right": surface[n],
+                    "weight": area(p["equipped"]), "highlight": n in leads,
+                }
+                for n, (_, p) in enumerate(shown)
+            ],
+        }
+
+    def tehsils_of(place_id: str) -> list[list[str]]:
+        """The recommendations of the tehsils inside a province or district. A tehsil's id opens with the
+        names of its province and district, as theirs do after the first two letters."""
+        stem = TEHSIL_STEMS.get(place_id, place_id[2:])
+        return [codes for tehsil_id, codes in tehsils if tehsil_id.startswith(f"t-{stem}-")]
+
+    def practice_counts(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+        """In how many tehsils each practice is recommended. A tehsil can be recommended several."""
+        if entry["level"] == "national":
+            where, rows = None, [codes for _, codes in tehsils]
+        else:
+            where, rows = entry["name"], tehsils_of(place_id)
+            if not rows and entry["level"] == "district":
+                # The tehsil map names some districts differently; their province is the nearest match.
+                where, rows = places.get(entry["parent_id"], {}).get("name"), tehsils_of(entry["parent_id"])
+        if not rows:
+            return None
+        counts = sorted(
+            ((code, sum(1 for codes in rows if code in codes)) for code in PRACTICE_GUIDE),
+            key=lambda item: item[1], reverse=True,
         )
+        (top, most), (low, least) = counts[0], next((c for c in reversed(counts) if c[1] > 0), counts[0])
+        noun = "tehsil" if len(rows) == 1 else "tehsils"
+        title = f"{PRACTICE_GUIDE[top][1]} is recommended in {most} of {len(rows)} {noun}"
+        if where:
+            title += f" in {where}"
+        elif 0 < least < most:
+            title += f"; {PRACTICE_GUIDE[low][1].lower()} in only {least}"
+        return {
+            "id": "irrigation-practices", "title": title, "kind": "counts", "unit": noun, "time": False,
+            "categories": [], "series": [], "total": len(rows),
+            "items": [
+                {"icon": PRACTICE_GUIDE[code][0], "name": PRACTICE_GUIDE[code][1], "value": count, "highlight": code == top}
+                for code, count in counts
+            ],
+        }
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         entry = places.get(place.id)
@@ -342,51 +428,24 @@ def _irrigation(data: dict[str, Any]) -> SectionDataProvider:
             }
         name = entry["name"]
         figures = [
-            _figure("Land equipped for irrigation", entry["equipped"], "ha"),
-            _figure("Served by groundwater", entry["groundwater"], "ha"),
-            _figure("Served by surface water", entry["surface"], "ha"),
-            _figure("Land actually irrigated", entry["irrigated"], "ha"),
+            _figure("Land equipped for irrigation", area(entry["equipped"]), unit),
+            _figure(
+                "Served by groundwater", area(entry["groundwater"]), unit,
+                _share(entry["groundwater"], entry["equipped"]), "of equipped land",
+            ),
+            _figure(
+                "Served by surface water", area(entry["surface"]), unit,
+                _share(entry["surface"], entry["equipped"]), "of equipped land",
+            ),
+            _figure("Land actually irrigated", area(entry["irrigated"]), unit),
         ]
         used = _share(entry["irrigated"], entry["equipped"])
         if used is not None:
             figures.append(_figure("Share of equipped land irrigated", used, "%"))
-        notes: list[str] = [
-            "Land equipped for irrigation has canals, wells or other infrastructure. "
-            "Not all of it is irrigated in practice."
-        ]
-        if entry["level"] != "district":
-            notes.append(f"Totals from {entry['districts_reported']} districts reported in the spreadsheet.")
-        if entry["level"] == "national" and data.get("unmatched"):
-            names = ", ".join(data["unmatched"])
-            notes.append(
-                f"{len(data['unmatched'])} spreadsheet districts could not be matched to the map and are "
-                f"counted in totals only: {names}."
-            )
 
-        charts: list[dict[str, Any]] = []
-        if used is not None:
-            charts.append(_bars(
-                "irrigation-use",
-                f"{_pct(used)}% of {name}'s irrigation-ready land is actually irrigated",
-                "Land that has irrigation infrastructure, next to the land that is irrigated in practice.",
-                "ha", ["Equipped for irrigation", "Actually irrigated"], [entry["equipped"], entry["irrigated"]],
-                series_name="Land",
-            ))
-        ground, surface = _share(entry["groundwater"], entry["equipped"]), _share(entry["surface"], entry["equipped"])
-        if ground is not None and surface is not None:
-            lead, lead_share = ("Surface water", surface) if surface >= ground else ("Groundwater", ground)
-            charts.append(_bars(
-                "irrigation-source",
-                f"{lead} serves {_pct(lead_share)}% of the irrigation-ready land in {name}",
-                "Where the water for irrigation-ready land comes from: wells that pump groundwater, "
-                "or canals and rivers that carry surface water.",
-                "%", ["Groundwater", "Surface water"], [ground, surface],
-                series_name="Share of equipped land",
-            ))
-        ranked = ranking(place.id, entry)
-        if ranked is not None:
-            charts.append(ranked)
-        return {"figures": figures, "notes": notes, "charts": charts}
+        charts = [water_source(place.id, entry), practice_counts(place.id, entry)]
+        charts = [chart for chart in charts if chart is not None]
+        return {"figures": figures, "notes": [], "charts": charts}
 
     return provider
 
@@ -406,10 +465,6 @@ def _crop_calendar(data: dict[str, Any]) -> SectionDataProvider:
         )
         return {
             "id": f"calendar-{province_id.removeprefix('p-')}", "title": title, "kind": "calendar",
-            "subtitle": (
-                "Each crop has two lines: its traditional calendar on top and its climate-smart calendar below. "
-                "Green is sowing and amber is harvest. A shorter or earlier green bar means sow sooner."
-            ),
             "unit": "", "time": False, "categories": [], "series": [],
             "rows": [
                 {
@@ -454,45 +509,169 @@ LAND_COVER = {
     "rainfed": ("Rainfed cropland", "#eda100"),
 }
 
+HECTARES_TO_ACRES = 2.47105
+MILLION = 1_000_000
+
+
+def _million_acres(hectares: float) -> float:
+    return hectares * HECTARES_TO_ACRES / MILLION
+
+
+NOT_MAPPED = ("Not mapped", "#d9d8d2")
+# A place counts towards a headline about its group only if it holds at least this share of the group's total,
+# so a very small territory with an extreme share does not become the story.
+HEADLINE_FLOOR = 2.0
+
+
+def _squares(parts: list[tuple[str, str, float]]) -> list[dict[str, Any]]:
+    """A hundred squares shared out between the parts by their percentages, largest first.
+
+    What the parts leave uncovered becomes "Not mapped". Parts that overlap and add up to more than the
+    whole are scaled back to fit, and keep their true percentage beside the squares.
+    """
+    total = sum(share for _, _, share in parts)
+    scale = 100 / total if total > 100 else 1.0
+    cells = [
+        {"label": label, "colour": colour, "share": share, "exact": share * scale}
+        for label, colour, share in sorted(parts, key=lambda part: part[2], reverse=True)
+    ]
+    if total < 99.5:
+        cells.append({"label": NOT_MAPPED[0], "colour": NOT_MAPPED[1], "share": round(100 - total, 1), "exact": 100 - total})
+    for cell in cells:
+        cell["squares"] = int(cell["exact"])
+    # The squares left over after rounding down go to the parts that lost the most.
+    spare = 100 - sum(cell["squares"] for cell in cells)
+    for cell in sorted(cells, key=lambda c: c["exact"] - c["squares"], reverse=True)[:spare]:
+        cell["squares"] += 1
+    return [{k: v for k, v in cell.items() if k != "exact"} for cell in cells]
+
+
+def _and(names: list[str]) -> str:
+    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
+
 
 def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
     places = data["places"]
     classes = [c for c in LAND_COVER if c in data["classes"]]
     missing = [LAND_COVER[c][0] for c in LAND_COVER if c not in data["classes"]]
 
-    def forest_ranking(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
-        if "forest" not in classes:
-            return None
+    def group(place_id: str, entry: dict[str, Any]) -> tuple[str, str, list[tuple[str, dict[str, Any]]]]:
+        """The places a chart compares: the provinces for the country, otherwise the districts of the
+        province in question. With them, that whole's name and what its parts are called."""
         if entry["level"] == "national":
-            scope, level, where = COUNTRY_ID, "province", "of any province"
+            scope, level = COUNTRY_ID, "province"
         else:
-            scope = place_id if entry["level"] == "province" else entry["parent_id"]
-            level, where = "district", f"in {places.get(scope, {}).get('name', 'its province')}"
-        rows = [
-            (pid, p, _share(p["forest"], p["area_ha"])) for pid, p in places.items()
-            if p["level"] == level and p["parent_id"] == scope and p.get("forest") is not None
-        ]
-        rows = [row for row in rows if row[2] is not None]
-        if not rows:
-            return None
-        rows.sort(key=lambda row: row[2], reverse=True)
+            scope, level = (place_id if entry["level"] == "province" else entry["parent_id"]), "district"
+        rows = [(pid, p) for pid, p in places.items() if p["level"] == level and p["parent_id"] == scope]
+        return places.get(scope, {}).get("name", "its province"), level, rows
+
+    def shown_rows(rows: list, place_id: str) -> tuple[list, int | None]:
+        """The largest rows that fit, always with the selected place among them, and where it sits."""
         selected = next((n for n, row in enumerate(rows) if row[0] == place_id), None)
-        if selected is None:
-            title = f"{rows[0][1]['name']} has the largest share of forest {where}"
-        else:
-            title = f"{entry['name']} ranks {_ordinal(selected + 1)} of {len(rows)} districts {where} for forest cover"
         shown = rows[:RANKING_LIMIT]
         if selected is not None and selected >= RANKING_LIMIT:
             shown[-1] = rows[selected]
             selected = RANKING_LIMIT - 1
-        more = f" The {RANKING_LIMIT} highest are shown." if len(rows) > RANKING_LIMIT else ""
-        return _bars(
+        return shown, selected
+
+    def cover_squares(entry: dict[str, Any], measured: list[str]) -> dict[str, Any]:
+        name = entry["name"]
+        shares = {c: _share(entry[c], entry["area_ha"]) or 0 for c in measured}
+        top = max(measured, key=lambda c: shares[c])
+        title = f"{LAND_COVER[top][0]} covers {_pct(shares[top])}% of {name}"
+        cropland = shares.get("irrigated", 0) + shares.get("rainfed", 0)
+        if top not in ("irrigated", "rainfed") and "irrigated" in shares and "rainfed" in shares and cropland >= 1:
+            title += f"; cropland covers {_pct(cropland)}%"
+        return {
+            "id": "land-cover-shares", "title": title, "kind": "shares", "unit": "%", "time": False,
+            "categories": [], "series": [],
+            "cells": _squares([(LAND_COVER[c][0], LAND_COVER[c][1], shares[c]) for c in measured]),
+        }
+
+    def rain_dependence(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+        """Cropland in each place of the group, split into irrigated and rainfed: how much is farmed,
+        and how much of it waits on rain."""
+        whole, level, rows = group(place_id, entry)
+        rows = [
+            (pid, p, p["irrigated"] + p["rainfed"]) for pid, p in rows
+            if p.get("irrigated") is not None and p.get("rainfed") is not None and p["irrigated"] + p["rainfed"] > 0
+        ]
+        if not rows:
+            return None
+        rows.sort(key=lambda row: row[2], reverse=True)
+        total = sum(row[2] for row in rows)
+        shown, selected = shown_rows(rows, place_id)
+        rainfed = [_share(p["rainfed"], crop) or 0 for _, p, crop in shown]
+        if selected is not None:
+            title = f"{_pct(rainfed[selected])}% of {entry['name']}'s cropland depends on rain"
+            highlights = [selected]
+        else:
+            weighty = [n for n, (_, _, crop) in enumerate(shown) if crop / total * 100 >= HEADLINE_FLOOR]
+            ranked = sorted(weighty or range(len(shown)), key=lambda n: rainfed[n], reverse=True)
+            mostly = [n for n in ranked if rainfed[n] > 50][:2]
+            if len(mostly) == 2:
+                title = f"{_and([shown[n][1]['name'] for n in mostly])} farm mostly on rain"
+                highlights = mostly
+            else:
+                lead = ranked[0]
+                verb = "farms mostly on rain" if rainfed[lead] > 50 else "depends most on rain"
+                title = f"{shown[lead][1]['name']} {verb}: {_pct(rainfed[lead])}% of its cropland is rainfed"
+                highlights = [lead]
+        return {
+            "id": "land-cover-cropland", "title": title, "kind": "bar", "unit": "million acres", "time": False,
+            "categories": [p["name"] for _, p, _ in shown],
+            "series": [
+                _series("Irrigated cropland", 1, [_million_acres(p["irrigated"]) for _, p, _ in shown],
+                        colour=LAND_COVER["irrigated"][1]),
+                _series("Rainfed cropland", 4, [_million_acres(p["rainfed"]) for _, p, _ in shown],
+                        colour=LAND_COVER["rainfed"][1]),
+            ],
+            "horizontal": True, "stacked": True, "highlights": highlights, "hide_axis": True, "still": True,
+            "bar_notes": [f"{_pct(share)}% rainfed" for share in rainfed],
+        }
+
+    def forest_holders(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
+        """Where the group's forest is: forest area in each place, with how forested that place is."""
+        if "forest" not in classes:
+            return None
+        whole, level, rows = group(place_id, entry)
+        rows = [(pid, p) for pid, p in rows if p.get("forest") is not None]
+        total = sum(p["forest"] for _, p in rows)
+        if not rows or total <= 0:
+            return None
+        rows.sort(key=lambda row: row[1]["forest"], reverse=True)
+        shown, selected = shown_rows(rows, place_id)
+        held = [p["forest"] / total * 100 for _, p in shown]
+        if selected is not None:
+            rank = next(n for n, (pid, _) in enumerate(rows) if pid == place_id) + 1
+            title = (
+                f"{entry['name']} holds {_pct(held[selected])}% of {whole}'s forest, "
+                f"{_ordinal(rank)} of {len(rows)} districts"
+            )
+            highlights = [selected]
+        elif len(shown) >= 3:
+            title = f"{_and([p['name'] for _, p in shown[:2]])} hold {_pct(held[0] + held[1])}% of {whole}'s forest"
+            highlights = [0, 1]
+        else:
+            title = f"{shown[0][1]['name']} holds {_pct(held[0])}% of {whole}'s forest"
+            highlights = [0]
+        chart = _bars(
             "land-cover-forest-ranking", title,
-            f"Forest as a share of all land in each {level}, highest first.{more}",
-            "%", [row[1]["name"] for row in shown], [row[2] for row in shown],
-            horizontal=True, highlight=selected, series_name="Forest share of land",
-            bar_colours=[LAND_COVER["forest"][1]] * len(shown),
+            "million acres", [p["name"] for _, p in shown], [_million_acres(p["forest"]) for _, p in shown],
+            horizontal=True, series_name="Forest", bar_colours=[LAND_COVER["forest"][1]] * len(shown),
+            highlights=highlights, hide_axis=True, still=True,
+            bar_notes=[f"{_pct(_share(p['forest'], p['area_ha']) or 0)}% of its land" for _, p in shown],
         )
+        # The place that is a large part of the land and a small part of the forest, when there is one.
+        land = sum(p["area_ha"] for _, p in rows)
+        bare = [(p, p["area_ha"] / land * 100, p["forest"] / total * 100) for _, p in rows]
+        bare = [row for row in bare if row[1] >= 20 and row[2] < 5]
+        if bare:
+            p, of_land, of_forest = max(bare, key=lambda row: row[1])
+            chart["note"] = (
+                f"{p['name']} is {_pct(of_land)}% of {whole}'s land and holds {_pct(of_forest)}% of its forest."
+            )
+        return chart
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         entry = places.get(place.id)
@@ -503,8 +682,14 @@ def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
             }
         name = entry["name"]
         measured = [c for c in classes if entry.get(c) is not None]
-        figures = [_figure("Land area", entry["area_ha"], "ha")]
-        figures += [_figure(LAND_COVER[c][0], entry[c], "ha") for c in measured]
+        figures = [_figure("Land area", _million_acres(entry["area_ha"]), "million acres")]
+        figures += [
+            _figure(
+                LAND_COVER[c][0], _million_acres(entry[c]), "million acres",
+                _share(entry[c], entry["area_ha"]), "of all land",
+            )
+            for c in measured
+        ]
         if not measured:
             return {
                 "figures": figures, "charts": [],
@@ -515,39 +700,123 @@ def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
         if missing:
             notes.append(f"Not measured yet: {', '.join(missing)}.")
 
-        shares = [_share(entry[c], entry["area_ha"]) for c in measured]
-        top = max(range(len(measured)), key=lambda n: shares[n] or 0)
-        charts = [_bars(
-            "land-cover-shares",
-            f"{LAND_COVER[measured[top]][0]} covers {_pct(shares[top] or 0)}% of {name}",
-            f"Each kind of land cover as a share of all land in {name}. "
-            "The colours match the map layers.",
-            "%", [LAND_COVER[c][0] for c in measured], shares,
-            horizontal=True, series_name="Share of land", bar_colours=[LAND_COVER[c][1] for c in measured],
-        )]
-        cropland = (entry.get("irrigated") or 0) + (entry.get("rainfed") or 0)
-        if "irrigated" in measured and "rainfed" in measured and cropland > 0:
-            split = [_share(entry["irrigated"], cropland), _share(entry["rainfed"], cropland)]
-            charts.append(_bars(
-                "land-cover-cropland",
-                f"{_pct(split[0] or 0)}% of the cropland in {name} is irrigated",
-                "Cropland that gets water from canals or wells, next to cropland that depends on rain. "
-                "Rainfed land is the more exposed to drought.",
-                "%", ["Irrigated", "Rainfed"], split,
-                series_name="Share of cropland",
-                bar_colours=[LAND_COVER["irrigated"][1], LAND_COVER["rainfed"][1]],
-            ))
-        ranked = forest_ranking(place.id, entry)
-        if ranked is not None:
-            charts.append(ranked)
-        return {"figures": figures, "notes": notes, "charts": charts}
+        charts = [cover_squares(entry, measured)]
+        if "irrigated" in classes and "rainfed" in classes:
+            charts.append(rain_dependence(place.id, entry))
+        charts.append(forest_holders(place.id, entry))
+        return {"figures": figures, "notes": notes, "charts": [chart for chart in charts if chart is not None]}
 
     return provider
 
 
+# Each irrigation practice a tehsil can be recommended: a picture for it, its name, what it is,
+# where it suits, and how it helps. Words to pick out in colour are wrapped in markers:
+# {+a benefit+}, {!a drawback!} and {~a condition the method depends on~}.
+PRACTICE_GUIDE = {
+    "Drip": (
+        "drip", "Drip irrigation",
+        "Feeds water drop by drop at the roots of each plant.",
+        "Orchards, vegetables and row crops where {~water is scarce~}.",
+        "{+Very little is lost+} to evaporation or runoff, and {+weeds get less water+}.",
+    ),
+    "SP": (
+        "sprinkler", "Sprinkler irrigation",
+        "Sprays water over the crop like rain.",
+        "{~Sandy or uneven land~} where flooding wastes water.",
+        "It {+spreads water evenly+} without levelling the field and {+uses less than flooding+}.",
+    ),
+    "AWD": (
+        "paddy", "Alternate wetting and drying",
+        "The field is left to dry between floodings instead of staying under water.",
+        "{~Rice~}.",
+        "It {+saves water and pumping cost+} without lowering the yield, and paddies release {+less methane+}.",
+    ),
+    "FI": (
+        "flood", "Flood irrigation",
+        "Covers a level field with canal water.",
+        "Places with a {~plentiful canal supply~}.",
+        "It is {+simple and cheap+} and can wash salts down out of the soil, but it {!uses the most water!}.",
+    ),
+}
+
+_HIGHLIGHT = re.compile(r"\{([+!~])(.+?)\1\}")
+_TONES = {"+": "benefit", "!": "caution", "~": "condition"}
+
+
+def _highlighted(marked: str) -> dict[str, Any]:
+    """A marked sentence as its plain text, plus that text cut where the highlighted words begin and end."""
+    parts: list[dict[str, str]] = []
+    at = 0
+    for match in _HIGHLIGHT.finditer(marked):
+        if match.start() > at:
+            parts.append({"text": marked[at:match.start()]})
+        parts.append({"text": match.group(2), "tone": _TONES[match.group(1)]})
+        at = match.end()
+    if at < len(marked):
+        parts.append({"text": marked[at:]})
+    return {"text": "".join(part["text"] for part in parts), "parts": parts}
+
+
+def _practice_row(code: str) -> dict[str, Any]:
+    icon, name, what, suits, helps = PRACTICE_GUIDE[code]
+    return {
+        "icon": icon, "name": name,
+        "points": [
+            _highlighted(what),
+            {"label": "Suits", "tone": "condition", **_highlighted(suits)},
+            {"label": "Helps by", "tone": "benefit", **_highlighted(helps)},
+        ],
+    }
+
+
+def _with_practice_tables(collection: dict[str, Any]) -> dict[str, Any]:
+    """The practice layer with, on each tehsil, a table of its recommended practices for the popup."""
+    features = []
+    for feature in collection["features"]:
+        props = dict(feature["properties"])
+        codes = [code.strip() for code in str(props.get("practice") or "").split(",") if code.strip()]
+        rows = [_practice_row(code) for code in codes if code in PRACTICE_GUIDE]
+        if rows:
+            props["table"] = {
+                "title": f"Recommended for {props.get('name', 'this')} tehsil",
+                "columns": ["Irrigation type", "Why it is needed and how it helps"],
+                "rows": rows,
+            }
+        features.append({**feature, "properties": props})
+    return {**collection, "features": features}
+
+
+# How many districts at each end of the irrigation balance the map picks out.
+BALANCE_EXTREMES = 5
+# The colours of the two ends of the irrigation balance map: more groundwater, more surface water.
+BALANCE_ENDS = ("#3b4cc0", "#b40426")
+# Places the tehsil map files under a different name from the district map.
+TEHSIL_STEMS = {"p-federal-capital": "islamabad"}
+
+
+def _amount(value: float) -> str:
+    """A figure for a label: at most two decimals, or its first two digits when it is too small for that."""
+    if value == 0:
+        return "0"
+    if abs(value) >= 0.1:
+        return f"{value:,.2f}".rstrip("0").rstrip(".")
+    return f"{value:.{1 - math.floor(math.log10(abs(value)))}f}".rstrip("0")
+
+
+def _water_balance_label(balance: float) -> str:
+    """Which source waters more land in a district, and by how much, from the balance in million acres."""
+    if abs(balance) < 0.5 * HECTARES_TO_ACRES / MILLION:
+        return "Surface water and groundwater irrigate the same area"
+    more, less = ("Surface water", "groundwater") if balance > 0 else ("Groundwater", "surface water")
+    return f"{more} irrigates {_amount(abs(balance))} million acres more than {less}"
+
+
 def _district_layer(
-    boundaries: dict[str, Any], places: dict[str, Any], title: str, value_of: Callable[[dict], Any], unit: str
+    boundaries: dict[str, Any], places: dict[str, Any], title: str, value_of: Callable[[dict], Any], unit: str,
+    describe: Callable[[float], str] | None = None, extremes: int = 0,
 ) -> GeoJsonProvider:
+    """One shape per district with its value and a label. With `extremes`, that many districts furthest
+    above zero are marked "high" and that many furthest below are marked "low", for the map to pick out."""
     features = []
     for feature in boundaries["features"]:
         props = feature["properties"]
@@ -558,8 +827,14 @@ def _district_layer(
             merged["label"] = f"{title}: no figures reported"
         else:
             merged["value"] = value
-            merged["label"] = f"{title}: {value:,.0f}{unit}"
+            merged["label"] = describe(value) if describe else f"{title}: {_amount(value)}{unit}"
         features.append({"type": "Feature", "geometry": feature["geometry"], "properties": merged})
+    if extremes > 0:
+        valued = sorted((f["properties"] for f in features if "value" in f["properties"]), key=lambda p: p["value"])
+        for props in [p for p in valued if p["value"] < 0][:extremes]:
+            props["extreme"] = "low"
+        for props in [p for p in valued if p["value"] > 0][-extremes:]:
+            props["extreme"] = "high"
     collection = {"type": "FeatureCollection", "features": features}
     return lambda: collection
 
@@ -572,11 +847,12 @@ def build_providers(
     sections: dict[str, SectionDataProvider] = {}
     layers: dict[str, GeoJsonProvider] = {}
 
+    practice = _read(data_dir / "irrigation_practice.geojson")
     builders = {
         "emissions": ("emissions.json", _emissions),
         "water-balance": ("water_balance.json", _water_balance),
         "food-security": ("food_security.json", _food_security),
-        "irrigation": ("irrigation.json", _irrigation),
+        "irrigation": ("irrigation.json", lambda data: _irrigation(data, practice)),
         "land-cover": ("land_cover.json", _land_cover),
         "climate-calendar": ("crop_calendar.json", _crop_calendar),
     }
@@ -588,21 +864,42 @@ def build_providers(
         try:
             sections[section_id] = build(data)
             loaded[section_id] = data
-        except (KeyError, TypeError, IndexError, ZeroDivisionError) as err:
+        except (KeyError, TypeError, IndexError, ZeroDivisionError, AttributeError) as err:
             logger.error("%s does not have the expected contents: %r", filename, err)
 
-    practice = _read(data_dir / "irrigation_practice.geojson")
     if practice is not None:
+        try:
+            practice = _with_practice_tables(practice)
+        except (KeyError, TypeError, AttributeError) as err:
+            logger.error("irrigation_practice.geojson does not have the expected contents: %r", err)
         layers["irrigation-practice"] = lambda: practice
 
     districts = _read(boundaries_dir / "districts.geojson")
     if districts is not None and "irrigation" in loaded:
         places = loaded["irrigation"]["places"]
+
+        def area(hectares: Any) -> Any:
+            return None if hectares is None else _million_acres(hectares)
+
         layers["equipped-area"] = _district_layer(
-            districts, places, "Area equipped for irrigation", lambda e: e["equipped"], " ha"
+            districts, places, "Area equipped for irrigation", lambda e: area(e["equipped"]), " million acres"
         )
         layers["irrigated-share"] = _district_layer(
             districts, places, "Share of equipped area irrigated", lambda e: _share(e["irrigated"], e["equipped"]), "%"
+        )
+        layers["surface-water-area"] = _district_layer(
+            districts, places, "Surface water irrigation", lambda e: area(e["surface"]), " million acres"
+        )
+        layers["groundwater-area"] = _district_layer(
+            districts, places, "Groundwater irrigation", lambda e: area(e["groundwater"]), " million acres"
+        )
+        layers["irrigation-balance"] = _district_layer(
+            districts, places, "Irrigation balance",
+            lambda e: (
+                None if e["surface"] is None or e["groundwater"] is None
+                else _million_acres(e["surface"] - e["groundwater"])
+            ),
+            " million acres", describe=_water_balance_label, extremes=BALANCE_EXTREMES,
         )
         layers["groundwater-share"] = _district_layer(
             districts, places, "Share equipped with groundwater", lambda e: _share(e["groundwater"], e["equipped"]), "%"

@@ -1,8 +1,9 @@
-import { Map as MapIcon } from 'lucide-react'
+import { Map as MapIcon, Maximize2, Minimize2 } from 'lucide-react'
+import { useEffect } from 'react'
 import type { Place, Section } from '../api/types'
 import { formatNumber } from '../charts/chartOption'
 import type { SectionDataState } from '../data/useSectionData'
-import { viewStore } from '../state/viewState'
+import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
 
 const EMPTY_STATES: Record<string, string> = {
@@ -23,6 +24,19 @@ export function ChartsView({
   sectionData: SectionDataState
 }) {
   const data = sectionData.status === 'ready' ? sectionData.data : null
+  const maximizedId = useView((s) => s.maximized)
+  // A chart that is no longer offered, after a change of place for instance, cannot stay maximized.
+  const maximized = data?.charts.find((chart) => chart.id === maximizedId) ?? null
+  const shown = maximized ? [maximized] : (data?.charts ?? [])
+
+  useEffect(() => {
+    if (!maximized) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') viewStore.getState().maximize(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [maximized])
 
   return (
     <section className="charts-view" aria-label="Charts in full view">
@@ -78,8 +92,21 @@ export function ChartsView({
 
       {data && data.charts.length > 0 && (
         <div className="charts-view-grid">
-          {data.charts.map((chart) => (
-            <ChartFigure key={chart.id} spec={chart} year={data.year} large />
+          {shown.map((chart) => (
+            <div key={chart.id} className="chart-cell">
+              <ChartFigure spec={chart} year={data.year} large />
+              {data.charts.length > 1 && (
+                <button
+                  type="button"
+                  className="chart-size"
+                  title={maximized ? 'Minimize' : 'Maximize'}
+                  aria-label={`${maximized ? 'Minimize' : 'Maximize'}: ${chart.title}`}
+                  onClick={() => viewStore.getState().maximize(maximized ? null : chart.id)}
+                >
+                  {maximized ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
+                </button>
+              )}
+            </div>
           ))}
         </div>
       )}

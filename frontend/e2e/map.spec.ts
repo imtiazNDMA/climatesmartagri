@@ -47,7 +47,7 @@ test('the map worker loads, so boundaries can be drawn', async ({ page }) => {
   expect(errors.filter((text) => /worker/i.test(text))).toEqual([])
 })
 
-test('hovering names a district, and clicks drill from province to district', async ({ page }) => {
+test('a click names a district in a popup, and clicks drill from province to district', async ({ page }) => {
   await openPortal(page)
   await page.locator('[data-boundaries-drawn="true"]').waitFor()
   const box = (await page.locator('.map').boundingBox())!
@@ -56,14 +56,23 @@ test('hovering names a district, and clicks drill from province to district', as
   const y = box.y + box.height / 2
   const crumbs = page.getByRole('navigation', { name: 'Selected place' }).getByRole('listitem')
 
+  const popup = page.locator('.maplibregl-popup')
+  // Pointing at a district shows nothing yet; the popup waits for a click.
   await page.mouse.move(x - 5, y)
   await page.mouse.move(x, y, { steps: 3 })
-  await expect(page.locator('.maplibregl-popup')).toHaveText('District One')
+  await page.waitForTimeout(300)
+  await expect(popup).toHaveCount(0)
 
   await page.mouse.click(x, y)
+  await expect(popup.locator('strong')).toHaveText('District One')
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha'])
   await page.mouse.click(x, y)
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha', 'District One'])
+  // The popup stays open when the pointer moves away, until it is closed.
+  await page.mouse.move(box.x + box.width - 30, box.y + box.height - 30, { steps: 3 })
+  await expect(popup).toHaveCount(1)
+  await popup.getByRole('button', { name: 'Close popup' }).click()
+  await expect(popup).toHaveCount(0)
 })
 
 test('clicking the map outside every district clears the selection', async ({ page }) => {

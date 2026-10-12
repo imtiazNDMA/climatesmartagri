@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { ChartSpec } from '../api/types'
-import { chartHeight, chartOption, endLabelOffsets, formatNumber, markedYear, SLOT_COLOURS } from './chartOption'
+import {
+  barLabel, chartHeight, chartOption, endLabelOffsets, formatNumber, markedYear, SLOT_COLOURS,
+} from './chartOption'
 
 const lines: ChartSpec = {
   id: 'lines', title: 'Lines', kind: 'line', unit: 'Mt', time: true,
@@ -31,6 +33,12 @@ describe('formatNumber', () => {
     expect(formatNumber(521.456)).toBe('521.46')
     expect(formatNumber(-23.9)).toBe('-23.9')
     expect(formatNumber(80)).toBe('80')
+  })
+  it('keeps the first two digits of a small amount instead of rounding it to nothing', () => {
+    expect(formatNumber(0.0012355)).toBe('0.0012')
+    expect(formatNumber(0.0478)).toBe('0.048')
+    expect(formatNumber(0.25)).toBe('0.25')
+    expect(formatNumber(0)).toBe('0')
   })
   it('passes text through and names a missing value', () => {
     expect(formatNumber('PK')).toBe('PK')
@@ -79,7 +87,7 @@ describe('chartOption for charts over time', () => {
 
   it('adds a zero line when asked', () => {
     const o = option({ ...lines, zero_line: true }, 2001)
-    expect(o.series[0].markLine.data).toEqual([{ xAxis: 1 }, { yAxis: 0 }])
+    expect(o.series[0].markLine.data).toEqual([{ xAxis: 1 }, { yAxis: 0, label: { show: false } }])
   })
 
   it('shows dots only at the listed points', () => {
@@ -129,7 +137,7 @@ describe('chartOption for bar charts', () => {
 
 describe('chartHeight', () => {
   it('grows with the number of horizontal bars and is fixed otherwise', () => {
-    expect(chartHeight(lines)).toBe(220)
+    expect(chartHeight(lines)).toBe(250)
     expect(chartHeight(lines, true)).toBeGreaterThan(300)
     expect(chartHeight(bars)).toBeLessThan(chartHeight({ ...bars, categories: Array(15).fill('x') }))
   })
@@ -187,6 +195,18 @@ describe('storytelling styles', () => {
     expect(label('ha', null)).toBe('')
   })
 
+  it('lets a few upright bars grow into broad columns, and more so in the large view', () => {
+    const upright = { ...bars, horizontal: false }
+    expect(option(upright).series[0].barMaxWidth).toBeGreaterThan(option(bars).series[0].barMaxWidth)
+    expect(option(upright, null, true).series[0].barMaxWidth).toBeGreaterThan(option(upright).series[0].barMaxWidth)
+  })
+
+  it('writes axis and bar labels larger in the large view', () => {
+    const large = option(bars, null, true)
+    expect(large.xAxis.axisLabel.fontSize).toBeGreaterThan(option(bars).xAxis.axisLabel.fontSize)
+    expect(large.series[0].label.fontSize).toBe(large.yAxis.axisLabel.fontSize)
+  })
+
   it('labels every bar when there are few, and none when there are many', () => {
     expect(option(bars).series[0].label.show).toBe(true)
     expect(option({ ...bars, categories: Array(15).fill('x') }).series[0].label.show).toBe(false)
@@ -208,9 +228,9 @@ describe('labels that would collide', () => {
     expect(offsets[0]).toBe(0)
     expect(offsets[1]).toBeGreaterThan(0)
     expect(offsets[2]).toBe(0)
-    // 108 and 103 on a 0-108 axis are about 13px apart on a 280px plot; after the push they are 16.
+    // 108 and 103 on a 0-108 axis are about 13px apart on a 280px plot; after the push they are 22.
     expect(offsets[1]).toBeGreaterThanOrEqual(2)
-    expect(offsets[1]).toBeLessThan(16)
+    expect(offsets[1]).toBeLessThan(22)
   })
 
   it('keeps pushing down a run of three close lines so none overlap', () => {
@@ -257,5 +277,65 @@ describe('bars in the colours of their map layers', () => {
     expect(data[1].itemStyle.opacity).toBe(1)
     expect(data[0].itemStyle.opacity).toBeLessThan(0.6)
     expect(data[2].itemStyle.opacity).toBeLessThan(0.6)
+  })
+})
+
+describe('bars that tell a story', () => {
+  const split: ChartSpec = {
+    id: 'split', title: 'Split', kind: 'bar', unit: 'million acres', time: false, horizontal: true,
+    stacked: true, hide_axis: true, still: true, highlights: [1],
+    categories: ['Punjab', 'Balochistan'],
+    bar_notes: ['14% rainfed', '63% rainfed'],
+    series: [
+      { name: 'Irrigated cropland', slot: 1, values: [29.3, 1.9], colour: '#2a78d6' },
+      { name: 'Rainfed cropland', slot: 4, values: [4.8, 3.2], colour: '#eda100' },
+    ],
+  }
+  const held: ChartSpec = {
+    ...split, id: 'held', stacked: false, bar_notes: ['18% of its land', '7% of its land'], highlights: [0],
+    series: [{ name: 'Forest', slot: 1, values: [4.48, 3.41] }], bar_colours: ['#2e7d32', '#2e7d32'],
+  }
+
+  it('lays stacked series end to end in their own colours, and labels each bar once, at its end', () => {
+    const [irrigated, rainfed] = option(split, null, true).series
+    expect(irrigated.stack).toBe('total')
+    expect(rainfed.stack).toBe('total')
+    expect(irrigated.data[0].itemStyle.color).toBe('#2a78d6')
+    expect(rainfed.data[0].itemStyle.color).toBe('#eda100')
+    expect(irrigated.label.show).toBe(false)
+    expect(rainfed.label.show).toBe(true)
+    expect(rainfed.label.formatter({ value: 3.2, dataIndex: 1 })).toBe('63% rainfed')
+  })
+
+  it('writes the value and the note at the end of a bar that is one amount', () => {
+    expect(barLabel(held, 0, 4.48)).toBe('4.48 · 18% of its land')
+    expect(barLabel(bars, 0, 30)).toBe('30')
+  })
+
+  it('draws the bars the headline is about at full strength and bold, and the rest fainter', () => {
+    const rainfed = option(split, null, true).series[1]
+    expect(rainfed.data[1].itemStyle.opacity).toBe(1)
+    expect(rainfed.data[0].itemStyle.opacity).toBeLessThan(1)
+    expect(rainfed.data[1].label.fontWeight).toBe('bold')
+    expect(rainfed.data[0].label.fontWeight).toBeUndefined()
+  })
+
+  it('leaves the numbers off the value axis and makes room for the words at the bar ends', () => {
+    const o = option(held, null, true)
+    expect(o.xAxis.axisLabel.show).toBe(false)
+    expect(o.xAxis.splitLine.show).toBe(false)
+    // The unit is said under the headline instead, and the longest bar runs the full width.
+    expect(o.xAxis.name).toBe('')
+    expect(o.xAxis.max).toBe('dataMax')
+    expect(o.grid.right).toBeGreaterThan(option(bars, null, true).grid.right)
+    expect(option(bars, null, true).xAxis.axisLabel.show).toBe(true)
+  })
+})
+
+describe('a value axis that does not start at zero', () => {
+  it('starts and ends where the chart says, and is left alone otherwise', () => {
+    const o = option({ ...lines, axis_min: 30, axis_max: 75 })
+    expect([o.yAxis.min, o.yAxis.max]).toEqual([30, 75])
+    expect(option(lines).yAxis.min).toBeUndefined()
   })
 })

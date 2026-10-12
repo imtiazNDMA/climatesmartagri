@@ -35,7 +35,7 @@
       ],
       "years": {
         "first": 1994,
-        "last": 2021
+        "last": 2025
       }
     },
     {
@@ -78,10 +78,21 @@
       ]
     },
     {
+      "id": "forecast",
+      "title": "Weather forecast",
+      "icon": "cloud-sun",
+      "order": 7,
+      "status": "ready",
+      "kind": "forecast",
+      "place_levels": [
+        "national"
+      ]
+    },
+    {
       "id": "hazards",
       "title": "Hazards",
       "icon": "cloud-lightning",
-      "order": 7,
+      "order": 8,
       "status": "coming-soon",
       "summary": "Flood, drought and heatwave layers to overlay on cropland and irrigation.",
       "place_levels": [
@@ -94,7 +105,7 @@
       "id": "exposure",
       "title": "Exposure and vulnerability",
       "icon": "users",
-      "order": 8,
+      "order": 9,
       "status": "coming-soon",
       "summary": "Population and cropland at risk, with a district risk ranking.",
       "place_levels": [
@@ -252,6 +263,79 @@
       }
     },
     {
+      "id": "surface-water-area",
+      "section_id": "irrigation",
+      "title": "Surface water irrigation (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#fff5f0",
+          "#fcbba1",
+          "#fb6a4a",
+          "#cb181d",
+          "#67000d"
+        ],
+        "min": 0,
+        "max": 1.7,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
+      }
+    },
+    {
+      "id": "groundwater-area",
+      "section_id": "irrigation",
+      "title": "Groundwater irrigation (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#f7fcf5",
+          "#c7e9c0",
+          "#74c476",
+          "#238b45",
+          "#00441b"
+        ],
+        "min": 0,
+        "max": 0.9,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
+      }
+    },
+    {
+      "id": "irrigation-balance",
+      "section_id": "irrigation",
+      "title": "Irrigation balance (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#3b4cc0",
+          "#8db0fe",
+          "#dddcdc",
+          "#f4987a",
+          "#b40426"
+        ],
+        "min": -0.52,
+        "max": 1.7,
+        "unit": "million acres",
+        "mid": 0,
+        "min_label": "More groundwater",
+        "max_label": "More surface water"
+      }
+    },
+    {
       "id": "irrigated-share",
       "section_id": "irrigation",
       "title": "Share of equipped area irrigated (district)",
@@ -270,7 +354,9 @@
         ],
         "min": 0,
         "max": 100,
-        "unit": "%"
+        "unit": "%",
+        "min_label": "Lower share",
+        "max_label": "Higher share"
       }
     },
     {
@@ -291,8 +377,10 @@
           "#0d366b"
         ],
         "min": 0,
-        "max": 700000,
-        "unit": "ha"
+        "max": 1.7,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
       }
     },
     {
@@ -314,7 +402,9 @@
         ],
         "min": 0,
         "max": 100,
-        "unit": "%"
+        "unit": "%",
+        "min_label": "Lower share",
+        "max_label": "Higher share"
       }
     }
   ]

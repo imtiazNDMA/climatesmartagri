@@ -14,7 +14,18 @@ export interface LegendItem {
 
 export type Legend =
   | { type: 'classes'; items: LegendItem[] }
-  | { type: 'ramp'; colours: string[]; min: number; max: number; unit: string }
+  | {
+      type: 'ramp'
+      colours: string[]
+      min: number
+      max: number
+      unit: string
+      /** The value the middle colour stands for, when the ramp runs both ways from a neutral point. */
+      mid?: number | null
+      /** What each end of the ramp means, when the numbers alone do not say. */
+      min_label?: string
+      max_label?: string
+    }
 
 export type SectionStatus = 'ready' | 'no-data' | 'coming-soon'
 export type PlaceLevel = 'national' | 'province' | 'district'
@@ -25,6 +36,8 @@ export interface Section {
   icon: string
   order: number
   status: SectionStatus
+  /** A forecast section takes its layers from the forecast layer list rather than the catalogue's. */
+  kind?: 'standard' | 'forecast'
   summary: string
   place_levels: PlaceLevel[]
   years: YearRange | null
@@ -47,10 +60,46 @@ export interface Layer {
   max_zoom?: number | null
 }
 
+export interface ForecastLayer {
+  id: string
+  title: string
+  group: string
+  unit: string
+  colours: string[]
+  /** The values the two ends of the colours stand for. */
+  min: number
+  max: number
+  /** A different pair of end values at some pressure levels, by level. */
+  ranges: Record<string, [number, number]>
+  /** A pair of end values of its own for some models, by model id; it wins over a level's pair. */
+  model_ranges?: Record<string, [number, number]>
+  /** The value each colour sits at, when the colours are not spread evenly between min and max. */
+  stops?: number[] | null
+  /** The pressure levels each model offers, by model id; 0 is the surface. Empty: no current data. */
+  levels: Record<string, number[]>
+}
+
+export interface ForecastCatalogue {
+  /** False when the server has no account for the forecast source. */
+  configured: boolean
+  /** West, south, east, north: the area forecasts are kept for. No tiles exist outside it. */
+  bbox: [number, number, number, number]
+  models: { id: string; label: string }[]
+  groups: { id: string; title: string }[]
+  layers: ForecastLayer[]
+}
+
+/** A time a forecast layer can be shown for and the model run it comes from, both UTC as YYYYMMDDHH. */
+export interface ForecastTime {
+  time: string
+  run: string
+}
+
 export interface Catalogue {
   basemap_style_url: string
   sections: Section[]
   layers: Layer[]
+  forecast?: ForecastCatalogue | null
 }
 
 export interface Place {
@@ -65,6 +114,10 @@ export interface Figure {
   label: string
   value: number | string | null
   unit: string
+  /** The part of a whole this figure makes up, in percent, when it is one. */
+  share?: number | null
+  /** That whole in a few words, to read after the percentage: "of equipped land". */
+  share_of?: string
 }
 
 export interface ChartSeries {
@@ -76,6 +129,8 @@ export interface ChartSeries {
   points?: number[]
   /** 'strong' draws the series darker and thicker: the one the story is about. */
   emphasis?: 'strong'
+  /** The series' own colour, when it stands for something that has one on the map. */
+  colour?: string
 }
 
 /** A crop's dates: month ranges counted from 0 (start of January) to 12, and the original wording. */
@@ -98,8 +153,7 @@ export interface ChartSpec {
   id: string
   title: string
   /** How to read the chart, in a sentence or two. */
-  subtitle?: string
-  kind: 'line' | 'stacked-area' | 'bar' | 'calendar'
+  kind: 'line' | 'stacked-area' | 'bar' | 'calendar' | 'shares' | 'diverging' | 'counts' | 'balance'
   unit: string
   /** True when the categories are years. */
   time: boolean
@@ -119,6 +173,70 @@ export interface ChartSpec {
   bar_colours?: string[]
   /** For a calendar chart: one row per crop. */
   rows?: CalendarRow[]
+  /** For a chart of the parts of a whole: the parts, largest first. */
+  cells?: WaffleCell[]
+  /** Where the value axis starts and ends, when it should not start at zero. */
+  axis_min?: number
+  axis_max?: number
+  /** Bar series are laid end to end in one bar per category, not side by side. */
+  stacked?: boolean
+  /** Words written at the end of each bar, one per category. */
+  bar_notes?: string[]
+  /** The bars the headline is about; the others are drawn fainter. */
+  highlights?: number[]
+  /** No numbers along the value axis: the bars are labelled themselves. */
+  hide_axis?: boolean
+  /** Drawn in once and left still, for bars whose lengths are being compared. */
+  still?: boolean
+  /** For a chart of two opposed shares: what the sides are, and the rows. */
+  sides?: [ChartSide, ChartSide]
+  splits?: DivergingSplit[]
+  /** For a balance played through the years: the two amounts behind each balance, and the words for its two sides. */
+  balance?: {
+    available?: number[]
+    needed?: number[][]
+    negative?: string
+    positive?: string
+    zero?: string
+    negative_word?: string
+    positive_word?: string
+    caption?: string
+  }
+  /** For a chart of counts: the things counted, and how many there were to count among. */
+  items?: CountItem[]
+  total?: number
+}
+
+export interface ChartSide {
+  label: string
+  colour: string
+}
+
+export interface DivergingSplit {
+  name: string
+  /** Percent on each side of the centre line. */
+  left: number
+  right: number
+  /** How much the row stands for; heavier rows are drawn thicker. */
+  weight: number
+  highlight: boolean
+}
+
+export interface CountItem {
+  /** A picture for the row, by name. */
+  icon?: string
+  name: string
+  value: number
+  highlight: boolean
+}
+
+export interface WaffleCell {
+  label: string
+  colour: string
+  /** The part's true percentage of the whole. */
+  share: number
+  /** Its width out of a hundred when the parts are laid end to end; these always add up to a hundred. */
+  squares: number
 }
 
 export interface SectionData {

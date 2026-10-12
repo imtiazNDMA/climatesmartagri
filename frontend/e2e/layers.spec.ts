@@ -14,9 +14,12 @@ test('layers from two sections stack in the active list and the legend', async (
   const active = page.getByRole('region', { name: 'Active layers' })
   await expect(active.getByRole('listitem')).toHaveText([/Fake static/, /Fake yearly/])
   const legend = page.getByRole('region', { name: 'Legend' })
-  await expect(legend.getByRole('heading')).toHaveText([/Fake static/, /Fake yearly/])
+  await expect(legend.getByRole('heading', { level: 3 })).toHaveText('Legend')
+  await expect(legend.getByRole('heading', { level: 4 })).toHaveText([/Fake static/, /Fake yearly/])
   await expect(legend).toContainText('Yearly class')
-  await expect(legend).toContainText('0 – 100 %')
+  // A colour ramp says in words what its ends mean; it carries no numbers.
+  await expect(legend.locator('.legend-ends')).toHaveText('LowHigh')
+  await expect(legend).not.toContainText('100')
 })
 
 test('layers can be reordered, faded, hidden and removed', async ({ page }) => {
@@ -27,7 +30,7 @@ test('layers can be reordered, faded, hidden and removed', async ({ page }) => {
 
   await active.getByRole('button', { name: 'Move Fake yearly up' }).click()
   await expect(active.getByRole('listitem')).toHaveText([/Fake yearly/, /Fake static/])
-  await expect(page.getByRole('region', { name: 'Legend' }).getByRole('heading')).toHaveText([
+  await expect(page.getByRole('region', { name: 'Legend' }).getByRole('heading', { level: 4 })).toHaveText([
     /Fake yearly/, /Fake static/,
   ])
 

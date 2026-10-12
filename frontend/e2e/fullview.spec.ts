@@ -17,7 +17,7 @@ async function mockSectionData(page: Page) {
         charts: [
           {
             id: 'trend', title: 'Food needs rise faster than supply', kind: 'line', unit: '', time: true,
-            subtitle: 'The dark line is the food the country needs.', end_labels: true, categories: YEARS,
+            end_labels: true, categories: YEARS,
             series: [
               { name: 'Food needed', slot: 1, values: YEARS.map((y) => y - 1990), emphasis: 'strong' },
               { name: 'Food available', slot: 3, values: YEARS.map((y) => 2012 - y) },
@@ -25,7 +25,7 @@ async function mockSectionData(page: Page) {
           },
           {
             id: 'growth', title: 'Nitrous oxide grew fastest', kind: 'bar', unit: 'times', time: false,
-            subtitle: 'How many times larger each gas became.', horizontal: true, bar_slots: [1, 2, 3],
+            horizontal: true, bar_slots: [1, 2, 3],
             categories: ['Carbon dioxide', 'Methane', 'Nitrous oxide'],
             series: [{ name: 'Growth', slot: 1, values: [2.9, 2.4, 6.8] }],
           },
@@ -62,14 +62,15 @@ test('charts open in a full view that replaces the map, and go back', async ({ p
   await expect(page.getByRole('searchbox', { name: 'Search place' })).toBeVisible()
 })
 
-test('the full view tells the story: headline, how to read it, key figures and notes', async ({ page }) => {
+test('the full view tells the story: headline, key figures and notes', async ({ page }) => {
   await mockSectionData(page)
   await openPortal(page, '/?section=alpha-section&view=charts')
   const full = page.getByRole('region', { name: 'Charts in full view' })
   await expect(full.getByRole('heading', { level: 2 })).toHaveText('Alpha section')
   await expect(full.getByText('Pakistan, 2010')).toBeVisible()
   await expect(full.getByRole('heading', { name: 'Food needs rise faster than supply' })).toBeVisible()
-  await expect(full.getByText('The dark line is the food the country needs.')).toBeVisible()
+  // Nothing sits between a chart's headline and its plot.
+  await expect(full.locator('figcaption > *')).toHaveCount(2)
   await expect(full.getByText('386.06 million')).toBeVisible()
   await expect(full.getByText('A note about the data.')).toBeVisible()
 
@@ -77,9 +78,47 @@ test('the full view tells the story: headline, how to read it, key figures and n
   // In the full view the lines are labelled where they end.
   await expect(trend.locator('.chart-plot svg')).toContainText('Food needed')
   await expect(trend.locator('.chart-plot svg')).toContainText('Food available')
-  await expect(full.getByRole('figure', { name: 'Nitrous oxide grew fastest' }).locator('svg')).toContainText('6.8×')
+  await expect(full.getByRole('figure', { name: 'Nitrous oxide grew fastest' }).locator('.chart-plot svg')).toContainText('6.8×')
   const plot = (await trend.locator('.chart-plot').boundingBox())!
   expect(plot.height).toBeGreaterThan(300)
+})
+
+test('one chart can be maximized to fill the full view, and minimized again', async ({ page }) => {
+  await mockSectionData(page)
+  await openPortal(page, '/?section=alpha-section&view=charts')
+  const full = page.getByRole('region', { name: 'Charts in full view' })
+  const growth = full.getByRole('figure', { name: 'Nitrous oxide grew fastest' })
+  const before = (await growth.boundingBox())!
+  await full.getByRole('button', { name: 'Maximize: Nitrous oxide grew fastest' }).click()
+  await expect(full.getByRole('figure')).toHaveCount(1)
+  // Alone, it takes the height the other chart was using, and is redrawn at that size, not stretched.
+  await expect.poll(async () => (await growth.boundingBox())!.height).toBeGreaterThan(before.height + 100)
+  await expect
+    .poll(async () => {
+      const plot = (await growth.locator('.chart-plot').boundingBox())!
+      const drawing = (await growth.locator('.chart-plot svg').boundingBox())!
+      return Math.abs(plot.height - drawing.height)
+    })
+    .toBeLessThan(2)
+  await full.getByRole('button', { name: 'Minimize: Nitrous oxide grew fastest' }).click()
+  await expect(full.getByRole('figure')).toHaveCount(2)
+
+  await full.getByRole('button', { name: 'Maximize: Food needs rise faster than supply' }).click()
+  await expect(full.getByRole('figure')).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(full.getByRole('figure')).toHaveCount(2)
+})
+
+test('a chart in the panel can be maximized straight into the full view', async ({ page }) => {
+  await mockSectionData(page)
+  await openPortal(page, '/?section=alpha-section')
+  await page.locator('.panel').getByRole('button', { name: 'Maximize: Nitrous oxide grew fastest' }).click()
+  const full = page.getByRole('region', { name: 'Charts in full view' })
+  await expect(full.getByRole('figure')).toHaveCount(1)
+  await expect(full.getByRole('figure', { name: 'Nitrous oxide grew fastest' })).toBeVisible()
+  await full.getByRole('button', { name: 'Back to map' }).click()
+  await page.getByRole('button', { name: 'Open charts in full view' }).click()
+  await expect(full.getByRole('figure')).toHaveCount(2)
 })
 
 test('in the full view the panel points to it and does not repeat the charts', async ({ page }) => {

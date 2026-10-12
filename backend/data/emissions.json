@@ -29,7 +29,11 @@
   2018,
   2019,
   2020,
-  2021
+  2021,
+  2022,
+  2023,
+  2024,
+  2025
  ],
  "co2": [
   94.57,
@@ -59,7 +63,11 @@
   268.81,
   270.29,
   271.76,
-  273.24
+  273.24,
+  275.54,
+  277.43,
+  279.34,
+  281.61
  ],
  "ch4": [
   72.27,
@@ -89,7 +97,11 @@
   135.88,
   148.55,
   161.23,
-  173.9
+  173.9,
+  175.8,
+  177.6,
+  179.2,
+  181.5
  ],
  "n2o": [
   11.0,
@@ -114,12 +126,16 @@
   82.46,
   84.32,
   86.18,
-  85.88,
-  85.57,
-  85.27,
-  81.62,
-  77.97,
-  74.32
+  87.88,
+  89.57,
+  91.27,
+  94.62,
+  96.97,
+  99.32,
+  101.45,
+  103.23,
+  106.54,
+  109.34
  ],
  "total": [
   177.84,
@@ -144,12 +160,50 @@
   377.29,
   387.87,
   398.46,
-  428.96,
-  459.46,
-  489.96,
-  500.46,
-  510.96,
-  521.46
+  430.96,
+  463.46,
+  495.96,
+  513.46,
+  529.96,
+  546.46,
+  552.79,
+  558.26,
+  565.08,
+  572.45
+ ],
+ "status": [
+  "official",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "official",
+  "interpolated",
+  "interpolated",
+  "interpolated",
+  "official",
+  "interpolated",
+  "interpolated",
+  "official",
+  "interpolated",
+  "interpolated",
+  "official",
+  "interpolated",
+  "interpolated",
+  "official",
+  "unstated",
+  "unstated",
+  "estimate",
+  "unstated"
  ],
  "official": [
   true,
@@ -179,6 +233,10 @@
   true,
   false,
   false,
-  true
+  true,
+  false,
+  false,
+  false,
+  false
  ]
 }

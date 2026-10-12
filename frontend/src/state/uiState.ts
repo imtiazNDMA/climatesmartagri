@@ -12,6 +12,8 @@ export interface UiStore {
   layerErrors: Record<string, boolean>
   retryCounts: Record<string, number>
   backendLost: boolean
+  /** True while the forecast's tiles are on their way: the first request for a time waits on PMD. */
+  forecastLoading: boolean
   addNotice(text: string): void
   dismissNotice(id: number): void
   setLayerError(id: string): void
@@ -19,6 +21,7 @@ export interface UiStore {
   retryLayer(id: string): void
   forgetLayer(id: string): void
   setBackendLost(lost: boolean): void
+  setForecastLoading(loading: boolean): void
 }
 
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
@@ -34,6 +37,7 @@ export function createUiStore(): StoreApi<UiStore> {
     layerErrors: {},
     retryCounts: {},
     backendLost: false,
+    forecastLoading: false,
     addNotice: (text) =>
       set((s) => (s.notices.some((n) => n.text === text) ? s : { notices: [...s.notices, { id: nextId++, text }] })),
     dismissNotice: (id) => set((s) => ({ notices: s.notices.filter((n) => n.id !== id) })),
@@ -51,6 +55,7 @@ export function createUiStore(): StoreApi<UiStore> {
           : s,
       ),
     setBackendLost: (lost) => set((s) => (s.backendLost === lost ? s : { backendLost: lost })),
+    setForecastLoading: (loading) => set((s) => (s.forecastLoading === loading ? s : { forecastLoading: loading })),
   }))
 }
 
