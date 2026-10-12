@@ -26,7 +26,6 @@ export function BalanceChart({ spec, year, large = false }: { spec: ChartSpec; y
   const ticks = [-end, -end / 2, 0, end / 2, end]
   const half = (value: number) => `${(Math.min(end, Math.abs(value)) / end) * 50}%`
   const inside = (value: number) => Math.abs(value) / end > 0.5
-  const greenest = Math.max(1e-9, ...spec.series.map((series) => series.values[index] ?? 0))
 
   return (
     <figure className={large ? 'chart balance-chart chart-large' : 'chart balance-chart'} aria-label={spec.title}>
@@ -67,7 +66,6 @@ export function BalanceChart({ spec, year, large = false }: { spec: ChartSpec; y
                     style={{
                       width: half(value),
                       [short ? 'right' : 'left']: '50%',
-                      '--strength': short ? 1 : 0.5 + 0.5 * (value / greenest),
                     } as CSSProperties}
                   />
                   <span

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, BackendUnreachableError, fetchSectionData } from '../api/client'
 import type { Section, SectionData } from '../api/types'
 import { uiStore } from '../state/uiState'
@@ -16,12 +16,24 @@ export function useSectionData(section: Section | null, placeId: string | null, 
   const [state, setState] = useState<SectionDataState>({ status: 'idle' })
   const sectionId = section?.id ?? null
   const sectionStatus = section?.status ?? null
+  /** The section and place whose data was last asked for. */
+  const shown = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!sectionId || !sectionStatus) return setState({ status: 'idle' })
-    if (sectionStatus !== 'ready') return setState({ status: sectionStatus })
+    if (!sectionId || !sectionStatus) {
+      shown.current = null
+      return setState({ status: 'idle' })
+    }
+    if (sectionStatus !== 'ready') {
+      shown.current = null
+      return setState({ status: sectionStatus })
+    }
     let cancelled = false
-    setState({ status: 'loading' })
+    // Moving through the years of the same section and place, the figures and charts on screen stay until
+    // the new year's arrive: taking them away for a moment would redraw every chart from nothing at each step.
+    const same = shown.current === `${sectionId}|${placeId ?? ''}`
+    shown.current = `${sectionId}|${placeId ?? ''}`
+    setState((before) => (same && before.status === 'ready' ? before : { status: 'loading' }))
     fetchSectionData(sectionId, placeId, year)
       .then((data) => {
         if (cancelled) return

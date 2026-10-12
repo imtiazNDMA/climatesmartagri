@@ -64,3 +64,11 @@ describe('forecast loading', () => {
     expect(store.getState().forecastLoading).toBe(false)
   })
 })
+
+describe('the water charts’ efficiency', () => {
+  it('is unset until the reader sets one', () => {
+    expect(store.getState().efficiency).toBeNull()
+    store.getState().setEfficiency(48)
+    expect(store.getState().efficiency).toBe(48)
+  })
+})

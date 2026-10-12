@@ -289,7 +289,7 @@ def test_every_chart_has_a_plain_headline_and_no_line_of_explanation(providers):
 def test_emissions_story(providers):
     sections, _ = providers
     charts = _charts(sections["emissions"](PK, 1995))
-    assert list(charts) == ["emissions-by-gas", "emissions-growth", "emissions-share", "emissions-official"]
+    assert list(charts) == ["emissions-by-gas", "emissions-growth", "emissions-share"]
 
     by_gas = charts["emissions-by-gas"]
     assert by_gas["title"] == "Pakistan's yearly emissions grew 1.1 times between 1994 and 1996"
@@ -311,10 +311,6 @@ def test_emissions_story(providers):
     assert share["series"][0]["values"] == [53.1, 40.3, 6.7]
     assert share["unit"] == "%"
 
-    official = charts["emissions-official"]
-    assert official["title"] == "Only 2 of the 3 years shown are official measurements"
-    assert official["series"][0]["points"] == [0, 2]
-
 
 def test_emissions_share_follows_the_year(providers):
     sections, _ = providers
@@ -331,7 +327,7 @@ def test_water_story(providers):
     assert figures["Water to spare at 70% efficiency"] == (42.6, "")
 
     charts = _charts(body)
-    assert list(charts) == ["water-buffer", "water-breakeven", "water-pressure"]
+    assert list(charts) == ["water-buffer", "water-explorer", "water-grid"]
     buffer = charts["water-buffer"]
     assert (buffer["kind"], buffer["time"], buffer["categories"]) == ("balance", True, [2026, 2027])
     assert buffer["title"] == "Higher efficiency protects the water buffer"
@@ -343,23 +339,21 @@ def test_water_story(providers):
     assert buffer["balance"]["available"] == [109.0, 109.1]
     assert buffer["balance"]["needed"] == [[132.0, 133.0], [92.4, 93.1], [66.0, 66.5]]
     assert (buffer["balance"]["negative"], buffer["balance"]["positive"]) == ("Water deficit", "Water buffer")
-    # The efficiency at which need would equal supply: 132 x 35% / 109, then 133 x 35% / 109.1.
-    breakeven = charts["water-breakeven"]
-    assert breakeven["title"] == "Breaking even takes 43% irrigation efficiency by 2027, up from 42% in 2026"
-    assert [(s["name"], s["values"]) for s in breakeven["series"]] == [
-        ("Needed to break even", [42.4, 42.7]),
-        ("35% efficiency", [35, 35]), ("50% efficiency", [50, 50]), ("70% efficiency", [70, 70]),
-    ]
-    assert breakeven["series"][0]["emphasis"] == "strong"
-    assert (breakeven["unit"], breakeven["axis_min"], breakeven["axis_max"]) == ("%", 30, 75)
-
-    # How far need and supply have each moved since the first year, in percent.
-    pressure = charts["water-pressure"]
-    assert pressure["title"] == "Crops will need 0.8% more water by 2027, while supply rises 0.1%"
-    assert [(s["name"], s["values"]) for s in pressure["series"]] == [
-        ("Water crops need", [0.0, 0.8]), ("Water available", [0.0, 0.1]),
-    ]
-    assert pressure["zero_line"] is True
+    # The two charts that work the balance out at any efficiency carry what they need to do it: the water
+    # available, the need at the lowest efficiency listed, and the range the reader may choose within.
+    explorer, grid = charts["water-explorer"], charts["water-grid"]
+    assert (explorer["kind"], grid["kind"]) == ("explorer", "grid")
+    for chart in (explorer, grid):
+        assert [(s["name"], s["values"]) for s in chart["series"]] == [
+            ("Water available", [109.0, 109.1]), ("Water crops need at 35% efficiency", [132.0, 133.0]),
+        ]
+        assert chart["efficiency"] == {"min": 35, "max": 70, "base": 35, "start": 45, "given": [35, 50, 70]}
+        assert chart["note"] == (
+            "Efficiencies other than 35%, 50% and 70% are calculated from the source's figures, not given in it."
+        )
+    # The efficiency at which need would equal supply: 132 x 35% / 109 = 42.4, then 133 x 35% / 109.1 = 42.7.
+    assert explorer["title"] == "Water stays enough to 2027 only if irrigation efficiency reaches 43%"
+    assert grid["title"] == "The efficiency that breaks even climbs from 42% in 2026 to 43% in 2027"
 
 
 def test_the_water_headline_falls_back_when_more_efficiency_does_not_always_leave_more(dirs):
@@ -372,8 +366,11 @@ def test_the_water_headline_falls_back_when_more_efficiency_does_not_always_leav
         "requirement": {"35": [132.0, 133.0], "50": [92.4, 140.0], "70": [66.0, 66.5]},
     }), encoding="utf-8")
     sections, _ = build_providers(data, boundaries)
-    title = _charts(sections["water-balance"](PK, 2027))["water-buffer"]["title"]
-    assert title == "At 35% efficiency, crops need more water than is available in 1 of 2 years"
+    charts = _charts(sections["water-balance"](PK, 2027))
+    assert charts["water-buffer"]["title"] == "At 35% efficiency, crops need more water than is available in 1 of 2 years"
+    # Need is not in proportion to efficiency here, so the balance at other efficiencies cannot be worked
+    # out, and the two charts that would do so are left out.
+    assert list(charts) == ["water-buffer"]
 
 
 def test_food_story(providers):
@@ -386,17 +383,17 @@ def test_food_story(providers):
     assert figures["Population"] == (259.8, "million")
 
     charts = _charts(body)
-    assert list(charts) == ["food-demand-availability", "food-gap", "food-population"]
-    assert charts["food-demand-availability"]["title"] == (
-        "Food needs rise 3% by 2027, while supply with climate smart agriculture rises 0.5%"
-    )
-    assert charts["food-demand-availability"]["series"][0]["emphasis"] == "strong"
-    assert charts["food-gap"]["title"] == (
-        "By 2027, climate smart agriculture makes the food gap 22% smaller than traditional farming"
-    )
-    assert [s["name"] for s in charts["food-gap"]["series"]] == [
-        "With climate smart agriculture", "With traditional farming",
+    assert list(charts) == ["food-outlook", "food-population"]
+    outlook = charts["food-outlook"]
+    assert outlook["kind"] == "outlook"
+    # Need first, then the two supplies: the chart fills in the spaces between them in that order.
+    assert [s["name"] for s in outlook["series"]] == [
+        "Food needed", "With climate smart agriculture", "With traditional farming",
     ]
+    assert [s["values"][-1] for s in outlook["series"]] == [95.85, 83.27, 79.81]
+    assert outlook["title"] == (
+        "By 2027 climate smart agriculture adds 3.5 over traditional farming, yet 12.6 of the food needed is unmet"
+    )
     assert charts["food-population"]["title"] == "Population grows from 255 to 260 million by 2027"
 
 
@@ -430,10 +427,12 @@ def test_water_sources_run_either_side_of_a_centre_line(providers):
     assert (punjab["name"], punjab["left"], punjab["right"]) == ("Punjab", 33.3, 66.7)
     # Rows are weighted by how much land each has equipped.
     assert (sindh["weight"], punjab["weight"]) == (_acres(2050), _acres(1500))
-    assert country["title"] == (
-        "Punjab draws 33% of its irrigation from groundwater; Sindh takes 100% from surface water"
-    )
-    assert [split["highlight"] for split in country["splits"]] == [True, True]
+    # With no place chosen the chart singles none out, in its headline or its rows.
+    assert country["title"] == "Where each province's irrigation water comes from"
+    assert [split["highlight"] for split in country["splits"]] == [False, False]
+    punjab_districts = _charts(sections["irrigation"](PUNJAB, None))["irrigation-source"]
+    assert punjab_districts["title"] == "Where each district's irrigation water comes from in Punjab"
+    assert not any(split["highlight"] for split in punjab_districts["splits"])
 
     lahore = _charts(sections["irrigation"](LAHORE, None))["irrigation-source"]
     assert [split["name"] for split in lahore["splits"]] == ["Lahore", "Attock"]

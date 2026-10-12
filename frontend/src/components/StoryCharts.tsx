@@ -39,7 +39,7 @@ export function DivergingChart({ spec, large = false }: { spec: ChartSpec; large
   const [left, right] = spec.sides ?? [{ label: 'Left', colour: '#3b4cc0' }, { label: 'Right', colour: '#b40426' }]
   const heaviest = Math.max(0, ...splits.map((split) => split.weight))
   const thickness = (weight: number) =>
-    (large ? 12 : 8) + (large ? 30 : 16) * (heaviest > 0 ? Math.sqrt(weight / heaviest) : 0)
+    (large ? 30 : 8) + (large ? 46 : 16) * (heaviest > 0 ? Math.sqrt(weight / heaviest) : 0)
 
   return (
     <Shell
@@ -152,7 +152,7 @@ export function CountsChart({ spec, large = false }: { spec: ChartSpec; large?: 
               className={`counts-row counts-${item.icon ?? 'plain'}${item.highlight ? ' lead' : ''}`}
               style={{ '--row': index } as CSSProperties}
             >
-              <span className="counts-icon">{Icon && <Icon size={large ? 30 : 22} aria-hidden />}</span>
+              <span className="counts-icon">{Icon && <Icon size={large ? 40 : 22} aria-hidden />}</span>
               <div className="counts-body">
                 <span className="counts-name">{item.name}</span>
                 <span className="counts-track" aria-hidden>

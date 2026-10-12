@@ -175,12 +175,13 @@ def test_real_headlines_read_as_findings():
     assert titles["emissions-by-gas"] == "Pakistan's yearly emissions grew 3.2 times between 1994 and 2025"
     assert titles["emissions-growth"] == "Nitrous oxide grew fastest: 9.9 times its 1994 level"
     assert titles["water-buffer"] == "Higher efficiency protects the water buffer"
-    assert titles["water-breakeven"] == "Breaking even takes 48% irrigation efficiency by 2047, up from 42% in 2026"
-    assert titles["water-pressure"] == "Crops will need 11% more water by 2047, while supply falls 1%"
+    assert titles["water-explorer"] == "Water stays enough to 2047 only if irrigation efficiency reaches 48%"
+    assert titles["water-grid"] == "The efficiency that breaks even climbs from 42% in 2026 to 48% in 2047"
     assert titles["food-population"] == "Population grows from 255 to 386 million by 2047"
-    assert titles["irrigation-source"] == (
-        "Punjab draws 47% of its irrigation from groundwater; Sindh takes 96% from surface water"
+    assert titles["food-outlook"] == (
+        "By 2047 climate smart agriculture adds 23.8 over traditional farming, yet 76.7 of the food needed is unmet"
     )
+    assert titles["irrigation-source"] == "Where each province's irrigation water comes from"
     assert titles["irrigation-practices"] == (
         "Sprinkler irrigation is recommended in 480 of 558 tehsils; flood irrigation in only 25"
     )

@@ -118,11 +118,10 @@ describe('chartOption for bar charts', () => {
     expect(o.yAxis.type).toBe('value')
   })
 
-  it('draws the highlighted bar in full colour and the rest lighter', () => {
-    const colours = option(bars).series[0].data.map((d: Loose) => d.itemStyle.color)
-    expect(colours[1]).toBe(SLOT_COLOURS[0])
-    expect(colours[0]).toBe(colours[2])
-    expect(colours[0]).not.toBe(SLOT_COLOURS[0])
+  it('draws every bar in full colour, the highlighted one and the rest alike', () => {
+    const data = option(bars).series[0].data
+    expect(data.map((d: Loose) => d.itemStyle.color)).toEqual([SLOT_COLOURS[0], SLOT_COLOURS[0], SLOT_COLOURS[0]])
+    expect(data.every((d: Loose) => d.itemStyle.opacity === undefined)).toBe(true)
   })
 
   it('draws every bar in full colour when nothing is highlighted', () => {
@@ -271,12 +270,10 @@ describe('bars in the colours of their map layers', () => {
     expect(option(cover).series[0].data.map((d: Loose) => d.itemStyle.color)).toEqual(['#2e7d32', '#2a78d6', '#eda100'])
   })
 
-  it('fades the bars that are not highlighted, keeping their colour', () => {
+  it('keeps every bar at full strength in its own colour when one is highlighted', () => {
     const data = option({ ...cover, highlight: 1 }).series[0].data
     expect(data.map((d: Loose) => d.itemStyle.color)).toEqual(['#2e7d32', '#2a78d6', '#eda100'])
-    expect(data[1].itemStyle.opacity).toBe(1)
-    expect(data[0].itemStyle.opacity).toBeLessThan(0.6)
-    expect(data[2].itemStyle.opacity).toBeLessThan(0.6)
+    expect(data.every((d: Loose) => d.itemStyle.opacity === undefined)).toBe(true)
   })
 })
 
@@ -312,10 +309,10 @@ describe('bars that tell a story', () => {
     expect(barLabel(bars, 0, 30)).toBe('30')
   })
 
-  it('draws the bars the headline is about at full strength and bold, and the rest fainter', () => {
+  it('labels the bars the headline is about in bold, and draws every bar at full strength', () => {
     const rainfed = option(split, null, true).series[1]
-    expect(rainfed.data[1].itemStyle.opacity).toBe(1)
-    expect(rainfed.data[0].itemStyle.opacity).toBeLessThan(1)
+    expect(rainfed.data[1].itemStyle.opacity).toBeUndefined()
+    expect(rainfed.data[0].itemStyle.opacity).toBeUndefined()
     expect(rainfed.data[1].label.fontWeight).toBe('bold')
     expect(rainfed.data[0].label.fontWeight).toBeUndefined()
   })

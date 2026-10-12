@@ -11,11 +11,10 @@ const AXIS = '#c3c2b7'
 const SURFACE = '#ffffff'
 /** The page's font, by name: labels are measured before they are drawn, and 'inherit' measures as another font. */
 const FONT = "system-ui, 'Segoe UI', sans-serif"
-const DIMMED_BAR = '#b7d3f6'
 const SURPLUS = '#2a78d6'
 const SHORTFALL = '#eb6834'
 /** Text inside a plot: axis names, bar values, line labels and the legend. Larger in the full view. */
-const textSize = (large: boolean) => (large ? 17 : 15)
+const textSize = (large: boolean) => (large ? 20 : 15)
 /** How long a chart takes to draw itself in. */
 export const DRAW_MS = 1400
 /** How often a chart draws itself in again, so the page keeps moving. */
@@ -53,7 +52,7 @@ export function markedYear(spec: ChartSpec, year: number | null): number | null 
 /** The least room a plot needs. In the full view it grows past this to fill its card. */
 export function chartHeight(spec: ChartSpec, large = false): number {
   if (spec.kind === 'bar' && spec.horizontal) {
-    return (large ? 76 : 60) + spec.categories.length * (large ? 38 : 30)
+    return (large ? 84 : 60) + spec.categories.length * (large ? 52 : 30)
   }
   return large ? 380 : 250
 }
@@ -167,15 +166,13 @@ function barColour(spec: ChartSpec, series: ChartSeries, index: number, value: n
   if (series.colour) return series.colour
   if (spec.colour_by_sign) return (value ?? 0) < 0 ? SHORTFALL : SURPLUS
   if (spec.bar_slots) return SLOT_COLOURS[(spec.bar_slots[index] - 1) % SLOT_COLOURS.length]
-  const colour = colourOf(series)
-  const highlight = spec.highlight ?? null
-  return highlight === null || highlight === index ? colour : DIMMED_BAR
+  return colourOf(series)
 }
 
 /** The widest a bar may grow: a few upright bars are broad columns, not thin sticks. */
 function barMaxWidth(spec: ChartSpec, large: boolean): number {
-  if (spec.horizontal) return large ? 56 : 18
-  return large ? 160 : 64
+  if (spec.horizontal) return large ? 84 : 18
+  return large ? 220 : 64
 }
 
 /** What is written at the end of a bar: its value, its note, or both when the bar is one amount. */
@@ -183,13 +180,6 @@ export function barLabel(spec: ChartSpec, index: number, value: number | null): 
   const note = spec.bar_notes?.[index]
   if (note === undefined) return spoken(value, spec.unit)
   return spec.stacked ? note : `${spoken(value, spec.unit)} · ${note}`
-}
-
-/** True for a bar that is not one of those the headline is about, when the chart names some. */
-function fainter(spec: ChartSpec, index: number): boolean {
-  if (spec.highlights) return !spec.highlights.includes(index)
-  // Bars in their own colours cannot be dimmed by swapping the colour, so the others fade instead.
-  return Boolean(spec.bar_colours) && (spec.highlight ?? null) !== null && spec.highlight !== index
 }
 
 function barSeries(spec: ChartSpec, large: boolean) {
@@ -215,8 +205,8 @@ function barSeries(spec: ChartSpec, large: boolean) {
     },
     data: series.values.map((value, i) => ({
       value,
-      itemStyle: { color: barColour(spec, series, i, value), opacity: fainter(spec, i) ? 0.45 : 1 },
-      // The bars the headline is about are labelled in bold, the rest quietly.
+      // Every bar is drawn at full strength. The bars the headline is about are told by their bold labels.
+      itemStyle: { color: barColour(spec, series, i, value) },
       ...(spec.highlights
         ? { label: spec.highlights.includes(i) ? { color: STRONG, fontWeight: 'bold' } : { color: INK } }
         : {}),
@@ -228,7 +218,7 @@ function barSeries(spec: ChartSpec, large: boolean) {
 
 /** Room to the right of horizontal bars for what is written at their ends. */
 function labelRoom(spec: ChartSpec, large: boolean): number {
-  if (!spec.bar_notes) return large ? 84 : 64
+  if (!spec.bar_notes) return large ? 100 : 64
   const last = spec.series[spec.series.length - 1]
   const longest = Math.max(0, ...spec.categories.map((_, i) => barLabel(spec, i, last?.values[i] ?? null).length))
   // Roughly the width of that many characters in bold, plus a little air.

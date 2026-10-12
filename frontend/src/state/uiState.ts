@@ -14,6 +14,8 @@ export interface UiStore {
   backendLost: boolean
   /** True while the forecast's tiles are on their way: the first request for a time waits on PMD. */
   forecastLoading: boolean
+  /** The irrigation efficiency the water charts are set to, in percent; null until the reader sets one. */
+  efficiency: number | null
   addNotice(text: string): void
   dismissNotice(id: number): void
   setLayerError(id: string): void
@@ -22,6 +24,7 @@ export interface UiStore {
   forgetLayer(id: string): void
   setBackendLost(lost: boolean): void
   setForecastLoading(loading: boolean): void
+  setEfficiency(efficiency: number): void
 }
 
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
@@ -38,6 +41,7 @@ export function createUiStore(): StoreApi<UiStore> {
     retryCounts: {},
     backendLost: false,
     forecastLoading: false,
+    efficiency: null,
     addNotice: (text) =>
       set((s) => (s.notices.some((n) => n.text === text) ? s : { notices: [...s.notices, { id: nextId++, text }] })),
     dismissNotice: (id) => set((s) => ({ notices: s.notices.filter((n) => n.id !== id) })),
@@ -56,6 +60,7 @@ export function createUiStore(): StoreApi<UiStore> {
       ),
     setBackendLost: (lost) => set((s) => (s.backendLost === lost ? s : { backendLost: lost })),
     setForecastLoading: (loading) => set((s) => (s.forecastLoading === loading ? s : { forecastLoading: loading })),
+    setEfficiency: (efficiency) => set((s) => (s.efficiency === efficiency ? s : { efficiency })),
   }))
 }
 

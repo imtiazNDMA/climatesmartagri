@@ -89,7 +89,6 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
     first, last = years[0], years[-1]
     growth = [round(data[key][-1] / data[key][0], 1) for _, key, _ in gases]
     fastest = max(range(len(gases)), key=lambda n: data[gases[n][1]][-1] / data[gases[n][1]][0])
-    official_years = sum(data["official"])
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
@@ -123,13 +122,6 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
                     f"In {years[i]}, {gases[top][0].lower()} made up {_pct(shares[top])}% of emissions",
                     "%", [name for name, _, _ in gases], shares,
                     horizontal=True, bar_slots=[slot for _, _, slot in gases], series_name="Share of total",
-                ),
-                _over_time(
-                    "emissions-official",
-                    f"Only {official_years} of the {len(years)} years shown are official measurements",
-                    "line", unit, years,
-                    [_series("Total emissions", 1, data["total"], points=[n for n, ok in enumerate(data["official"]) if ok])],
-                    end_labels=False,
                 ),
             ],
         }
@@ -168,48 +160,35 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
     }
     first, last = years[0], years[-1]
 
-    # The efficiency at which the water crops need would exactly equal the water available. What a crop
-    # must actually receive is the requirement times the efficiency it was worked out at.
+    # In the source, need times efficiency is the same at every level it lists: what a crop must receive
+    # does not change, only how much must be supplied to deliver it. The two charts below work the
+    # balance out at any efficiency by that rule, which is only as good as the levels agreeing.
     base_level = levels[0][0]
-    breakeven = [
-        round(need * int(base_level) / available, 1)
-        for need, available in zip(data["requirement"][base_level], availability)
-    ]
-    direction = "up from" if breakeven[-1] > breakeven[0] else "down from" if breakeven[-1] < breakeven[0] else "as in"
-    breakeven_chart = _over_time(
-        "water-breakeven",
-        f"Breaking even takes {_pct(breakeven[-1])}% irrigation efficiency by {last}, "
-        f"{direction} {_pct(breakeven[0])}% in {first}",
-        "line", "%", years,
-        [
-            _series("Needed to break even", 1, breakeven, emphasis="strong"),
-            *[_series(f"{level}% efficiency", slot, [int(level)] * len(years)) for level, slot in levels],
-        ],
-        axis_min=30, axis_max=75,
+    base_need = data["requirement"][base_level]
+    proportional = all(
+        abs(need * int(level) - base * int(base_level)) <= 1e-6 * base * int(base_level)
+        for level, _ in levels for need, base in zip(data["requirement"][level], base_need)
     )
-
-    # Why the balance worsens: how far need and supply have each moved since the first year.
-    def change(values: list[float]) -> list[float]:
-        return [round((value / values[0] - 1) * 100, 1) for value in values]
-
-    need_change, supply_change = change(data["requirement"][base_level]), change(availability)
-    supply = (
-        f"supply falls {_pct(-supply_change[-1])}%" if supply_change[-1] < 0
-        else f"supply rises {_pct(supply_change[-1])}%" if supply_change[-1] > 0
-        else "supply stays the same"
+    # The efficiency at which the water crops need would exactly equal the water available.
+    breakeven = [round(need * int(base_level) / available, 1) for need, available in zip(base_need, availability)]
+    given = [int(level) for level, _ in levels]
+    choice = {"min": min(given), "max": max(given), "base": int(base_level), "start": 45, "given": given}
+    note = "Efficiencies other than " + ", ".join(f"{g}%" for g in given[:-1]) + f" and {given[-1]}% are calculated from the source's figures, not given in it."
+    series = [_series("Water available", 1, availability), _series(f"Water crops need at {base_level}% efficiency", 2, base_need)]
+    enough = max(breakeven)
+    explorer_chart = _over_time(
+        "water-explorer",
+        f"Water stays enough to {last} only if irrigation efficiency reaches {_pct(enough)}%",
+        "explorer", "", years, series, efficiency=choice, note=note,
     )
-    if need_change[-1] > 0:
-        pressure_title = f"Crops will need {_pct(need_change[-1])}% more water by {last}, while {supply}"
-    else:
-        pressure_title = f"How the water crops need and the water available change from {first}"
-    pressure_chart = _over_time(
-        "water-pressure", pressure_title, "line", "%", years,
-        [
-            _series("Water crops need", 2, need_change, emphasis="strong"),
-            _series("Water available", 1, supply_change),
-        ],
-        zero_line=True,
+    direction = "climbs from" if breakeven[-1] > breakeven[0] else "falls from" if breakeven[-1] < breakeven[0] else "stays at"
+    grid_chart = _over_time(
+        "water-grid",
+        f"The efficiency that breaks even {direction} {_pct(breakeven[0])}% in {first} to {_pct(breakeven[-1])}% in {last}"
+        if breakeven[-1] != breakeven[0] else f"The efficiency that breaks even stays at {_pct(breakeven[0])}%",
+        "grid", "", years, series, efficiency=choice, note=note,
     )
+    extra_charts = [explorer_chart, grid_chart] if proportional else []
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
         i = _index(years, year)
@@ -230,11 +209,7 @@ def _water_balance(data: dict[str, Any]) -> SectionDataProvider:
                 ],
             ],
             "notes": [],
-            "charts": [
-                buffer_chart,
-                breakeven_chart,
-                pressure_chart,
-            ],
+            "charts": [buffer_chart, *extra_charts],
         }
 
     return provider
@@ -244,10 +219,7 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
     years = data["years"]
     last = years[-1]
 
-    def rise(values: list[float]) -> float:
-        return (values[-1] - values[0]) / values[0] * 100
-
-    saved = (data["traditional_gap"][-1] - data["csa_gap"][-1]) / data["traditional_gap"][-1] * 100
+    gain = data["csa_availability"][-1] - data["traditional_availability"][-1]
     csa, traditional = "climate smart agriculture", "traditional farming"
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
@@ -263,24 +235,17 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
             ],
             "notes": [],
             "charts": [
+                # One chart for need, the two supplies and the two spaces between them: the gap that
+                # remains with climate smart agriculture, and what it adds over traditional farming.
                 _over_time(
-                    "food-demand-availability",
-                    f"Food needs rise {_pct(rise(data['demand']))}% by {last}, while supply with {csa} "
-                    f"rises {_pct(rise(data['csa_availability']))}%",
-                    "line", "", years,
+                    "food-outlook",
+                    f"By {last} {csa} adds {_num(gain)} over {traditional}, "
+                    f"yet {_num(data['csa_gap'][-1])} of the food needed is unmet",
+                    "outlook", "", years,
                     [
-                        _series("Food needed", 1, data["demand"], emphasis="strong"),
-                        _series(f"Available with {csa}", 3, data["csa_availability"]),
-                        _series(f"Available with {traditional}", 2, data["traditional_availability"]),
-                    ],
-                ),
-                _over_time(
-                    "food-gap",
-                    f"By {last}, {csa} makes the food gap {_pct(saved)}% smaller than {traditional}",
-                    "line", "", years,
-                    [
-                        _series(f"With {csa}", 3, data["csa_gap"]),
-                        _series(f"With {traditional}", 2, data["traditional_gap"]),
+                        _series("Food needed", 1, data["demand"]),
+                        _series("With climate smart agriculture", 3, data["csa_availability"]),
+                        _series("With traditional farming", 2, data["traditional_availability"]),
                     ],
                 ),
                 _over_time(
@@ -347,24 +312,18 @@ def _irrigation(data: dict[str, Any], practice: dict[str, Any] | None = None) ->
         shown, selected = shown_rows(rows, place_id)
         ground = [_share(p["groundwater"], p["equipped"]) or 0 for _, p in shown]
         surface = [_share(p["surface"], p["equipped"]) or 0 for _, p in shown]
-        total = sum(p["equipped"] for _, p in rows)
-        weighty = [n for n, (_, p) in enumerate(shown) if p["equipped"] / total * 100 >= HEADLINE_FLOOR] or list(range(len(shown)))
         if selected is not None:
             source, share = ("surface water", surface[selected]) if surface[selected] >= ground[selected] else ("groundwater", ground[selected])
             title = f"{entry['name']} takes {_pct(share)}% of its irrigation water from {source}"
             leads = [selected]
         else:
-            pumps = max(weighty, key=lambda n: ground[n])
-            canals = max(weighty, key=lambda n: surface[n])
-            if pumps == canals:
-                source, share = ("surface water", surface[canals]) if surface[canals] >= ground[pumps] else ("groundwater", ground[pumps])
-                title = f"{shown[pumps][1]['name']} takes {_pct(share)}% of its irrigation water from {source}"
-            else:
-                title = (
-                    f"{shown[pumps][1]['name']} draws {_pct(ground[pumps])}% of its irrigation from groundwater; "
-                    f"{shown[canals][1]['name']} takes {_pct(surface[canals])}% from surface water"
-                )
-            leads = sorted({pumps, canals})
+            # With no place chosen the chart singles none out: which provinces matter is the reader's to
+            # judge, and any rule for picking some (the largest shares, or those among places above a
+            # size) puts a claim in the headline that the figures do not make.
+            title = f"Where each {level}'s irrigation water comes from"
+            if level == "district":
+                title += f" in {whole}"
+            leads = []
         return {
             "id": "irrigation-source", "title": title, "kind": "diverging", "unit": "%", "time": False,
             "categories": [], "series": [],

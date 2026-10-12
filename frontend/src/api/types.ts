@@ -153,7 +153,7 @@ export interface ChartSpec {
   id: string
   title: string
   /** How to read the chart, in a sentence or two. */
-  kind: 'line' | 'stacked-area' | 'bar' | 'calendar' | 'shares' | 'diverging' | 'counts' | 'balance'
+  kind: 'line' | 'stacked-area' | 'bar' | 'calendar' | 'shares' | 'diverging' | 'counts' | 'balance' | 'outlook' | 'explorer' | 'grid'
   unit: string
   /** True when the categories are years. */
   time: boolean
@@ -202,6 +202,11 @@ export interface ChartSpec {
     positive_word?: string
     caption?: string
   }
+  /**
+   * For the water charts: the irrigation efficiencies the reader can choose between, in percent. The second
+   * series is the water crops need at `base`; `given` are the efficiencies the source itself has figures for.
+   */
+  efficiency?: { min: number; max: number; base: number; start: number; given: number[] }
   /** For a chart of counts: the things counted, and how many there were to count among. */
   items?: CountItem[]
   total?: number
