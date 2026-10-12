@@ -25,7 +25,8 @@ export default defineConfig({
       command: 'npm run dev -- --host 127.0.0.1',
       url: 'http://127.0.0.1:5183',
       reuseExistingServer: false,
-      env: { CSA_BACKEND_URL: 'http://127.0.0.1:8010', CSA_FRONTEND_PORT: '5183' },
+      // VITE_NO_PROTOTYPE: the tests check the panel as it is, not the sidebar prototypes.
+      env: { CSA_BACKEND_URL: 'http://127.0.0.1:8010', CSA_FRONTEND_PORT: '5183', VITE_NO_PROTOTYPE: '1' },
     },
   ],
 })

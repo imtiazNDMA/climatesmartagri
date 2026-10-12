@@ -8,6 +8,8 @@ import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
 import { ForecastPanel } from './ForecastPanel'
+// PROTOTYPE: three sidebar variants to choose between. Remove with src/prototype/ once one is chosen.
+import { ForecastPrototype, PrototypeSwitcher, useVariant } from '../prototype/ForecastVariants'
 import { figureBar, groupLayers, layerScope, layerSwatch } from './panelParts'
 import { sectionIcon } from './sectionIcons'
 
@@ -134,6 +136,9 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
   const activeLayers = useView((s) => s.layers)
   const placeId = useView((s) => s.place)
   const [width, setWidth] = useState(480)
+  // PROTOTYPE: off in production builds and in the browser tests, which check the current panel.
+  const variant = useVariant()
+  const prototype = import.meta.env.DEV && !import.meta.env.VITE_NO_PROTOTYPE && variant !== 'current'
 
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
   if (!section) return null
@@ -188,6 +193,8 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
           <p className="coming-soon">Coming soon</p>
           <p>{section.summary}</p>
         </div>
+      ) : section.kind === 'forecast' && prototype && data.catalogue.forecast ? (
+        <ForecastPrototype forecast={data.catalogue.forecast} times={forecastTimes} />
       ) : section.kind === 'forecast' ? (
         <div className="panel-body">
           <ForecastPanel forecast={data.catalogue.forecast ?? null} times={forecastTimes} />
@@ -276,6 +283,7 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
           </Part>
         </div>
       )}
+      {import.meta.env.DEV && !import.meta.env.VITE_NO_PROTOTYPE && section.kind === 'forecast' && <PrototypeSwitcher />}
       <div className="panel-resize" onPointerDown={startResize} role="separator" aria-orientation="vertical" />
     </aside>
   )
