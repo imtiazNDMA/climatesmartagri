@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { ForecastCatalogue } from '../api/types'
 import {
-  chooseLayer, chooseModel, formatRun, formatTime, hasData, legendValues, levelLabel, nearestTime, runOf, timesAhead, parseChoice, serializeChoice,
+  chooseLayer, chooseModel, formatRun, formatTime, hasData, legendValues, levelLabel, nearestTime, runOf, timeAtShare, timesAhead, parseChoice, serializeChoice,
   valueRange,
 } from './choice'
 
@@ -122,6 +122,14 @@ describe('times', () => {
     expect(runOf(offered, '2026101112')).toBe('2026101000')
     expect(runOf(offered, '2026101200')).toBeNull()
     expect(runOf(offered, null)).toBeNull()
+  })
+
+  it('finds the hour part of the way between two times, across a midnight and a month end', () => {
+    expect(timeAtShare('2026103118', '2026110106', 0)).toBe('2026103118')
+    expect(timeAtShare('2026103118', '2026110106', 0.5)).toBe('2026110100')
+    expect(timeAtShare('2026103118', '2026110106', 0.75)).toBe('2026110103')
+    expect(timeAtShare('2026103118', '2026110106', 1)).toBe('2026110106')
+    expect(timeAtShare('2026110106', '2026103118', 0.5)).toBe('2026110100') // backwards too
   })
 
   it('writes a run time in UTC', () => {

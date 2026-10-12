@@ -89,6 +89,19 @@ export function runOf(times: ForecastTime[], time: string | null): string | null
   return times.find((t) => t.time === time)?.run ?? null
 }
 
+/**
+ * The hour part of the way from one time to another: 0 gives the first, 1 the second, and between them the
+ * whole hour nearest that share of the way. For rolling the clock from the old time to the new.
+ */
+export function timeAtShare(from: string, to: string, share: number): string {
+  if (share >= 1) return to
+  if (share <= 0) return from
+  const start = hourToDate(from).getTime()
+  const at = new Date(start + Math.round(((hourToDate(to).getTime() - start) * share) / 3600_000) * 3600_000)
+  const two = (n: number) => String(n).padStart(2, '0')
+  return `${at.getUTCFullYear()}${two(at.getUTCMonth() + 1)}${two(at.getUTCDate())}${two(at.getUTCHours())}`
+}
+
 /** The next few times after one, in order; fewer near the end, none for a time not in the list. */
 export function timesAhead(times: string[], current: string, count: number): string[] {
   const at = times.indexOf(current)

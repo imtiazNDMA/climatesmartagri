@@ -12,6 +12,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "animejs": "^4.5.0",
     "echarts": "^6.1.0",
     "lucide-react": "^1.52.0",
     "maplibre-gl": "^6.12.0",

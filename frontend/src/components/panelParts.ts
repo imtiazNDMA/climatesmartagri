@@ -31,6 +31,23 @@ export function layerSwatch(layer: Layer): string {
   return `linear-gradient(to right, ${colours.map((c, i) => `${c} ${i * step}% ${(i + 1) * step}%`).join(', ')})`
 }
 
+/** What a layer's colours stand for, in a few words for its card: its classes, or the two ends of its scale. */
+export function layerAbout(layer: Pick<Layer, 'legend'>): string {
+  const { legend } = layer
+  if (!legend) return ''
+  if (legend.type === 'classes') {
+    // A class can appear under several colours; it is named once.
+    const labels = [...new Set(legend.items.map((item) => item.label))]
+    // Classes that are themselves lists ("Drip, Sprinkler") are set apart by semicolons, so they stay whole.
+    const between = labels.some((label) => label.includes(',')) ? '; ' : ', '
+    return labels.length > 3 ? `${labels.slice(0, 3).join(between)} and ${labels.length - 3} more` : labels.join(between)
+  }
+  // The far end is written mid-sentence, so it starts small: "Less land to more land".
+  const far = legend.max_label || 'high'
+  const ends = `${legend.min_label || 'Low'} to ${far.charAt(0).toLowerCase()}${far.slice(1)}`
+  return legend.unit ? `${ends}, ${legend.unit}` : ends
+}
+
 /**
  * How full the bar under a figure is, from 0 to 100, or null for a figure that has no bar.
  * A figure that is itself a percentage fills by its value; others by the share the data gives them.

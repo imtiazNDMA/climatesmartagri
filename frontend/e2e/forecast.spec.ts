@@ -67,14 +67,20 @@ async function openWithForecast(page: Page, path = '/', times: unknown = { times
   return mocks
 }
 
-test('the forecast section lists its layers by group, and marks one with no current data', async ({ page }) => {
+test('the forecast section shows its layers as cards, a kind at a time, and names those with no current data', async ({ page }) => {
   await openWithForecast(page)
   await page.getByRole('button', { name: 'Weather forecast' }).click()
   const panel = page.getByRole('complementary', { name: 'Weather forecast' })
-  await expect(panel.getByRole('heading', { level: 4 })).toHaveText(['Heat', 'Rain'])
-  await expect(panel.getByRole('switch')).toHaveCount(3)
-  await expect(panel.getByRole('switch', { name: 'Old only' })).toBeDisabled()
-  await expect(panel).toContainText('No current data from PMD')
+  await expect(panel.getByRole('region', { name: 'On the map' })).toContainText('Nothing on the map yet')
+  await expect(panel.getByRole('tab')).toHaveText(['Heat', 'Rain'])
+  await expect(panel.getByRole('tab', { name: 'Heat' })).toHaveAttribute('aria-selected', 'true')
+  await expect(panel.getByRole('switch')).toHaveCount(1)
+  await expect(panel.getByRole('switch', { name: 'Temperature' })).not.toBeChecked()
+
+  await panel.getByRole('tab', { name: 'Rain' }).click()
+  await expect(panel.getByRole('switch')).toHaveCount(1)
+  await expect(panel.getByRole('switch', { name: '24-hour rain' })).toBeVisible()
+  await expect(panel).toContainText('PMD has no current data for Old only.')
   await expect(page.getByRole('group', { name: 'Forecast time' })).toHaveCount(0)
 })
 
@@ -85,8 +91,13 @@ test('turning a layer on draws it for the time closest to now, with a key and a 
   const panel = page.getByRole('complementary', { name: 'Weather forecast' })
   await panel.getByRole('switch', { name: 'Temperature' }).check()
 
-  await expect(panel).toContainText('Forecast for Mon 12 Oct, 05:00 Pakistan time')
-  await expect(panel).toContainText('From the model run of 9 Oct 12:00 UTC')
+  const shown = panel.getByRole('region', { name: 'On the map' })
+  await expect(shown.getByRole('heading')).toHaveText('Temperature')
+  await expect(shown.locator('.deck-hero-time strong')).toHaveText('05:00')
+  await expect(shown).toContainText('Mon 12 Oct')
+  await expect(shown).toContainText('Pakistan time, from the 9 Oct 12:00 UTC run')
+  await expect(shown.locator('.deck-gauge-ticks span')).toHaveText(['0', '45'])
+  await expect(panel.getByRole('switch', { name: 'Temperature' })).toBeChecked()
   await expect(page).toHaveURL(/forecast=temperature~model-a~0~2026101200/)
   expect(mocks.timesRequests).toContain('?layer=temperature&model=model-a&level=0')
 
@@ -121,11 +132,15 @@ test('the model and level can be changed, and a model without the layer cannot b
   await expect(page).toHaveURL(/forecast=temperature~model-b~0~2026101200/)
   await expect(panel.getByRole('group', { name: 'Level' })).toHaveCount(0)
 
-  // Rain comes from Model B alone.
+  // Rain comes from Model B alone: a model without the layer is not offered.
+  await panel.getByRole('tab', { name: 'Rain' }).click()
   await panel.getByRole('switch', { name: '24-hour rain' }).check()
-  await expect(panel.getByRole('switch', { name: 'Temperature' })).not.toBeChecked()
-  await expect(panel.getByRole('group', { name: 'Model' }).getByRole('button', { name: 'Model A' })).toBeDisabled()
+  await expect(panel.getByRole('region', { name: 'On the map' }).getByRole('heading')).toHaveText('24-hour rain')
+  await expect(panel.getByRole('group', { name: 'Model' }).getByRole('button')).toHaveText(['Model B'])
   await expect(page).toHaveURL(/forecast=rain-24h~model-b~0/)
+  // The other kind's tab is marked no longer; this one is.
+  await panel.getByRole('tab', { name: 'Heat' }).click()
+  await expect(panel.getByRole('switch', { name: 'Temperature' })).not.toBeChecked()
   // Uneven colour stops: each colour's value is written under the key, and the unit moves to the heading.
   await expect(legend.getByRole('heading', { level: 4 })).toHaveText('24-hour rain (mm) · Model B')
   await expect(legend.locator('.legend-ends span')).toHaveText(['0', '10', '100'])
@@ -142,7 +157,7 @@ test('the slider steps through the times, and the layer can be taken off the map
   await slider.getByRole('button', { name: 'Later time' }).click()
   await expect(slider.locator('strong')).toHaveText('Mon 12 Oct, 11:00')
   await expect(page).toHaveURL(/~2026101206/)
-  await expect(panel).toContainText('From the model run of 9 Oct 00:00 UTC')
+  await expect(panel).toContainText('from the 9 Oct 00:00 UTC run')
   await expect(slider.getByRole('button', { name: 'Later time' })).toBeDisabled()
   await expect.poll(() => mocks.tiles.some((q) => q.includes('time=2026101206'))).toBe(true)
 

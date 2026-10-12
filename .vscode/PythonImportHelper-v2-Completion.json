@@ -5139,7 +5139,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_emissions_story(providers):\n    sections, _ = providers\n    charts = _charts(sections[\"emissions\"](PK, 1995))\n    assert list(charts) == [\"emissions-by-gas\", \"emissions-growth\", \"emissions-share\", \"emissions-official\"]\n    by_gas = charts[\"emissions-by-gas\"]\n    assert by_gas[\"title\"] == \"Pakistan's yearly emissions grew 1.1 times between 1994 and 1996\"\n    assert by_gas[\"kind\"] == \"stacked-area\"\n    assert by_gas[\"end_labels\"] is True\n    assert [(s[\"name\"], s[\"slot\"]) for s in by_gas[\"series\"]] == [\n        (\"Carbon dioxide\", 1), (\"Methane\", 2), (\"Nitrous oxide\", 3),",
+        "peekOfCode": "def test_emissions_story(providers):\n    sections, _ = providers\n    charts = _charts(sections[\"emissions\"](PK, 1995))\n    assert list(charts) == [\"emissions-by-gas\", \"emissions-growth\", \"emissions-share\"]\n    by_gas = charts[\"emissions-by-gas\"]\n    assert by_gas[\"title\"] == \"Pakistan's yearly emissions grew 1.1 times between 1994 and 1996\"\n    assert by_gas[\"kind\"] == \"stacked-area\"\n    assert by_gas[\"end_labels\"] is True\n    assert [(s[\"name\"], s[\"slot\"]) for s in by_gas[\"series\"]] == [\n        (\"Carbon dioxide\", 1), (\"Methane\", 2), (\"Nitrous oxide\", 3),",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
@@ -5157,7 +5157,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_water_story(providers):\n    sections, _ = providers\n    body = sections[\"water-balance\"](PK, 2027)\n    figures = _figures(body)\n    assert figures[\"Water available\"] == (109.1, \"\")\n    assert figures[\"Water crops need at 50% efficiency\"] == (93.1, \"\")\n    assert figures[\"Shortfall at 35% efficiency\"] == (23.9, \"\")\n    assert figures[\"Water to spare at 70% efficiency\"] == (42.6, \"\")\n    charts = _charts(body)\n    assert list(charts) == [\"water-buffer\", \"water-breakeven\", \"water-pressure\"]",
+        "peekOfCode": "def test_water_story(providers):\n    sections, _ = providers\n    body = sections[\"water-balance\"](PK, 2027)\n    figures = _figures(body)\n    assert figures[\"Water available\"] == (109.1, \"\")\n    assert figures[\"Water crops need at 50% efficiency\"] == (93.1, \"\")\n    assert figures[\"Shortfall at 35% efficiency\"] == (23.9, \"\")\n    assert figures[\"Water to spare at 70% efficiency\"] == (42.6, \"\")\n    charts = _charts(body)\n    assert list(charts) == [\"water-buffer\", \"water-explorer\", \"water-grid\"]",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
@@ -5166,7 +5166,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_the_water_headline_falls_back_when_more_efficiency_does_not_always_leave_more(dirs):\n    import json as _json\n    data, boundaries = dirs\n    (data / \"water_balance.json\").write_text(_json.dumps({\n        \"years\": [2026, 2027], \"availability\": [140.0, 109.1],\n        # In 2027 the 50% level needs more than the 35% level: the plain finding does not hold.\n        \"requirement\": {\"35\": [132.0, 133.0], \"50\": [92.4, 140.0], \"70\": [66.0, 66.5]},\n    }), encoding=\"utf-8\")\n    sections, _ = build_providers(data, boundaries)\n    title = _charts(sections[\"water-balance\"](PK, 2027))[\"water-buffer\"][\"title\"]",
+        "peekOfCode": "def test_the_water_headline_falls_back_when_more_efficiency_does_not_always_leave_more(dirs):\n    import json as _json\n    data, boundaries = dirs\n    (data / \"water_balance.json\").write_text(_json.dumps({\n        \"years\": [2026, 2027], \"availability\": [140.0, 109.1],\n        # In 2027 the 50% level needs more than the 35% level: the plain finding does not hold.\n        \"requirement\": {\"35\": [132.0, 133.0], \"50\": [92.4, 140.0], \"70\": [66.0, 66.5]},\n    }), encoding=\"utf-8\")\n    sections, _ = build_providers(data, boundaries)\n    charts = _charts(sections[\"water-balance\"](PK, 2027))",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
@@ -5175,7 +5175,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_food_story(providers):\n    sections, _ = providers\n    body = sections[\"food-security\"](PK, 2027)\n    figures = _figures(body)\n    assert figures[\"Food needed\"] == (95.85, \"\")\n    assert figures[\"Food gap with climate smart agriculture\"] == (12.58, \"\")\n    assert figures[\"Food gap with traditional farming\"] == (16.05, \"\")\n    assert figures[\"Population\"] == (259.8, \"million\")\n    charts = _charts(body)\n    assert list(charts) == [\"food-demand-availability\", \"food-gap\", \"food-population\"]",
+        "peekOfCode": "def test_food_story(providers):\n    sections, _ = providers\n    body = sections[\"food-security\"](PK, 2027)\n    figures = _figures(body)\n    assert figures[\"Food needed\"] == (95.85, \"\")\n    assert figures[\"Food gap with climate smart agriculture\"] == (12.58, \"\")\n    assert figures[\"Food gap with traditional farming\"] == (16.05, \"\")\n    assert figures[\"Population\"] == (259.8, \"million\")\n    charts = _charts(body)\n    assert list(charts) == [\"food-outlook\", \"food-population\"]",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },

@@ -1,5 +1,5 @@
-import { BarChart3, Hash, Layers, Maximize2, X, type LucideIcon } from 'lucide-react'
-import { useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
+import { BarChart3, Check, Hash, Layers, Maximize2, X, type LucideIcon } from 'lucide-react'
+import { useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { COUNTRY_ID, type Figure, type Layer } from '../api/types'
 import { formatNumber } from '../charts/chartOption'
 import type { ForecastTimesState } from '../data/useForecastTimes'
@@ -8,9 +8,8 @@ import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
 import { ForecastPanel } from './ForecastPanel'
-// PROTOTYPE: three sidebar variants to choose between. Remove with src/prototype/ once one is chosen.
-import { ForecastPrototype, PrototypeSwitcher, useVariant } from '../prototype/ForecastVariants'
-import { figureBar, groupLayers, layerScope, layerSwatch } from './panelParts'
+import { fieldArt, layerColours } from './fieldArt'
+import { figureBar, groupLayers, layerAbout, layerScope } from './panelParts'
 import { sectionIcon } from './sectionIcons'
 
 const MIN_WIDTH = 280
@@ -104,16 +103,14 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
   )
 }
 
-/** A layer as a row: a strip of its colours, its name, and the switch that puts it on the map. */
-function LayerRow({ layer, on }: { layer: Layer; on: boolean }) {
+/**
+ * A layer as a card: a small chart in its colours, its name, and what the colours stand for. The whole card
+ * is the switch that puts the layer on the map, and wears a tick while it is there.
+ */
+function LayerCard({ layer, on, at }: { layer: Layer; on: boolean; at: number }) {
   const ready = layer.status === 'ready'
   return (
-    <label className={`layer-switch${on ? ' on' : ''}${ready ? '' : ' disabled'}`}>
-      <span className="layer-swatch" style={{ background: layerSwatch(layer) }} aria-hidden />
-      <span className="layer-name">
-        {layerScope(layer.title).name}
-        {!ready && <small>Data not loaded yet</small>}
-      </span>
+    <label className={`deck-card${on ? ' on' : ''}${ready ? '' : ' disabled'}`} style={{ '--at': at } as CSSProperties}>
       <input
         type="checkbox"
         role="switch"
@@ -122,6 +119,11 @@ function LayerRow({ layer, on }: { layer: Layer; on: boolean }) {
         checked={on}
         onChange={() => viewStore.getState().toggleLayer(layer.id, layer.default_opacity)}
       />
+      <span className="deck-card-art" style={{ backgroundImage: fieldArt(layerColours(layer), layer.id) }} aria-hidden>
+        {on && <span className="deck-card-on"><Check size={13} aria-hidden /></span>}
+      </span>
+      <span className="deck-card-title">{layerScope(layer.title).name}</span>
+      <span className="deck-card-about">{ready ? layerAbout(layer) : 'Data not loaded yet'}</span>
     </label>
   )
 }
@@ -136,9 +138,6 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
   const activeLayers = useView((s) => s.layers)
   const placeId = useView((s) => s.place)
   const [width, setWidth] = useState(480)
-  // PROTOTYPE: off in production builds and in the browser tests, which check the current panel.
-  const variant = useVariant()
-  const prototype = import.meta.env.DEV && !import.meta.env.VITE_NO_PROTOTYPE && variant !== 'current'
 
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
   if (!section) return null
@@ -193,8 +192,6 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
           <p className="coming-soon">Coming soon</p>
           <p>{section.summary}</p>
         </div>
-      ) : section.kind === 'forecast' && prototype && data.catalogue.forecast ? (
-        <ForecastPrototype forecast={data.catalogue.forecast} times={forecastTimes} />
       ) : section.kind === 'forecast' ? (
         <div className="panel-body">
           <ForecastPanel forecast={data.catalogue.forecast ?? null} times={forecastTimes} />
@@ -214,9 +211,11 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
             {groupLayers(layers).map((group) => (
               <div key={group.scope ?? 'all'} className="layer-group">
                 {group.scope && <h4>By {group.scope}</h4>}
-                {group.layers.map((layer) => (
-                  <LayerRow key={layer.id} layer={layer} on={isOn(layer)} />
-                ))}
+                <div className="deck-grid">
+                  {group.layers.map((layer, at) => (
+                    <LayerCard key={layer.id} layer={layer} on={isOn(layer)} at={at} />
+                  ))}
+                </div>
               </div>
             ))}
           </Part>
@@ -283,7 +282,6 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
           </Part>
         </div>
       )}
-      {import.meta.env.DEV && !import.meta.env.VITE_NO_PROTOTYPE && section.kind === 'forecast' && <PrototypeSwitcher />}
       <div className="panel-resize" onPointerDown={startResize} role="separator" aria-orientation="vertical" />
     </aside>
   )

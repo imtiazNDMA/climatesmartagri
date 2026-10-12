@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Layer } from '../api/types'
-import { figureBar, groupLayers, layerScope, layerSwatch } from './panelParts'
+import { figureBar, groupLayers, layerAbout, layerScope, layerSwatch } from './panelParts'
 
 const layer = (id: string, title: string, legend: Layer['legend'] = null): Layer => ({
   id, section_id: 's', title, kind: 'geojson', status: 'ready', property: 'value', default_opacity: 1, legend,
@@ -55,5 +55,23 @@ describe('figureBar', () => {
     expect(figureBar({ label: 'Share', value: null, unit: '%' })).toBeNull()
     expect(figureBar({ label: 'Share', value: 140, unit: '%' })).toBe(100)
     expect(figureBar({ label: 'Share', value: -5, unit: '%' })).toBe(0)
+  })
+})
+
+describe('layerAbout', () => {
+  const item = (label: string) => ({ colour: '#000000', label })
+
+  it('names the classes of a layer, and counts the rest past three', () => {
+    expect(layerAbout({ legend: { type: 'classes', items: [item('Forest')] } })).toBe('Forest')
+    expect(layerAbout({ legend: { type: 'classes', items: ['A', 'B', 'C', 'D', 'E'].map(item) } })).toBe('A, B, C and 2 more')
+    expect(layerAbout({ legend: { type: 'classes', items: ['Drip', 'Sprinkler', 'Drip'].map(item) } })).toBe('Drip, Sprinkler')
+    expect(layerAbout({ legend: { type: 'classes', items: ['Drip, Sprinkler', 'Flood'].map(item) } })).toBe('Drip, Sprinkler; Flood')
+  })
+
+  it('names the two ends of a scale, with its unit when it has one', () => {
+    const ramp = { type: 'ramp' as const, colours: ['#fff', '#000'], min: 0, max: 100 }
+    expect(layerAbout({ legend: { ...ramp, unit: '%' } })).toBe('Low to high, %')
+    expect(layerAbout({ legend: { ...ramp, unit: '', min_label: 'Less land', max_label: 'More land' } })).toBe('Less land to more land')
+    expect(layerAbout({ legend: null })).toBe('')
   })
 })
