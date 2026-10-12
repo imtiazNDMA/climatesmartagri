@@ -27,3 +27,8 @@ backend/forecast/
 
 # Browser automation logs
 .playwright-mcp/
+
+# Source rasters and their archives: several gigabytes, far over GitHub's 100 MB file limit.
+# They stay on disk here and are read by backend/scripts/prepare_rasters.py.
+data/geospatial/rasters/
+data/archives/
