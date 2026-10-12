@@ -15,7 +15,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 
 ## State of the code
 
-- **Branch:** `feat/portal-data`, on top of `feat/portal-shell`, on top of `docs/csa-portal-shell-spec`, on top of `main`. Nothing is pushed or merged. Last commit `5de1d5f`.
+- **Branch:** `feat/portal-data`, on top of `feat/portal-shell`, on top of `docs/csa-portal-shell-spec`, on top of `main`. `feat/portal-data` was pushed to GitHub on 2026-10-12 and is the only branch there; nothing is merged.
 - **Uncommitted and not mine to touch:** `CLAUDE.md`, `docs/agents/`, the deleted `crop_water_balance_trend.png`, `.vscode/`, and the untracked `data/geospatial/vectors/sajid(2oct)/` folder (about 700 MB).
 - **Design documents:** spec and plan for the shell only, under `docs/superpowers/`. Everything after the shell was built from short designs agreed in chat.
 
@@ -94,6 +94,9 @@ Three scripts turn source files into what the backend serves. Source files are n
 
 ## Things learned the hard way
 
+- **The source rasters are not in git.** `data/geospatial/rasters/` and `data/archives/` (about 7 GB, nine files over GitHub's 100 MB limit) were in the first commit and made every push impossible. On 2026-10-12, at the user's choice, all four branches were rewritten without them and the folders git-ignored; the files are still on disk. The history from before is kept locally under `backup/before-slimming/*`. Do the same in a separate clone if it is ever needed again: `filter-branch` in the working repo would delete the files from disk.
+- **`data/geospatial/vectors/sajid(2oct)/` is untracked** and holds three files over 100 MB, including `Join_Irrigated_Full.shp`, the district map's source. It cannot be pushed as it is.
+
 - **Never stop processes by port.** Early on I killed everything listening on ports 8000 and 5173 and took down the user's unrelated "Seismic Intelligence Platform". Since then I stop only processes whose command line is inside this project (`stop.ps1` in the session scratchpad did this; it is not in the repo).
 - **`PROJ_LIB` on this machine points at PostgreSQL/PostGIS's older projection database** and breaks rasterio. `backend/csa_portal/geoenv.py` switches to the bundled copy; it must run before rasterio is imported.
 - **Raster overviews must be built by sampling ("nearest").** Voting overviews that skip empty cells painted Punjab and Sindh as solid forest from far out.
@@ -112,5 +115,5 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Units for water and food** are still unknown.
 - **Only the shell had an independent code review.** Everything on `feat/portal-data` has tests but no second reviewer.
 - **Deferred from the shell review:** search says "No places match" when boundaries are missing; lenient number parsing in the URL; the URL is rewritten on every change; some validation errors use a different shape; "Check again" gives no feedback when the backend is still down.
-- **Branches are unmerged and unpushed.** The user has not said whether to merge to `main` or open a pull request.
+- **Only `feat/portal-data` is on GitHub, and nothing is merged.** `main` and the two branches between have not been pushed, so there is no base to open a pull request against yet. The user has not said whether to merge to `main` or open a pull request.
 - **GitHub triage labels** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) were created on `imtiazNDMA/climatesmartagri` at the start of the session.
