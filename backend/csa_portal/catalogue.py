@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 
 SectionStatus = Literal["ready", "no-data", "coming-soon"]
 # A forecast section takes its layers from the forecast layer list, not from this catalogue.
-SectionKind = Literal["standard", "forecast"]
+SectionKind = Literal["standard", "forecast", "crop-classification", "hazards"]
 LayerStatus = Literal["ready", "no-data"]
 LayerKind = Literal["raster", "vector", "geojson", "boundary"]
 PlaceLevel = Literal["national", "province", "district"]

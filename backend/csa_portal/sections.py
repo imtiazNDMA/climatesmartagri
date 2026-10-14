@@ -246,6 +246,7 @@ def _food_security(data: dict[str, Any]) -> SectionDataProvider:
                         _series("Food needed", 1, data["demand"]),
                         _series("With climate smart agriculture", 3, data["csa_availability"]),
                         _series("With traditional farming", 2, data["traditional_availability"]),
+                        _series("Population", 4, data["population"]),
                     ],
                 ),
                 _over_time(

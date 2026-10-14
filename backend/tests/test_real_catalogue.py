@@ -12,7 +12,8 @@ EXPECTED = [
     ("food-security", "ready"),
     ("climate-calendar", "ready"),
     ("forecast", "ready"),
-    ("hazards", "coming-soon"),
+    ("crop-classification", "ready"),
+    ("hazards", "ready"),
     ("exposure", "coming-soon"),
 ]
 IRRIGATION_LAYERS = [
@@ -29,7 +30,7 @@ def test_shipped_catalogue_is_valid_and_complete():
     catalogue = load_catalogue(BACKEND_DIR / "catalogue.json")
     ordered = sorted(catalogue.sections, key=lambda s: s.order)
     assert [(s.id, s.status) for s in ordered] == EXPECTED
-    assert [s.order for s in ordered] == list(range(1, 10))
+    assert [s.order for s in ordered] == list(range(1, 11))
     assert all(s.summary for s in ordered if s.status == "coming-soon")
     boundary_ids = {layer.id for layer in catalogue.layers if layer.kind == "boundary"}
     assert boundary_ids == {"provinces", "districts"}
@@ -65,8 +66,8 @@ def test_boundaries_are_loaded_from_the_prepared_files():
 def test_every_ready_section_serves_figures_and_charts():
     client = _client()
     for section_id, status in EXPECTED:
-        if section_id == "forecast":
-            continue  # its layers come from the forecast layer list; it has no figures or charts
+        if section_id in {"forecast", "crop-classification", "hazards"}:
+            continue  # specialized interactive sections have no static figures or charts
         response = client.get(f"/api/sections/{section_id}/data")
         if status != "ready":
             assert response.json()["detail"]["reason"] == status

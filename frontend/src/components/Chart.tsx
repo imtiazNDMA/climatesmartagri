@@ -1,6 +1,6 @@
 import { BarChart, LineChart } from 'echarts/charts'
 import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } from 'echarts/components'
-import { init, use, type ECharts } from 'echarts/core'
+import { init, use as registerEChartsModules, type ECharts } from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import { Table2 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
@@ -8,7 +8,15 @@ import type { ChartSpec } from '../api/types'
 import { chartHeight, chartOption, formatNumber, markedYear, REPLAY_MS } from '../charts/chartOption'
 import { viewStore } from '../state/viewState'
 
-use([LineChart, BarChart, GridComponent, LegendComponent, TooltipComponent, MarkLineComponent, SVGRenderer])
+registerEChartsModules([
+  LineChart,
+  BarChart,
+  GridComponent,
+  LegendComponent,
+  TooltipComponent,
+  MarkLineComponent,
+  SVGRenderer,
+])
 
 /**
  * One chart: a headline that states the finding, then the plot.

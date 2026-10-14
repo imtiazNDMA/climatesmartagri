@@ -1,0 +1,72 @@
+{
+  "classification": "forecast-guidance",
+  "threshold_version": "provisional-2026-10",
+  "disclaimer": "Model-derived agricultural guidance. This is not an official warning.",
+  "products": [
+    {
+      "id": "frost",
+      "title": "Frost risk",
+      "forecast_layer": "temperature-min",
+      "unit": "°C",
+      "direction": "below",
+      "summary": "Low minimum temperatures that may damage sensitive crops, especially in exposed and low-lying fields.",
+      "bands": [
+        { "severity": "advisory", "label": "Possible frost", "threshold": 2, "colour": "#facc15" },
+        { "severity": "watch", "label": "Likely frost", "threshold": 0, "colour": "#38bdf8" },
+        { "severity": "severe", "label": "Severe frost", "threshold": -2, "colour": "#2563eb" }
+      ]
+    },
+    {
+      "id": "heat-stress",
+      "title": "Heat stress",
+      "forecast_layer": "temperature-max",
+      "unit": "°C",
+      "direction": "above",
+      "summary": "High daytime temperatures that can stress crops and livestock; crop stage and humidity alter impacts.",
+      "bands": [
+        { "severity": "advisory", "label": "Elevated heat", "threshold": 35, "colour": "#facc15" },
+        { "severity": "watch", "label": "High heat", "threshold": 40, "colour": "#f97316" },
+        { "severity": "severe", "label": "Severe heat", "threshold": 45, "colour": "#dc2626" }
+      ]
+    },
+    {
+      "id": "heavy-rain",
+      "title": "Heavy rainfall",
+      "forecast_layer": "rain-24h",
+      "unit": "mm / 24h",
+      "direction": "above",
+      "summary": "Rainfall intensity that may cause waterlogging or contribute to flash-flood conditions; not an inundation forecast.",
+      "bands": [
+        { "severity": "advisory", "label": "Heavy rain", "threshold": 25, "colour": "#facc15" },
+        { "severity": "watch", "label": "Very heavy rain", "threshold": 50, "colour": "#f97316" },
+        { "severity": "severe", "label": "Extreme rain", "threshold": 100, "colour": "#dc2626" }
+      ]
+    },
+    {
+      "id": "strong-wind",
+      "title": "Strong wind and lodging",
+      "forecast_layer": "gust",
+      "unit": "m/s",
+      "direction": "above",
+      "summary": "Wind gusts that may lodge tall crops, damage orchards, and disrupt field operations.",
+      "bands": [
+        { "severity": "advisory", "label": "Strong gusts", "threshold": 10, "colour": "#facc15" },
+        { "severity": "watch", "label": "Damaging gusts", "threshold": 15, "colour": "#f97316" },
+        { "severity": "severe", "label": "Severe gusts", "threshold": 20, "colour": "#dc2626" }
+      ]
+    },
+    {
+      "id": "low-visibility",
+      "title": "Fog and low visibility",
+      "forecast_layer": "visibility",
+      "unit": "km",
+      "direction": "below",
+      "summary": "Low visibility that may disrupt harvesting, spraying, transport, and livestock movement.",
+      "bands": [
+        { "severity": "advisory", "label": "Reduced visibility", "threshold": 5, "colour": "#facc15" },
+        { "severity": "watch", "label": "Low visibility", "threshold": 2, "colour": "#f97316" },
+        { "severity": "severe", "label": "Dense fog", "threshold": 1, "colour": "#dc2626" }
+      ]
+    }
+  ]
+}

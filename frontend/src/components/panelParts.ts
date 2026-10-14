@@ -38,9 +38,11 @@ export function layerAbout(layer: Pick<Layer, 'legend'>): string {
   if (legend.type === 'classes') {
     // A class can appear under several colours; it is named once.
     const labels = [...new Set(legend.items.map((item) => item.label))]
-    // Classes that are themselves lists ("Drip, Sprinkler") are set apart by semicolons, so they stay whole.
-    const between = labels.some((label) => label.includes(',')) ? '; ' : ', '
-    return labels.length > 3 ? `${labels.slice(0, 3).join(between)} and ${labels.length - 3} more` : labels.join(between)
+    // Long categorical legends belong in the map legend, not in a compact switch card.
+    if (labels.length > 3 || labels.some((label) => label.includes(','))) {
+      return `${labels.length} mapped ${labels.length === 1 ? 'category' : 'categories'}`
+    }
+    return labels.join(', ')
   }
   // The far end is written mid-sentence, so it starts small: "Less land to more land".
   const far = legend.max_label || 'high'

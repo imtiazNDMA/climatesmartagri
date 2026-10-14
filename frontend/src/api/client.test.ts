@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   ApiError,
   BackendUnreachableError,
+  classifyCropImage,
+  fetchHazardProducts,
   fetchBoundaries,
   fetchCatalogue,
   fetchSectionData,
@@ -71,6 +73,28 @@ describe('client', () => {
     expect(tileUrlTemplate('forest', null, 0)).toBe('/api/tiles/forest/{z}/{x}/{y}')
     expect(tileUrlTemplate('forest', 2005, 0)).toBe('/api/tiles/forest/{z}/{x}/{y}?year=2005')
     expect(tileUrlTemplate('forest', 2005, 2)).toBe('/api/tiles/forest/{z}/{x}/{y}?year=2005&r=2')
+  })
+
+  it('posts crop images as multipart form data', async () => {
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) =>
+      new Response(JSON.stringify({ predictions: [], needs_expert_review: true, model: 'improved-002' }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const file = new File(['leaf'], 'leaf.png', { type: 'image/png' })
+    await classifyCropImage(file, 'Maize', 3)
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/crop-classification/predict')
+    const init = fetchMock.mock.calls[0][1] as RequestInit
+    expect(init.method).toBe('POST')
+    const form = init.body as FormData
+    expect(form.get('image')).toBe(file)
+    expect(form.get('crop')).toBe('Maize')
+    expect(form.get('top_k')).toBe('3')
+  })
+
+  it('fetches hazard guidance products', async () => {
+    const fetchMock = respond(200, { classification: 'forecast-guidance', products: [] })
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(fetchHazardProducts()).resolves.toMatchObject({ classification: 'forecast-guidance' })
+    expect(fetchMock).toHaveBeenCalledWith('/api/hazards/products')
   })
 
   it('probes the root tile and reports success or failure', async () => {

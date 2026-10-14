@@ -63,9 +63,9 @@ describe('layerAbout', () => {
 
   it('names the classes of a layer, and counts the rest past three', () => {
     expect(layerAbout({ legend: { type: 'classes', items: [item('Forest')] } })).toBe('Forest')
-    expect(layerAbout({ legend: { type: 'classes', items: ['A', 'B', 'C', 'D', 'E'].map(item) } })).toBe('A, B, C and 2 more')
+    expect(layerAbout({ legend: { type: 'classes', items: ['A', 'B', 'C', 'D', 'E'].map(item) } })).toBe('5 mapped categories')
     expect(layerAbout({ legend: { type: 'classes', items: ['Drip', 'Sprinkler', 'Drip'].map(item) } })).toBe('Drip, Sprinkler')
-    expect(layerAbout({ legend: { type: 'classes', items: ['Drip, Sprinkler', 'Flood'].map(item) } })).toBe('Drip, Sprinkler; Flood')
+    expect(layerAbout({ legend: { type: 'classes', items: ['Drip, Sprinkler', 'Flood'].map(item) } })).toBe('2 mapped categories')
   })
 
   it('names the two ends of a scale, with its unit when it has one', () => {

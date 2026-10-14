@@ -1,25 +1,32 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
 # Virtual environments
-.venv
+.venv/
 
 # Node
 node_modules/
 frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
+*.log
 
 # Converted rasters (large; rebuilt by backend/scripts/prepare_rasters.py)
 backend/rasters/
 
 # Credentials for outside services
 .env
+.env.*
+!.env.example
 \#*PMD Monitor*.txt
 
 # Forecast rasters fetched from PMD on demand (a cache; safe to delete)
@@ -27,6 +34,18 @@ backend/forecast/
 
 # Browser automation logs
 .playwright-mcp/
+
+# Local editor and agent state
+.idea/
+.remember/
+.superpowers/
+.DS_Store
+Thumbs.db
+*.sw?
+
+# New raw vector deliveries require review before they are committed.
+data/geospatial/vectors/Join_Irrigated.*
+data/geospatial/vectors/sajid(2oct)/
 
 # Source rasters and their archives: several gigabytes, far over GitHub's 100 MB file limit.
 # They stay on disk here and are read by backend/scripts/prepare_rasters.py.

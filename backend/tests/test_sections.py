@@ -388,9 +388,9 @@ def test_food_story(providers):
     assert outlook["kind"] == "outlook"
     # Need first, then the two supplies: the chart fills in the spaces between them in that order.
     assert [s["name"] for s in outlook["series"]] == [
-        "Food needed", "With climate smart agriculture", "With traditional farming",
+        "Food needed", "With climate smart agriculture", "With traditional farming", "Population",
     ]
-    assert [s["values"][-1] for s in outlook["series"]] == [95.85, 83.27, 79.81]
+    assert [s["values"][-1] for s in outlook["series"]] == [95.85, 83.27, 79.81, 259.8]
     assert outlook["title"] == (
         "By 2027 climate smart agriculture adds 3.5 over traditional farming, yet 12.6 of the food needed is unmet"
     )

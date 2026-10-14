@@ -89,12 +89,25 @@
       ]
     },
     {
+      "id": "crop-classification",
+      "title": "Crop health scanner",
+      "icon": "scan-search",
+      "order": 8,
+      "status": "ready",
+      "kind": "crop-classification",
+      "summary": "Classify Rice and Maize leaf images for common pests, diseases and healthy crops.",
+      "place_levels": [
+        "national"
+      ]
+    },
+    {
       "id": "hazards",
       "title": "Hazards",
       "icon": "cloud-lightning",
-      "order": 8,
-      "status": "coming-soon",
-      "summary": "Flood, drought and heatwave layers to overlay on cropland and irrigation.",
+      "order": 9,
+      "status": "ready",
+      "kind": "hazards",
+      "summary": "Forecast guidance for frost, heat stress, heavy rain, strong wind and low visibility.",
       "place_levels": [
         "national",
         "province",
@@ -105,7 +118,7 @@
       "id": "exposure",
       "title": "Exposure and vulnerability",
       "icon": "users",
-      "order": 9,
+      "order": 10,
       "status": "coming-soon",
       "summary": "Population and cropland at risk, with a district risk ranking.",
       "place_levels": [

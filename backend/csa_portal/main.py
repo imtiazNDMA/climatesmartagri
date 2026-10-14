@@ -17,6 +17,8 @@ from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers  # 
 from titiler.core.factory import TilerFactory  # noqa: E402
 
 from .catalogue import Layer, load_catalogue  # noqa: E402
+from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
+from .hazards import add_hazard_routes, load_hazards  # noqa: E402
 from .forecast import (  # noqa: E402
     ForecastService,
     ForecastSource,
@@ -47,6 +49,7 @@ def create_app(
     tile_providers: Mapping[str, TileProvider] | None = None,
     geojson_providers: Mapping[str, GeoJsonProvider] | None = None,
     forecast_source: ForecastSource | None = None,
+    crop_classifier: CropClassifier | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     catalogue = load_catalogue(settings.catalogue_path)
@@ -67,6 +70,10 @@ def create_app(
     layers = {layer.id: layer for layer in catalogue.layers}
 
     app = FastAPI(title="CSA Portal")
+
+    classifier = crop_classifier or CropClassifier(settings.crop_model_dir)
+    add_crop_classification_routes(app, classifier)
+    add_hazard_routes(app, load_hazards(settings.hazard_products_path))
 
     # --- Land-cover rasters, served by TiTiler from converted (cloud-optimized) files.
     def raster_file(layer: Layer) -> Path | None:
@@ -120,9 +127,9 @@ def create_app(
     app.include_router(cog.router, prefix=COG_PREFIX, tags=["Land cover"])
     add_exception_handlers(app, DEFAULT_STATUS_CODES)
 
-    # --- Weather forecast, fetched from PMD on demand. Only for a catalogue that has a forecast section.
+    # --- Weather forecast, fetched from PMD on demand. Only for a catalogue whose sections show forecasts.
     forecast: ForecastService | None = None
-    if any(section.kind == "forecast" for section in catalogue.sections):
+    if any(section.kind in {"forecast", "hazards"} for section in catalogue.sections):
         if forecast_source is None and settings.pmd_url and settings.pmd_user:
             forecast_source = PmdClient(
                 settings.pmd_url, settings.pmd_user, settings.pmd_pass, settings.pmd_cert_sha256
@@ -142,6 +149,7 @@ def create_app(
             "status": "ok",
             "boundaries_loaded": places.loaded,
             "boundaries_error": boundaries_error,
+            "crop_classifier_configured": classifier.configured,
             "layers": {
                 layer.id: places.loaded
                 if layer.kind == "boundary"

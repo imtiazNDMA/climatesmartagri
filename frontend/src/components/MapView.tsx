@@ -10,6 +10,7 @@ import type { ForecastTimesState } from '../data/useForecastTimes'
 import type { PortalData } from '../data/usePortalData'
 import { runOf } from '../forecast/choice'
 import { ForecastFrames, type FrameMap } from '../map/forecastFrames'
+import { basemapById, type BasemapId } from '../map/basemaps'
 import { extremeColours, fillColour, glowStrength, shapeColour } from '../map/layerStyle'
 import { tooltipTable } from '../map/tooltip'
 import { clickTarget, effectiveYear } from '../state/selectors'
@@ -24,6 +25,63 @@ const BLANK_STYLE: StyleSpecification = {
   version: 8,
   sources: {},
   layers: [{ id: 'background', type: 'background', paint: { 'background-color': '#eef1f4' } }],
+}
+
+const DARK_MAP_BACKGROUND = '#0b1320'
+
+function applyMapTheme(map: MapLibreMap, darkMode: boolean, imagery = false) {
+  const boundaryPaint: Record<string, { colour: string; opacity: number }> = {
+    'districts-line': {
+      colour: darkMode ? '#8aa0ba' : '#64748b',
+      opacity: darkMode ? 0.78 : 1,
+    },
+    'provinces-line': {
+      colour: darkMode ? '#d2dfef' : '#334155',
+      opacity: darkMode ? 0.92 : 1,
+    },
+    'selected-province': {
+      colour: darkMode ? '#f8fafc' : '#0f172a',
+      opacity: 1,
+    },
+    'selected-district': {
+      colour: darkMode ? '#60a5fa' : '#1d4ed8',
+      opacity: 1,
+    },
+  }
+  for (const layer of map.getStyle().layers ?? []) {
+    if (layer.id.startsWith('data-') || layer.id.startsWith('forecast')) continue
+    if (boundaryPaint[layer.id]) {
+      const paint = boundaryPaint[layer.id]
+      map.setPaintProperty(layer.id, 'line-color', paint.colour)
+      map.setPaintProperty(layer.id, 'line-opacity', paint.opacity)
+      continue
+    }
+    if (layer.id === 'districts-fill') {
+      map.setPaintProperty(layer.id, 'fill-color', darkMode ? '#60a5fa' : '#1d4ed8')
+      continue
+    }
+
+    if (layer.type === 'background') {
+      map.setPaintProperty(layer.id, 'background-color', darkMode ? DARK_MAP_BACKGROUND : '#eef1f4')
+    } else if (layer.type === 'raster') {
+      map.setPaintProperty(layer.id, 'raster-brightness-max', darkMode ? (imagery ? 0.72 : 0.42) : 1)
+      map.setPaintProperty(layer.id, 'raster-brightness-min', darkMode ? (imagery ? 0.03 : 0.08) : 0)
+      map.setPaintProperty(layer.id, 'raster-contrast', darkMode ? (imagery ? 0.08 : 0.18) : 0)
+      map.setPaintProperty(layer.id, 'raster-saturation', darkMode ? (imagery ? -0.18 : -0.72) : 0)
+      map.setPaintProperty(layer.id, 'raster-hue-rotate', darkMode && !imagery ? 20 : 0)
+    } else if (layer.type === 'fill') {
+      map.setPaintProperty(layer.id, 'fill-color', darkMode ? '#172235' : '#f1f3f2')
+    } else if (layer.type === 'line') {
+      map.setPaintProperty(layer.id, 'line-color', darkMode ? '#3d4f68' : '#c4c9ca')
+    } else if (layer.type === 'symbol') {
+      if (layer.paint?.['text-color'] !== undefined) {
+        map.setPaintProperty(layer.id, 'text-color', darkMode ? '#b9c6d8' : '#374151')
+      }
+      if (layer.paint?.['text-halo-color'] !== undefined) {
+        map.setPaintProperty(layer.id, 'text-halo-color', darkMode ? '#0b1320' : '#ffffff')
+      }
+    }
+  }
 }
 
 const dataId = (layerId: string) => `data-${layerId}`
@@ -223,7 +281,17 @@ function boundaryAnchor(map: MapLibreMap): string | undefined {
   return ['districts-fill', 'provinces-line'].find((id) => map.getLayer(id))
 }
 
-export function MapView({ data, forecastTimes }: { data: PortalData; forecastTimes: ForecastTimesState }) {
+export function MapView({
+  data,
+  darkMode,
+  basemap,
+  forecastTimes,
+}: {
+  data: PortalData
+  darkMode: boolean
+  basemap: BasemapId
+  forecastTimes: ForecastTimesState
+}) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const built = useRef(new Map<string, string>())
@@ -246,7 +314,14 @@ export function MapView({ data, forecastTimes }: { data: PortalData; forecastTim
     const builtLayers = built.current
     const country = data.places.find((p) => p.id === COUNTRY_ID)
 
-    resolveStyle(data.catalogue.basemap_style_url).then(({ style, fallback }) => {
+    const selectedBasemap = basemapById(basemap)
+    const requestedStyle = basemap === 'positron' && data.catalogue.basemap_style_url
+      ? data.catalogue.basemap_style_url
+      : selectedBasemap.style
+    const stylePromise = typeof requestedStyle === 'string'
+      ? resolveStyle(requestedStyle)
+      : Promise.resolve({ style: requestedStyle, fallback: false })
+    stylePromise.then(({ style, fallback }) => {
       if (cancelled || !container.current) return
       if (fallback) {
         uiStore.getState().addNotice('Background map unavailable. Data is shown on a plain background.')
@@ -267,6 +342,7 @@ export function MapView({ data, forecastTimes }: { data: PortalData; forecastTim
       created.addControl(new NavigationControl({ showCompass: false }), 'bottom-right')
       created.on('load', () => {
         if (cancelled) return
+        applyMapTheme(created, darkMode, selectedBasemap.imagery)
         addBoundaries(created, data)
         wireInteractions(created, data)
         mapRef.current = created
@@ -304,7 +380,13 @@ export function MapView({ data, forecastTimes }: { data: PortalData; forecastTim
     }
     // Built from places, boundaries and the background style only: a refreshed layer list must not rebuild the map.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data.places, data.boundaries, data.catalogue.basemap_style_url])
+  }, [data.places, data.boundaries, data.catalogue.basemap_style_url, basemap])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map) return
+    applyMapTheme(map, darkMode, basemapById(basemap).imagery)
+  }, [darkMode, ready, basemap])
 
   // Outline the selection and move the map to it.
   useEffect(() => {

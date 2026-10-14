@@ -24,6 +24,16 @@ describe('linear', () => {
   })
 })
 
+describe('population overlay', () => {
+  it('uses the shared scale so population is drawn above the food lines', () => {
+    const scale = niceScale(68.2, 386, 8)
+    const y = linear(scale.min, scale.max, 300, 0)
+
+    expect(scale).toEqual({ min: 50, max: 400, ticks: [50, 100, 150, 200, 250, 300, 350, 400] })
+    expect(y(386)).toBeLessThan(y(168.7))
+  })
+})
+
 describe('paths', () => {
   const upper = [{ x: 0, y: 10 }, { x: 50, y: 5 }]
   const lower = [{ x: 0, y: 20 }, { x: 50, y: 30 }]

@@ -29,5 +29,13 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    host: '127.0.0.1',
+    port: Number(process.env.CSA_FRONTEND_PORT ?? 9080),
+    strictPort: true,
+    proxy: {
+      '/api': { target: backend, changeOrigin: true },
+    },
+  },
   test: { environment: 'node', include: ['src/**/*.test.ts'] },
 })

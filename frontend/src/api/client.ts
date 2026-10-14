@@ -1,5 +1,5 @@
 import type { FeatureCollection } from 'geojson'
-import type { Catalogue, ForecastTime, Layer, Place, SectionData } from './types'
+import type { Catalogue, CropClassificationResult, ForecastTime, HazardCatalogue, Layer, Place, SectionData } from './types'
 
 export class ApiError extends Error {
   status: number
@@ -41,6 +41,31 @@ async function getJson<T>(path: string): Promise<T> {
   return (await response.json()) as T
 }
 
+async function responseJson<T>(request: () => Promise<Response>): Promise<T> {
+  let response: Response
+  try {
+    response = await request()
+  } catch {
+    throw new BackendUnreachableError()
+  }
+  if (GATEWAY_STATUSES.includes(response.status)) {
+    const body = await response.clone().json().catch(() => null)
+    const detail = body && typeof body === 'object' ? (body as { detail?: unknown }).detail : null
+    if (!detail || typeof detail !== 'object') throw new BackendUnreachableError()
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => null)
+    const detail = body && typeof body === 'object' ? (body as { detail?: unknown }).detail : null
+    const shaped = detail && typeof detail === 'object' ? (detail as { message?: unknown; reason?: unknown }) : null
+    throw new ApiError(
+      response.status,
+      typeof shaped?.reason === 'string' ? shaped.reason : null,
+      typeof shaped?.message === 'string' ? shaped.message : `Request failed (${response.status})`,
+    )
+  }
+  return (await response.json()) as T
+}
+
 export const fetchCatalogue = () => getJson<Catalogue>('/api/catalogue')
 export const fetchPlaces = () => getJson<Place[]>('/api/places')
 export const fetchHealth = () =>
@@ -66,6 +91,20 @@ export function fetchSectionData(sectionId: string, placeId: string | null, year
   if (year !== null) params.push(`year=${year}`)
   const query = params.length ? `?${params.join('&')}` : ''
   return getJson<SectionData>(`/api/sections/${sectionId}/data${query}`)
+}
+
+export function classifyCropImage(image: File, crop: 'Rice' | 'Maize', topK = 3) {
+  const form = new FormData()
+  form.append('image', image)
+  form.append('crop', crop)
+  form.append('top_k', String(topK))
+  return responseJson<CropClassificationResult>(() =>
+    fetch('/api/crop-classification/predict', { method: 'POST', body: form }),
+  )
+}
+
+export function fetchHazardProducts() {
+  return getJson<HazardCatalogue>('/api/hazards/products')
 }
 
 interface ForecastAddress {

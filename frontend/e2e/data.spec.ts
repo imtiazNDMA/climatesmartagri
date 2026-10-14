@@ -76,7 +76,9 @@ test('clicking a chart sets the year', async ({ page }) => {
   const plot = page.getByRole('figure', { name: 'Demand and supply' }).locator('.chart-plot')
   await expect(plot).toHaveAttribute('data-marked-year', '2010')
   const box = (await plot.boundingBox())!
-  await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.6)
+  // With figures shown the plot can sit below the fold; a locator click scrolls it into view,
+  // where a raw page.mouse.click would land off-screen and hit nothing.
+  await plot.click({ position: { x: box.width * 0.5, y: box.height * 0.6 } })
   const slider = page.getByRole('group', { name: 'Year' }).getByRole('slider')
   await expect.poll(async () => Number(await slider.inputValue())).toBeLessThan(2009)
   await expect.poll(async () => Number(await slider.inputValue())).toBeGreaterThan(2001)

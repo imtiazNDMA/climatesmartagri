@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AboutDialog } from './components/AboutDialog'
 import { ActiveLayers } from './components/ActiveLayers'
 import { BackendDown } from './components/BackendDown'
 import { ForecastSlider } from './components/ForecastSlider'
 import { ChartsView } from './components/ChartsView'
 import { Breadcrumb } from './components/Breadcrumb'
+import { BasemapSelector } from './components/BasemapSelector'
 import { IconRail } from './components/IconRail'
 import { Legend } from './components/Legend'
 import { MapView } from './components/MapView'
@@ -12,13 +13,16 @@ import { Notices } from './components/Notices'
 import { PlaceSearch } from './components/PlaceSearch'
 import { SectionPanel } from './components/SectionPanel'
 import { TimeSlider } from './components/TimeSlider'
+import Switch from './components/ui/sky-toggle'
 import { useBackendWatch } from './data/useBackendWatch'
 import { useForecastTimes } from './data/useForecastTimes'
 import { useLayerProbes } from './data/useLayerProbes'
+import { useHazardProducts } from './data/useHazardProducts'
 import { usePortalData, type PortalData } from './data/usePortalData'
 import { useSectionData } from './data/useSectionData'
 import { COUNTRY_ID } from './api/types'
 import { effectiveYear } from './state/selectors'
+import type { BasemapId } from './map/basemaps'
 import { useView } from './state/viewState'
 import { useUrlSync } from './state/useUrlSync'
 
@@ -27,24 +31,42 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
   useLayerProbes(data.catalogue)
   useBackendWatch(data.catalogue, onLayersChanged)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('csa-theme')
+    return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+  const [basemap, setBasemap] = useState<BasemapId>(() =>
+    (localStorage.getItem('csa-basemap') as BasemapId | null) ?? 'positron')
+  useEffect(() => {
+    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
+    document.documentElement.style.colorScheme = darkMode ? 'dark' : 'light'
+    localStorage.setItem('csa-theme', darkMode ? 'dark' : 'light')
+  }, [darkMode])
+  useEffect(() => localStorage.setItem('csa-basemap', basemap), [basemap])
   const sectionId = useView((s) => s.section)
   const full = useView((s) => s.full)
   const placeId = useView((s) => s.place)
   const year = useView((s) => s.year)
   const section = data.catalogue.sections.find((s) => s.id === sectionId) ?? null
+  const hazardProducts = useHazardProducts(section?.kind === 'hazards')
   // A forecast section has no figures or charts of its own to ask for.
   const sectionData = useSectionData(
-    section?.kind === 'forecast' ? null : section, placeId, effectiveYear(section?.years, year),
+    section?.kind === 'forecast' || section?.kind === 'crop-classification' || section?.kind === 'hazards' ? null : section,
+    placeId,
+    effectiveYear(section?.years, year),
   )
   const forecastTimes = useForecastTimes()
   const place = data.places.find((p) => p.id === (placeId ?? COUNTRY_ID))
-  const showCharts = full && section !== null
+  const showCharts = full && section !== null && section.kind !== 'crop-classification'
   return (
     <div className="app">
-      <IconRail catalogue={data.catalogue} onAbout={() => setAboutOpen(true)} />
-      <SectionPanel data={data} sectionData={sectionData} forecastTimes={forecastTimes} />
+      <IconRail
+        catalogue={data.catalogue}
+        onAbout={() => setAboutOpen(true)}
+      />
+      <SectionPanel data={data} sectionData={sectionData} forecastTimes={forecastTimes} hazardProducts={hazardProducts} />
       <main className={showCharts ? 'map-area map-area-full' : 'map-area'}>
-        <MapView data={data} forecastTimes={forecastTimes} />
+        <MapView data={data} darkMode={darkMode} basemap={basemap} forecastTimes={forecastTimes} />
         {/* In full view the charts take the map's place; the map stays loaded underneath. */}
         {showCharts ? (
           <ChartsView section={section} place={place} sectionData={sectionData} />
@@ -52,13 +74,19 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
           <>
             <div className="map-toolbar">
               <PlaceSearch places={data.places} />
-              <Breadcrumb places={data.places} />
+              <div className="map-toolbar-actions">
+                <BasemapSelector value={basemap} onChange={setBasemap} />
+                <div className="map-theme-toggle">
+                  <Switch checked={darkMode} onChange={setDarkMode} />
+                </div>
+                <Breadcrumb places={data.places} />
+              </div>
             </div>
             <ActiveLayers catalogue={data.catalogue} />
             <Legend catalogue={data.catalogue} />
           </>
         )}
-        <TimeSlider catalogue={data.catalogue} />
+        {section?.kind !== 'forecast' && section?.kind !== 'crop-classification' && section?.kind !== 'hazards' && <TimeSlider catalogue={data.catalogue} />}
         {!showCharts && <ForecastSlider times={forecastTimes} />}
         <Notices />
       </main>

@@ -1,5 +1,5 @@
-import { Map as MapIcon, Maximize2, Minimize2 } from 'lucide-react'
-import { useEffect } from 'react'
+import { Expand, Map as MapIcon, Maximize2, Minimize2, Shrink } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import type { Place, Section } from '../api/types'
 import { formatNumber } from '../charts/chartOption'
 import type { SectionDataState } from '../data/useSectionData'
@@ -25,6 +25,7 @@ export function ChartsView({
 }) {
   const data = sectionData.status === 'ready' ? sectionData.data : null
   const maximizedId = useView((s) => s.maximized)
+  const [fullscreenId, setFullscreenId] = useState<string | null>(null)
   // A chart that is no longer offered, after a change of place for instance, cannot stay maximized.
   const maximized = data?.charts.find((chart) => chart.id === maximizedId) ?? null
   const shown = maximized ? [maximized] : (data?.charts ?? [])
@@ -37,6 +38,25 @@ export function ChartsView({
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [maximized])
+
+  useEffect(() => {
+    const syncFullscreen = () => {
+      const element = document.fullscreenElement as HTMLElement | null
+      setFullscreenId(element?.dataset.chartId ?? null)
+    }
+    document.addEventListener('fullscreenchange', syncFullscreen)
+    return () => document.removeEventListener('fullscreenchange', syncFullscreen)
+  }, [])
+
+  const toggleFullscreen = async (element: HTMLDivElement, chartId: string) => {
+    if (document.fullscreenElement === element) {
+      await document.exitFullscreen()
+      return
+    }
+    if (document.fullscreenElement) await document.exitFullscreen()
+    await element.requestFullscreen()
+    setFullscreenId(chartId)
+  }
 
   return (
     <section className="charts-view" aria-label="Charts in full view">
@@ -93,9 +113,10 @@ export function ChartsView({
       {data && data.charts.length > 0 && (
         <div className="charts-view-grid">
           {shown.map((chart) => (
-            <div key={chart.id} className="chart-cell">
+            <div key={chart.id} className="chart-cell" data-chart-id={chart.id}>
               <ChartFigure spec={chart} year={data.year} large />
-              {data.charts.length > 1 && (
+              <div className="chart-actions">
+                {data.charts.length > 1 && (
                 <button
                   type="button"
                   className="chart-size"
@@ -105,7 +126,17 @@ export function ChartsView({
                 >
                   {maximized ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
                 </button>
-              )}
+                )}
+                <button
+                  type="button"
+                  className="chart-fullscreen"
+                  title={fullscreenId === chart.id ? 'Exit full screen' : 'View chart full screen'}
+                  aria-label={`${fullscreenId === chart.id ? 'Exit full screen' : 'View full screen'}: ${chart.title}`}
+                  onClick={(event) => void toggleFullscreen(event.currentTarget.closest<HTMLDivElement>('.chart-cell')!, chart.id)}
+                >
+                  {fullscreenId === chart.id ? <Shrink size={18} aria-hidden /> : <Expand size={18} aria-hidden />}
+                </button>
+              </div>
             </div>
           ))}
         </div>

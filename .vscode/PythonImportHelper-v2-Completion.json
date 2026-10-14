@@ -5466,14 +5466,5 @@
         "peekOfCode": "KASHMIR = Place(\"p-azad-kashmir\", \"Azad Kashmir\", \"province\", \"PK\", (73, 33, 75, 35))\ndef test_calendar_for_a_province_is_one_chart_of_its_crops(calendar):\n    body = calendar(PUNJAB, None)\n    assert _figures(body) == {\n        \"Crops with a calendar\": (3, \"\"),\n        \"Calendars adjusted for climate\": (2, \"\"),\n        \"Crops to sow earlier\": (2, \"\"),\n    }\n    assert body[\"notes\"] == []\n    (chart,) = body[\"charts\"]",
         "detail": "backend.tests.test_sections",
         "documentation": {}
-    },
-    {
-        "label": "main",
-        "kind": 2,
-        "importPath": "main",
-        "description": "main",
-        "peekOfCode": "def main():\n    print(\"Hello from dr-aamir!\")\nif __name__ == \"__main__\":\n    main()",
-        "detail": "main",
-        "documentation": {}
     }
 ]

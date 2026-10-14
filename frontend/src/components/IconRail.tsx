@@ -5,7 +5,12 @@ import { sectionsWithActiveLayers } from '../state/selectors'
 import { emptyView, useView, viewStore } from '../state/viewState'
 import { sectionIcon } from './sectionIcons'
 
-export function IconRail({ catalogue, onAbout }: { catalogue: Catalogue; onAbout: () => void }) {
+type IconRailProps = {
+  catalogue: Catalogue
+  onAbout: () => void
+}
+
+export function IconRail({ catalogue, onAbout }: IconRailProps) {
   const open = useView((s) => s.section)
   const layers = useView((s) => s.layers)
   const forecastOn = useView((s) => s.forecast !== null)
@@ -36,9 +41,11 @@ export function IconRail({ catalogue, onAbout }: { catalogue: Catalogue; onAbout
           )
         })}
       </div>
-      <button type="button" className="rail-button" aria-label="About" title="About" onClick={onAbout}>
-        <Info size={22} aria-hidden />
-      </button>
+      <div className="rail-footer">
+        <button type="button" className="rail-button" aria-label="About" title="About" onClick={onAbout}>
+          <Info size={22} aria-hidden />
+        </button>
+      </div>
     </nav>
   )
 }

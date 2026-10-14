@@ -37,7 +37,7 @@ export interface Section {
   order: number
   status: SectionStatus
   /** A forecast section takes its layers from the forecast layer list rather than the catalogue's. */
-  kind?: 'standard' | 'forecast'
+  kind?: 'standard' | 'forecast' | 'crop-classification' | 'hazards'
   summary: string
   place_levels: PlaceLevel[]
   years: YearRange | null
@@ -100,6 +100,45 @@ export interface Catalogue {
   sections: Section[]
   layers: Layer[]
   forecast?: ForecastCatalogue | null
+}
+
+export interface CropPrediction {
+  label_index: number
+  canonical_class_id: string
+  canonical_class: string
+  crop: 'Rice' | 'Maize'
+  category: 'disease' | 'pest' | 'healthy'
+  confidence: number
+}
+
+export interface CropClassificationResult {
+  predictions: CropPrediction[]
+  needs_expert_review: boolean
+  model: string
+}
+
+export interface HazardBand {
+  severity: string
+  label: string
+  threshold: number
+  colour: string
+}
+
+export interface HazardProduct {
+  id: string
+  title: string
+  forecast_layer: string
+  unit: string
+  direction: 'above' | 'below'
+  summary: string
+  bands: HazardBand[]
+}
+
+export interface HazardCatalogue {
+  classification: 'forecast-guidance'
+  threshold_version: string
+  disclaimer: string
+  products: HazardProduct[]
 }
 
 export interface Place {

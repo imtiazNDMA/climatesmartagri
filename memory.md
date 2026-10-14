@@ -30,7 +30,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 | Food security projections | Live: charts, 2026–2047, national | `food security projection CSA 17 sep.xlsx` |
 | Climate-smart crop calendar | Live: calendar chart per province | `apps/climate calender 28 sep 2026/script.js` |
 | Weather forecast | Live since 2026-10-12: 47 layers from 8 models, fetched from PMD on demand | PMD early warning platform, `backend/forecast_layers.json` |
-| Hazards | Coming soon | No data yet |
+| Hazards | Live: 5 forecast-guidance products (frost, heat stress, heavy rain, strong wind, low visibility) derived from PMD layers | `backend/hazard_products.json` |
 | Exposure and vulnerability | Coming soon | No data yet |
 
 ## How data gets in
@@ -85,6 +85,13 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Food security's units are unknown.** The workbook states none. Million tonnes is my inference (364 kg per person per year); its "food" totals include cash and other crops; and two versions of the climate smart series exist (the `csa` sheet, which the portal reads, starts at 82.855; another sheet's "With best practices" starts at 86.155). The user was told and has not yet decided on relabelling.
 - **A section's charts now stay on screen while another year loads** (`useSectionData`). Before, every year step threw the charts away and drew them afresh.
 
+## Hazards guidance (added 2026-10-14)
+
+- **The Hazards section is live** with five forecast-guidance products: frost risk, heat stress, heavy rainfall, strong wind and lodging, and fog/low visibility. They are guidance derived from PMD forecast fields, not official warnings; the panel says so on every open.
+- **`backend/hazard_products.json`** holds each product's id, PMD layer, unit, direction and three severity bands with provisional thresholds, plus a `threshold_version` and disclaimer. `backend/csa_portal/hazards.py` validates the file (ordered bands, known direction) and serves `GET /api/hazards/products`; `CSA_HAZARD_PRODUCTS` overrides the path. The section's `kind` is `hazards` in the catalogue, which also switches on the forecast service in `main.py`.
+- **The panel drives the ordinary forecast machinery**: picking a product calls `chooseLayer` and sets the view store's `forecast`, so the map pipeline, `ForecastSlider` and the URL (`forecast=layer~model~level~time`) work unchanged. It opens on the first product that has data when nothing is on the map. Model choice and valid time come from the existing forecast controls.
+- **Thresholds are interpretive, not calibrated.** The map shows the raw PMD field's own colour ramp, not the band colours; the bands and thresholds are a screening aid in the panel. They live in the JSON so they can be revised without touching code.
+
 ## Decisions the user made
 
 - Audience is general disaster management stakeholders; everything must be interactive.
@@ -125,7 +132,7 @@ Three scripts turn source files into what the backend serves. Source files are n
 ## Open items
 
 - **Delete `backend\rasters\tmpyt2t2_d9.tif`** (5.6 GB), left from a conversion I stopped. A safety check blocked my clean-up, so it is the user's to remove.
-- **Hazards and exposure** have no data. The district map carries a population figure per district (about 313 million in total) that would suit exposure.
+- **Hazards guidance** is live but its thresholds are provisional (`provisional-2026-10`); they have not been reviewed against impact data or PMD's own warning thresholds. **Exposure and vulnerability** still have no data. The district map carries a population figure per district (about 313 million in total) that would suit exposure.
 - **The background map draws its own borders** and Kashmir labels beneath the project's boundaries. The style is a setting (`CSA_BASEMAP_STYLE_URL`).
 - **The tehsil practice layer uses a different boundary set** from the district map, so edges do not line up exactly, and it has no tehsils in Jammu and Kashmir.
 - **Nothing on the page says why land cover shares exceed or fall short of 100%** now that the notes are gone.

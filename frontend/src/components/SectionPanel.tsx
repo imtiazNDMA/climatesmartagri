@@ -7,9 +7,12 @@ import type { PortalData } from '../data/usePortalData'
 import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
+import { CropClassificationPanel } from './CropClassificationPanel'
+import { HazardsPanel } from './HazardsPanel'
+import type { HazardProductsState } from '../data/useHazardProducts'
 import { ForecastPanel } from './ForecastPanel'
 import { fieldArt, layerColours } from './fieldArt'
-import { figureBar, groupLayers, layerAbout, layerScope } from './panelParts'
+import { groupLayers, layerAbout, layerScope } from './panelParts'
 import { sectionIcon } from './sectionIcons'
 
 const MIN_WIDTH = 280
@@ -36,9 +39,8 @@ function Part({ icon: Icon, heading, count, action, children }: {
   )
 }
 
-/** One figure as a tile: what it is, the number large with its unit small, and a bar when it is a share. */
+/** One figure as a tile: what it is, the number with its unit, and optional share context. */
 function FigureTile({ figure }: { figure: Figure }) {
-  const bar = figureBar(figure)
   const share = typeof figure.share === 'number' ? figure.share : null
   return (
     <div className="figure-tile">
@@ -58,17 +60,10 @@ function FigureTile({ figure }: { figure: Figure }) {
           </>
         )}
       </dd>
-      {bar !== null && figure.value !== null && (
-        <div className="figure-share">
-          <span className="figure-bar" aria-hidden>
-            <span style={{ width: `${bar}%` }} />
-          </span>
-          {share !== null && (
-            <span className="figure-share-text">
-              {formatNumber(share)}%{figure.share_of ? ` ${figure.share_of}` : ''}
-            </span>
-          )}
-        </div>
+      {share !== null && figure.value !== null && (
+        <p className="figure-share-text">
+          {formatNumber(share)}%{figure.share_of ? ` ${figure.share_of}` : ''}
+        </p>
       )}
     </div>
   )
@@ -109,6 +104,8 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
  */
 function LayerCard({ layer, on, at }: { layer: Layer; on: boolean; at: number }) {
   const ready = layer.status === 'ready'
+  const name = layerScope(layer.title).name
+  const about = ready ? layerAbout(layer) : 'Data not loaded yet'
   return (
     <label className={`deck-card${on ? ' on' : ''}${ready ? '' : ' disabled'}`} style={{ '--at': at } as CSSProperties}>
       <input
@@ -122,16 +119,17 @@ function LayerCard({ layer, on, at }: { layer: Layer; on: boolean; at: number })
       <span className="deck-card-art" style={{ backgroundImage: fieldArt(layerColours(layer), layer.id) }} aria-hidden>
         {on && <span className="deck-card-on"><Check size={13} aria-hidden /></span>}
       </span>
-      <span className="deck-card-title">{layerScope(layer.title).name}</span>
-      <span className="deck-card-about">{ready ? layerAbout(layer) : 'Data not loaded yet'}</span>
+      <span className="deck-card-title" title={name}>{name}</span>
+      <span className="deck-card-about" title={about}>{about}</span>
     </label>
   )
 }
 
-export function SectionPanel({ data, sectionData, forecastTimes }: {
+export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts }: {
   data: PortalData
   sectionData: SectionDataState
   forecastTimes: ForecastTimesState
+  hazardProducts: HazardProductsState
 }) {
   const sectionId = useView((s) => s.section)
   const full = useView((s) => s.full)
@@ -195,6 +193,14 @@ export function SectionPanel({ data, sectionData, forecastTimes }: {
       ) : section.kind === 'forecast' ? (
         <div className="panel-body">
           <ForecastPanel forecast={data.catalogue.forecast ?? null} times={forecastTimes} />
+        </div>
+      ) : section.kind === 'crop-classification' ? (
+        <div className="panel-body">
+          <CropClassificationPanel />
+        </div>
+      ) : section.kind === 'hazards' ? (
+        <div className="panel-body">
+          <HazardsPanel catalogue={data.catalogue.forecast ?? null} products={hazardProducts} times={forecastTimes} />
         </div>
       ) : (
         <div className="panel-body">
