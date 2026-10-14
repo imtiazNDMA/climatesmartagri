@@ -10,6 +10,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_BASEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
 DEFAULT_CROP_MODEL_DIR = BACKEND_DIR / "models" / "crop-classification" / "improved-002"
 DEFAULT_HAZARD_PRODUCTS = BACKEND_DIR / "hazard_products.json"
+DEFAULT_HAZARD_MODELS = BACKEND_DIR / "hazard_models.json"
 
 
 def read_env_file(path: Path) -> dict[str, str]:
@@ -42,6 +43,7 @@ class Settings:
     pmd_cert_sha256: str = ""
     crop_model_dir: Path = DEFAULT_CROP_MODEL_DIR
     hazard_products_path: Path = DEFAULT_HAZARD_PRODUCTS
+    hazard_models_path: Path = DEFAULT_HAZARD_MODELS
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -73,4 +75,5 @@ class Settings:
             pmd_cert_sha256=environ.get("CSA_PMD_CERT_SHA256", ""),
             crop_model_dir=Path(environ.get("CSA_CROP_MODEL_DIR", DEFAULT_CROP_MODEL_DIR)),
             hazard_products_path=Path(environ.get("CSA_HAZARD_PRODUCTS", DEFAULT_HAZARD_PRODUCTS)),
+            hazard_models_path=Path(environ.get("CSA_HAZARD_MODELS", DEFAULT_HAZARD_MODELS)),
         )

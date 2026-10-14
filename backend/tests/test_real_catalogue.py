@@ -254,6 +254,9 @@ def test_the_shipped_forecast_layer_list_is_valid_and_served():
         offered = {level for levels in layer.levels.values() for level in levels}
         assert set(layer.ranges) <= offered, layer.id
     served = _client().get("/api/catalogue").json()["forecast"]
-    assert [layer["id"] for layer in served["layers"]] == [layer.id for layer in registry.layers]
+    fetched = [layer["id"] for layer in served["layers"]]
+    # The derived frost model is appended after the layers fetched straight from PMD.
+    assert fetched[:-1] == [layer.id for layer in registry.layers]
+    assert fetched[-1] == "frost-degree-hours"
     without_data = [layer["id"] for layer in served["layers"] if not any(layer["levels"].values())]
     assert without_data == ["max-wind-10m", "cin", "theta-se", "vapour-transport"]

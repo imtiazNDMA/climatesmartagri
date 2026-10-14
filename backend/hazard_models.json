@@ -1,0 +1,22 @@
+{
+  "version": "provisional-2026-10",
+  "models": [
+    {
+      "id": "frost-degree-hours",
+      "title": "Frost severity (degree-hours)",
+      "group": "hazard-models",
+      "unit": "°C·h",
+      "colours": ["#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b"],
+      "min": 0,
+      "max": 48,
+      "stops": [0, 3, 12, 24, 48],
+      "hide_below": 0.5,
+      "input_layer": "temperature",
+      "input_level": 0,
+      "window_hours": 24,
+      "min_points": 4,
+      "compute": "frost_degree_hours",
+      "params": { "base_c": 0 }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ def test_hazard_products_are_versioned_and_ordered(settings):
     assert [product.id for product in registry.products] == [
         "frost", "heat-stress", "heavy-rain", "strong-wind", "low-visibility"
     ]
-    assert [band.threshold for band in registry.products[0].bands] == [2, 0, -2]
+    assert [band.threshold for band in registry.products[0].bands] == [3, 12, 24]
 
 
 def test_hazard_products_api(settings):
@@ -19,5 +19,5 @@ def test_hazard_products_api(settings):
     assert response.status_code == 200
     body = response.json()
     assert body["classification"] == "forecast-guidance"
-    assert body["products"][0]["forecast_layer"] == "temperature-min"
+    assert body["products"][0]["forecast_layer"] == "frost-degree-hours"
     assert "not an official warning" in body["disclaimer"].lower()

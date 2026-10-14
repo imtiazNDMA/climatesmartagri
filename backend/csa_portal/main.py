@@ -19,6 +19,7 @@ from titiler.core.factory import TilerFactory  # noqa: E402
 from .catalogue import Layer, load_catalogue  # noqa: E402
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
 from .hazards import add_hazard_routes, load_hazards  # noqa: E402
+from .hazard_models import DerivedRegistryError, DerivedService, load_hazard_models  # noqa: E402
 from .forecast import (  # noqa: E402
     ForecastService,
     ForecastSource,
@@ -41,6 +42,18 @@ logger = logging.getLogger("uvicorn.error")
 
 def _error(status: int, message: str, reason: str) -> HTTPException:
     return HTTPException(status_code=status, detail={"message": message, "reason": reason})
+
+
+def _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:
+    """The forecast description, with any computed hazard models listed alongside the fetched layers."""
+    if forecast is None:
+        return None
+    body = forecast.describe()
+    if derived is not None:
+        extra = derived.describe()
+        body["groups"] = [*body["groups"], *extra["groups"]]
+        body["layers"] = [*body["layers"], *extra["layers"]]
+    return body
 
 
 def create_app(
@@ -129,6 +142,7 @@ def create_app(
 
     # --- Weather forecast, fetched from PMD on demand. Only for a catalogue whose sections show forecasts.
     forecast: ForecastService | None = None
+    derived: DerivedService | None = None
     if any(section.kind in {"forecast", "hazards"} for section in catalogue.sections):
         if forecast_source is None and settings.pmd_url and settings.pmd_user:
             forecast_source = PmdClient(
@@ -138,10 +152,15 @@ def create_app(
             forecast = ForecastService(
                 load_registry(settings.forecast_layers_path), forecast_source, settings.forecast_dir
             )
-            add_forecast_routes(app, forecast)
         except RegistryError as err:
             # A bad layer list must not take the portal down; the section shows as having no data.
             logger.error("Forecast layers could not be loaded: %s", err)
+        if forecast is not None:
+            try:
+                derived = DerivedService(forecast, load_hazard_models(settings.hazard_models_path))
+            except DerivedRegistryError as err:
+                logger.error("Hazard models could not be loaded: %s", err)
+            add_forecast_routes(app, forecast, derived)
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
@@ -164,7 +183,7 @@ def create_app(
             "basemap_style_url": settings.basemap_style_url,
             "sections": [section.model_dump() for section in catalogue.sections],
             "layers": [served(layer) for layer in catalogue.layers],
-            "forecast": forecast.describe() if forecast else None,
+            "forecast": _describe_forecast(forecast, derived),
         }
 
     @app.get("/api/places")

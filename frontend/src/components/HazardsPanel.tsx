@@ -106,7 +106,7 @@ export function HazardsPanel({
               {availableModels.map((model) => <option key={model.id} value={model.id}>{model.label}</option>)}
             </select>
           </label>
-          <p className="hazard-method">Threshold set: {products.data.threshold_version}. Values show the underlying PMD forecast field; severity thresholds are interpretive guidance for screening.</p>
+          <p className="hazard-method">Threshold set: {products.data.threshold_version}. Values show the underlying forecast field; severity thresholds are interpretive guidance for screening.</p>
         </section>
       )}
     </div>

@@ -6,14 +6,14 @@
     {
       "id": "frost",
       "title": "Frost risk",
-      "forecast_layer": "temperature-min",
-      "unit": "°C",
-      "direction": "below",
-      "summary": "Low minimum temperatures that may damage sensitive crops, especially in exposed and low-lying fields.",
+      "forecast_layer": "frost-degree-hours",
+      "unit": "°C·h",
+      "direction": "above",
+      "summary": "Accumulated cold below 0 °C over the last 24 hours: deeper and longer cold means more frost damage to sensitive crops, especially in exposed and low-lying fields.",
       "bands": [
-        { "severity": "advisory", "label": "Possible frost", "threshold": 2, "colour": "#facc15" },
-        { "severity": "watch", "label": "Likely frost", "threshold": 0, "colour": "#38bdf8" },
-        { "severity": "severe", "label": "Severe frost", "threshold": -2, "colour": "#2563eb" }
+        { "severity": "advisory", "label": "Light frost", "threshold": 3, "colour": "#facc15" },
+        { "severity": "watch", "label": "Moderate frost", "threshold": 12, "colour": "#f97316" },
+        { "severity": "severe", "label": "Severe frost", "threshold": 24, "colour": "#dc2626" }
       ]
     },
     {

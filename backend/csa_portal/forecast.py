@@ -215,15 +215,14 @@ def ramp_colourmap(colours: list[str]) -> dict[int, tuple[int, int, int, int]]:
     return result
 
 
-def convert(
+def read_physical(
     data: bytes,
-    destination: Path,
     layer: ForecastLayer,
     level: int,
     bbox: tuple[float, float, float, float],
     model_id: str = "",
-) -> None:
-    """Cut a downloaded forecast file down to the kept area and store it as colour positions."""
+) -> tuple[np.ma.MaskedArray, Any]:
+    """Cut a downloaded forecast file down to the kept area, as real values rather than colours."""
     with MemoryFile(data) as memory, memory.open() as source:
         grid = source.transform
         if grid.b != 0 or grid.d != 0 or grid.a <= 0 or grid.e >= 0:
@@ -251,6 +250,35 @@ def convert(
     if layer.ignore_above is not None:
         values = np.ma.masked_greater(values, layer.ignore_above)
     values = values * layer.factor * layer.model_factors.get(model_id, 1.0) + layer.add
+    return values, transform
+
+
+def _write_geotiff(out: np.ndarray, transform: Any, destination: Path, *, dtype: str, nodata: float) -> None:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    handle, temporary = tempfile.mkstemp(dir=destination.parent, suffix=".part")
+    os.close(handle)
+    try:
+        with rasterio.open(
+            temporary, "w", driver="GTiff", width=out.shape[1], height=out.shape[0], count=1, dtype=dtype,
+            crs="EPSG:4326", transform=transform, nodata=nodata, tiled=True, blockxsize=256, blockysize=256,
+            compress="deflate",
+        ) as target:
+            target.write(out, 1)
+        os.replace(temporary, destination)
+    finally:
+        if os.path.exists(temporary):
+            os.remove(temporary)
+
+
+def write_positions(
+    values: np.ma.MaskedArray,
+    transform: Any,
+    destination: Path,
+    layer: ForecastLayer,
+    level: int,
+    model_id: str = "",
+) -> None:
+    """Store real values as colour positions: 0 is "nothing here", 1 to 255 run along the ramp."""
     # Each colour sits at a value; a value between two of them takes a position between theirs.
     at = layer.colour_values(level, model_id)
     along = np.interp(np.ma.filled(values, at[0]), at, np.linspace(0, STEPS, len(at)))
@@ -259,21 +287,26 @@ def convert(
     if layer.hide_below is not None:
         empty |= np.ma.filled(values, np.nan) < layer.hide_below
     out = np.where(empty, 0, positions).astype("uint8")
+    _write_geotiff(out, transform, destination, dtype="uint8", nodata=0)
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=destination.parent, suffix=".part")
-    os.close(handle)
-    try:
-        with rasterio.open(
-            temporary, "w", driver="GTiff", width=out.shape[1], height=out.shape[0], count=1, dtype="uint8",
-            crs="EPSG:4326", transform=transform, nodata=0, tiled=True, blockxsize=256, blockysize=256,
-            compress="deflate",
-        ) as target:
-            target.write(out, 1)
-        os.replace(temporary, destination)
-    finally:
-        if os.path.exists(temporary):
-            os.remove(temporary)
+
+def write_values(values: np.ma.MaskedArray, transform: Any, destination: Path) -> None:
+    """Store real values as a float32 GeoTIFF, for the models that read them back."""
+    out = np.ma.filled(values.astype("float32"), np.nan)
+    _write_geotiff(out, transform, destination, dtype="float32", nodata=float("nan"))
+
+
+def convert(
+    data: bytes,
+    destination: Path,
+    layer: ForecastLayer,
+    level: int,
+    bbox: tuple[float, float, float, float],
+    model_id: str = "",
+) -> None:
+    """Cut a downloaded forecast file down to the kept area and store it as colour positions."""
+    values, transform = read_physical(data, layer, level, bbox, model_id)
+    write_positions(values, transform, destination, layer, level, model_id)
 
 
 @dataclass(frozen=True)
@@ -314,7 +347,7 @@ class ForecastService:
         self._known: dict[tuple[ListingKey, datetime, datetime], str] = {}
         self._refreshing: set[ListingKey] = set()
         self._retry_after: dict[ListingKey, float] = {}
-        self._failed: dict[Path, tuple[float, ForecastError]] = {}
+        self._failed: dict[Any, tuple[float, ForecastError]] = {}
         self._locks: dict[Any, threading.Lock] = {}
         self._locks_guard = threading.Lock()
         self._pruned_at: float | None = None
@@ -322,6 +355,17 @@ class ForecastService:
     @property
     def configured(self) -> bool:
         return self._source is not None
+
+    @property
+    def cache_dir(self) -> Path:
+        return self._cache_dir
+
+    def lock(self, key: Any) -> threading.Lock:
+        """A lock others may share for one stored path, so it is written only once."""
+        return self._lock(key)
+
+    def prune(self) -> None:
+        self._prune()
 
     def describe(self) -> dict[str, Any]:
         """The layer list as the frontend needs it."""
@@ -460,6 +504,81 @@ class ForecastService:
 
         self._background(refresh)
 
+    def _paths(self, layer: ForecastLayer, model_id: str, level: int, valid: datetime, run: datetime) -> tuple[Path, Path]:
+        """Where a stored time's colour file and real-value file live."""
+        # The colours' values are part of the name: a file stored for others would be coloured wrongly.
+        scale = "_".join(f"{value:g}" for value in layer.colour_values(level, model_id))
+        factor = layer.model_factors.get(model_id, 1.0)
+        folder = self._cache_dir / model_id / layer.id / str(level)
+        return (
+            folder / f"{valid:{HOUR}}_{run:{HOUR}}_{scale}{'' if factor == 1 else f'_x{factor:g}'}.tif",
+            folder / f"{valid:{HOUR}}_{run:{HOUR}}_values.tif",
+        )
+
+    def _run_for(
+        self, key: ListingKey, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None
+    ) -> tuple[datetime, str]:
+        """Which run's file to use for a time, and where it is."""
+        slot = next((s for s in self.times(layer_id, model_id, level) if s.valid == valid), None)
+        if run is None:
+            if slot is None:
+                raise ForecastError(404, "no-data", f"No forecast for {valid:%d %b %H:%M} UTC")
+            return slot.run, slot.path
+        known = self._known.get((key, valid, run))
+        if known is None:
+            raise ForecastError(404, "no-data", f"No forecast for {valid:%d %b %H:%M} UTC from that run")
+        return run, known
+
+    def _ensure(
+        self,
+        layer: ForecastLayer,
+        model_id: str,
+        level: int,
+        valid: datetime,
+        run: datetime,
+        remote: str,
+        source: ForecastSource,
+        want: str,
+    ) -> Path:
+        """The colour file or the real-value file for a time, fetched from PMD at most once for both.
+
+        A colour file is rebuilt from stored values when they are there; values cannot be
+        rebuilt from colours (the colours are a lossy quantisation), so they are fetched again.
+        """
+        colour, values = self._paths(layer, model_id, level, valid, run)
+        wanted = colour if want == "colour" else values
+        with self._lock(("file", wanted)):
+            if wanted.is_file():
+                return wanted
+            failed = self._failed.get(("download", remote))
+            if failed and self._clock() < failed[0]:
+                raise failed[1]
+            try:
+                if want == "colour" and values.is_file():
+                    with rasterio.open(values) as stored:
+                        write_positions(stored.read(1, masked=True), stored.transform, colour, layer, level, model_id)
+                else:
+                    data = source.download(remote)
+                    physical, transform = read_physical(data, layer, level, self.registry.bbox, model_id)
+                    if not colour.is_file():
+                        write_positions(physical, transform, colour, layer, level, model_id)
+                    if not values.is_file():
+                        write_values(physical, transform, values)
+            except PmdError as err:
+                problem = ForecastError(SOURCE_FAILED, "source-unreachable", f"PMD could not be reached: {err}")
+                self._failed[("download", remote)] = (self._clock() + UNREACHABLE_SECONDS, problem)
+                raise problem from err
+            except rasterio.errors.RasterioError as err:
+                problem = ForecastError(SOURCE_FAILED, "bad-source", f"PMD's file could not be read: {err}")
+                self._failed[("download", remote)] = (self._clock() + BAD_FILE_SECONDS, problem)
+                raise problem from err
+            except ForecastError as problem:  # a file that is no use: outside the area, or not a plain grid
+                self._failed[("download", remote)] = (self._clock() + BAD_FILE_SECONDS, problem)
+                raise
+            self._failed.pop(("download", remote), None)
+        self._prune()
+        return wanted
+
     def file(self, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None = None) -> Path:
         """The stored file for a layer at a time, fetched from PMD if this is the first request for it.
 
@@ -467,51 +586,28 @@ class ForecastService:
         """
         layer, _, source = self._choice(layer_id, model_id, level)
         key = (layer_id, model_id, level)
-        # The colours' values are part of the name: a file stored for others would be coloured wrongly.
-        scale = "_".join(f"{value:g}" for value in layer.colour_values(level, model_id))
-        factor = layer.model_factors.get(model_id, 1.0)
-        folder = self._cache_dir / model_id / layer_id / str(level)
-
-        def stored_as(of_run: datetime) -> Path:
-            return folder / f"{valid:{HOUR}}_{of_run:{HOUR}}_{scale}{'' if factor == 1 else f'_x{factor:g}'}.tif"
-
         # A file already here needs nothing from PMD, not even the list of times.
-        if run is not None and stored_as(run).is_file():
-            return stored_as(run)
-        slot = next((s for s in self.times(layer_id, model_id, level) if s.valid == valid), None)
-        if run is None:
-            if slot is None:
-                raise ForecastError(404, "no-data", f"No forecast for {valid:%d %b %H:%M} UTC")
-            run, remote = slot.run, slot.path
-        else:
-            known = self._known.get((key, valid, run))
-            if known is None:
-                raise ForecastError(404, "no-data", f"No forecast for {valid:%d %b %H:%M} UTC from that run")
-            remote = known
-        path = stored_as(run)
-        with self._lock(("file", path)):
-            if path.is_file():
-                return path
-            failed = self._failed.get(path)
-            if failed and self._clock() < failed[0]:
-                raise failed[1]
-            try:
-                data = source.download(remote)
-                convert(data, path, layer, level, self.registry.bbox, model_id)
-            except PmdError as err:
-                problem = ForecastError(SOURCE_FAILED, "source-unreachable", f"PMD could not be reached: {err}")
-                self._failed[path] = (self._clock() + UNREACHABLE_SECONDS, problem)
-                raise problem from err
-            except rasterio.errors.RasterioError as err:
-                problem = ForecastError(SOURCE_FAILED, "bad-source", f"PMD's file could not be read: {err}")
-                self._failed[path] = (self._clock() + BAD_FILE_SECONDS, problem)
-                raise problem from err
-            except ForecastError as problem:  # a file that is no use: outside the area, or not a plain grid
-                self._failed[path] = (self._clock() + BAD_FILE_SECONDS, problem)
-                raise
-            self._failed.pop(path, None)
-        self._prune()
-        return path
+        if run is not None and self._paths(layer, model_id, level, valid, run)[0].is_file():
+            return self._paths(layer, model_id, level, valid, run)[0]
+        run, remote = self._run_for(key, layer_id, model_id, level, valid, run)
+        return self._ensure(layer, model_id, level, valid, run, remote, source, want="colour")
+
+    def value_file(self, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None = None) -> Path:
+        """The stored real values for a layer at a time, as a float32 GeoTIFF, fetched if need be.
+
+        The same download writes both this and the colour file, so a time is fetched at most once.
+        """
+        layer, _, source = self._choice(layer_id, model_id, level)
+        key = (layer_id, model_id, level)
+        if run is not None and self._paths(layer, model_id, level, valid, run)[1].is_file():
+            return self._paths(layer, model_id, level, valid, run)[1]
+        run, remote = self._run_for(key, layer_id, model_id, level, valid, run)
+        return self._ensure(layer, model_id, level, valid, run, remote, source, want="values")
+
+    def known_valids(self, layer_id: str, model_id: str, level: int, run: datetime) -> list[datetime]:
+        """The times a run offers for a layer, from the lists already fetched, earliest first."""
+        key = (layer_id, model_id, level)
+        return sorted(valid for (k, valid, r) in self._known if k == key and r == run)
 
     def _prune(self) -> None:
         """Delete stored files past their keeping time. Runs at most once an hour."""
@@ -553,8 +649,15 @@ def _http(err: ForecastError) -> HTTPException:
     return HTTPException(status_code=err.status, detail={"message": err.message, "reason": err.reason})
 
 
-def add_forecast_routes(app: FastAPI, service: ForecastService) -> None:
+def add_forecast_routes(app: FastAPI, service: ForecastService, derived: Any | None = None) -> None:
+    """Serve the forecast layers; layers computed by `derived` (if any) go through it instead."""
+
     prefix = f"{FORECAST_PREFIX}/cog"
+
+    def _slots(layer: str, model: str, level: int) -> list[Slot]:
+        if derived is not None and derived.has(layer):
+            return derived.times(layer, model, level)
+        return service.times(layer, model, level)
 
     @app.middleware("http")
     async def forecast_cache_headers(request: Request, call_next: Any) -> Response:
@@ -570,7 +673,7 @@ def add_forecast_routes(app: FastAPI, service: ForecastService) -> None:
     @app.get(f"{FORECAST_PREFIX}/times", tags=["Weather forecast"])
     def get_times(layer: str, model: str, level: int = 0) -> dict[str, Any]:
         try:
-            slots = service.times(layer, model, level)
+            slots = _slots(layer, model, level)
         except ForecastError as err:
             raise _http(err) from err
         return {"times": [{"time": f"{s.valid:{HOUR}}", "run": f"{s.run:{HOUR}}"} for s in slots]}
@@ -584,13 +687,17 @@ def add_forecast_routes(app: FastAPI, service: ForecastService) -> None:
     ) -> str:
         """TiTiler opens only the file this names: a forecast the layer list knows, fetched if need be."""
         try:
-            return str(service.file(layer, model, level, parse_hour(time), parse_hour(run) if run else None))
+            parsed_run = parse_hour(run) if run else None
+            if derived is not None and derived.has(layer):
+                return str(derived.file(layer, model, level, parse_hour(time), parsed_run))
+            return str(service.file(layer, model, level, parse_hour(time), parsed_run))
         except ForecastError as err:
             raise _http(err) from err
 
     def forecast_colourmap(layer: Annotated[str, Query()]) -> dict[int, tuple[int, int, int, int]]:
         try:
-            return ramp_colourmap(service.layer(layer).colours)
+            colours = derived.layer(layer).colours if derived is not None and derived.has(layer) else service.layer(layer).colours
+            return ramp_colourmap(colours)
         except ForecastError as err:
             raise _http(err) from err
 

@@ -401,6 +401,29 @@ def test_a_files_nothing_here_marker_is_left_empty(service, source):
     assert (values[:, 10:] == 0).all()
 
 
+def test_real_values_are_stored_alongside_the_colour_file_with_one_download(service, source):
+    path = service.value_file("temperature", "model-a", 0, T1)
+    assert path.name.endswith("_values.tif")
+    with rasterio.open(path) as ds:
+        data = ds.read(1, masked=True)
+        assert ds.dtypes == ("float32",)
+        assert np.isnan(ds.nodata)
+        assert float(np.ma.median(data)) == pytest.approx(40, abs=0.05)
+    # Asking for the colour file afterwards needs no new download; the real values are already there.
+    assert service.file("temperature", "model-a", 0, T1).is_file()
+    assert len(source.downloads) == 1
+
+
+def test_a_colour_file_is_rebuilt_from_stored_values_without_downloading_again(service, source):
+    values_path = service.value_file("temperature", "model-a", 0, T2)
+    colour_path = service.file("temperature", "model-a", 0, T2)  # same download wrote both
+    assert len(source.downloads) == 1
+    colour_path.unlink()
+    rebuilt = service.file("temperature", "model-a", 0, T2)
+    assert rebuilt == colour_path and rebuilt.is_file()
+    assert len(source.downloads) == 1  # rebuilt from the stored real values, not re-fetched
+
+
 # --- files by run, and what is remembered about failures
 
 
