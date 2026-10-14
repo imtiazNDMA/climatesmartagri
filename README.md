@@ -75,6 +75,7 @@ This writes `backend/rasters/` (not kept in git; about 1 GB in total) and takes 
 | `CSA_FORECAST_DIR` | `backend/forecast` | Forecast cache |
 | `CSA_CROP_MODEL_DIR` | `backend/models/crop-classification/improved-002` | Crop-classification deployment package (`model.ts`, `label_map.json`, `portal_inference.py`) |
 | `CSA_HAZARD_PRODUCTS` | `backend/hazard_products.json` | Hazard guidance products (thresholds, units, severity bands) |
+| `CSA_HAZARD_MODELS` | `backend/hazard_models.json` | Forecast-derived hazard models (rolling windows over real values, e.g. frost degree-hours) |
 | `CSA_PMD_URL` | empty | PMD service URL |
 | `CSA_PMD_USER` | empty | PMD username |
 | `CSA_PMD_PASS` | empty | PMD password |

@@ -30,7 +30,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 | Food security projections | Live: charts, 2026–2047, national | `food security projection CSA 17 sep.xlsx` |
 | Climate-smart crop calendar | Live: calendar chart per province | `apps/climate calender 28 sep 2026/script.js` |
 | Weather forecast | Live since 2026-10-12: 47 layers from 8 models, fetched from PMD on demand | PMD early warning platform, `backend/forecast_layers.json` |
-| Hazards | Live: 5 forecast-guidance products (frost, heat stress, heavy rain, strong wind, low visibility) derived from PMD layers | `backend/hazard_products.json` |
+| Hazards | Live: 5 forecast-guidance products (frost, heat stress, heavy rain, strong wind, low visibility); frost uses a computed degree-hours layer | `backend/hazard_products.json`, `backend/hazard_models.json` |
 | Exposure and vulnerability | Coming soon | No data yet |
 
 ## How data gets in
@@ -91,6 +91,14 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **`backend/hazard_products.json`** holds each product's id, PMD layer, unit, direction and three severity bands with provisional thresholds, plus a `threshold_version` and disclaimer. `backend/csa_portal/hazards.py` validates the file (ordered bands, known direction) and serves `GET /api/hazards/products`; `CSA_HAZARD_PRODUCTS` overrides the path. The section's `kind` is `hazards` in the catalogue, which also switches on the forecast service in `main.py`.
 - **The panel drives the ordinary forecast machinery**: picking a product calls `chooseLayer` and sets the view store's `forecast`, so the map pipeline, `ForecastSlider` and the URL (`forecast=layer~model~level~time`) work unchanged. It opens on the first product that has data when nothing is on the map. Model choice and valid time come from the existing forecast controls.
 - **Thresholds are interpretive, not calibrated.** The map shows the raw PMD field's own colour ramp, not the band colours; the bands and thresholds are a screening aid in the panel. They live in the JSON so they can be revised without touching code.
+
+## Forecast-derived hazard models (added 2026-10-14)
+
+- **Frost risk now uses a real derived model, not instantaneous temperature-min.** `frost-degree-hours` accumulates how far below 0 °C each cell has been over a rolling 24-hour window (degree-hours: 1 °C below for 6 hours scores 6). Deeper and longer cold means more damage; the old instantaneous field missed that entirely.
+- **Colour positions are lossy; models need real values.** `ForecastService.file()` stores colour positions (uint8 1–255) for tiles — good enough to draw, not to compute from (0.27 °C per step). Any download now also writes a float32 `_values.tif` beside the colour file (`read_physical` / `write_positions` / `write_values` in `forecast.py`). A colour file can be rebuilt from values; values cannot be rebuilt from colours, so they are re-fetched once if missing. Both are written on the same download.
+- **`backend/hazard_models.json`** lists the derived models; `backend/csa_portal/hazard_models.py` validates them (`DerivedSpec`) and serves them (`DerivedService`). Models are not in `ForecastRegistry` — `add_forecast_routes` delegates `times` / path / colourmap for derived ids to the service, and `main.py` merges `derived.describe()` into the catalogue's forecast body under a `hazard-models` group. The frost product in `hazard_products.json` points at `frost-degree-hours` with ascending bands 3 / 12 / 24 °C·h.
+- **A derived time appears only when its input window is full enough.** `times()` keeps a slot only when the run offers at least `min_points` (4) input valids inside the last `window_hours` (24). Computing reads each window time's real-value file, stacks them, runs the pure function in `backend/csa_portal/models/frost.py`, and caches the result under `_derived/`. First view of a window costs up to 8 downloads; the frontend's `/api/forecast/cog/info` prefetch warms it.
+- **Adding another model is JSON plus a pure function.** Heat degree-hours, heavy-rain rolling totals and wind lodging follow the same pattern: a compute function registered in `models/__init__.py`'s `COMPUTES`, a spec in `hazard_models.json`, and a band set in `hazard_products.json`.
 
 ## Decisions the user made
 
