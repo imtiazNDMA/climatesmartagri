@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import threading
-import urllib.error
-import urllib.request
 from typing import Any, Literal, Protocol
 
 from fastapi import FastAPI, HTTPException
@@ -13,68 +11,20 @@ from pydantic import BaseModel, Field
 
 from .catalogue import Catalogue
 from .facts import Facts, FactsError
+from .language_model import LmStudioModel, ModelError
 from .places import COUNTRY_ID, PlaceIndex
 
 
-class AssistantError(Exception):
-    def __init__(self, status: int, reason: str, message: str) -> None:
-        super().__init__(message)
-        self.status = status
-        self.reason = reason
-        self.message = message
+# Every model failure is a ModelError; the assistant's own refusals (bad view, busy) use the same type.
+AssistantError = ModelError
+# The LM Studio adapter lives behind the language model seam; this name is kept for existing callers.
+LmStudioClient = LmStudioModel
 
 
 class AssistantClient(Protocol):
+    """What the assistant needs from a language model today: a plain answer."""
+
     def chat(self, messages: list[dict[str, str]]) -> str: ...
-
-
-class LmStudioClient:
-    """Small client for LM Studio's OpenAI-compatible chat completions endpoint."""
-
-    def __init__(self, base_url: str, model: str, timeout: float = 60, api_key: str = "") -> None:
-        self.base_url = base_url.rstrip("/")
-        self.model = model
-        self.timeout = timeout
-        self.api_key = api_key
-
-    def chat(self, messages: list[dict[str, str]]) -> str:
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": messages,
-                "temperature": 0.2,
-                "max_tokens": 700,
-                "stream": False,
-            }
-        ).encode()
-        headers = {"Content-Type": "application/json"}
-        if self.api_key:
-            headers["Authorization"] = f"Bearer {self.api_key}"
-        request = urllib.request.Request(
-            f"{self.base_url}/v1/chat/completions", data=payload, headers=headers, method="POST"
-        )
-        try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
-                body = json.loads(response.read())
-        except urllib.error.HTTPError as err:
-            if err.code in {400, 401, 403, 404}:
-                raise AssistantError(
-                    502,
-                    "assistant-misconfigured",
-                    f"LM Studio rejected the configured model or credentials (HTTP {err.code})",
-                ) from err
-            raise AssistantError(503, "assistant-unavailable", f"The AI model answered with HTTP {err.code}") from err
-        except (OSError, TimeoutError) as err:
-            raise AssistantError(503, "assistant-unavailable", "The local AI model could not be reached") from err
-        except (ValueError, TypeError) as err:
-            raise AssistantError(502, "bad-model-response", "The local AI model returned invalid JSON") from err
-        try:
-            answer = body["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as err:
-            raise AssistantError(502, "bad-model-response", "The local AI model returned an unexpected response") from err
-        if not isinstance(answer, str) or not answer.strip():
-            raise AssistantError(502, "bad-model-response", "The local AI model returned an empty answer")
-        return answer.strip()
 
 
 class AssistantMessage(BaseModel):
