@@ -177,6 +177,14 @@
         "documentation": {}
     },
     {
+        "label": "annotations",
+        "importPath": "__future__",
+        "description": "__future__",
+        "isExtraImport": true,
+        "detail": "__future__",
+        "documentation": {}
+    },
+    {
         "label": "os",
         "kind": 6,
         "isExtraImport": true,
@@ -407,54 +415,6 @@
         "documentation": {}
     },
     {
-        "label": "Mapping",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
-        "label": "Callable",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
-        "label": "Callable",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
-        "label": "Callable",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
-        "label": "Mapping",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
-        "label": "Callable",
-        "importPath": "collections.abc",
-        "description": "collections.abc",
-        "isExtraImport": true,
-        "detail": "collections.abc",
-        "documentation": {}
-    },
-    {
         "label": "Any",
         "importPath": "typing",
         "description": "typing",
@@ -512,6 +472,22 @@
     },
     {
         "label": "Literal",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Protocol",
+        "importPath": "typing",
+        "description": "typing",
+        "isExtraImport": true,
+        "detail": "typing",
+        "documentation": {}
+    },
+    {
+        "label": "Any",
         "importPath": "typing",
         "description": "typing",
         "isExtraImport": true,
@@ -1135,6 +1111,14 @@
         "documentation": {}
     },
     {
+        "label": "Path",
+        "importPath": "pathlib",
+        "description": "pathlib",
+        "isExtraImport": true,
+        "detail": "pathlib",
+        "documentation": {}
+    },
+    {
         "label": "importlib.util",
         "kind": 6,
         "isExtraImport": true,
@@ -1150,6 +1134,54 @@
         "importPath": "io",
         "description": "io",
         "detail": "io",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
+        "documentation": {}
+    },
+    {
+        "label": "Mapping",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
+        "documentation": {}
+    },
+    {
+        "label": "Mapping",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
+        "documentation": {}
+    },
+    {
+        "label": "Callable",
+        "importPath": "collections.abc",
+        "description": "collections.abc",
+        "isExtraImport": true,
+        "detail": "collections.abc",
         "documentation": {}
     },
     {
@@ -1201,29 +1233,19 @@
         "documentation": {}
     },
     {
-        "label": "logging",
-        "kind": 6,
+        "label": "dataclass",
+        "importPath": "dataclasses",
+        "description": "dataclasses",
         "isExtraImport": true,
-        "importPath": "logging",
-        "description": "logging",
-        "detail": "logging",
+        "detail": "dataclasses",
         "documentation": {}
     },
     {
-        "label": "time",
-        "kind": 6,
+        "label": "field",
+        "importPath": "dataclasses",
+        "description": "dataclasses",
         "isExtraImport": true,
-        "importPath": "time",
-        "description": "time",
-        "detail": "time",
-        "documentation": {}
-    },
-    {
-        "label": "ThreadPoolExecutor",
-        "importPath": "concurrent.futures",
-        "description": "concurrent.futures",
-        "isExtraImport": true,
-        "detail": "concurrent.futures",
+        "detail": "dataclasses",
         "documentation": {}
     },
     {
@@ -1315,38 +1337,6 @@
         "documentation": {}
     },
     {
-        "label": "timedelta",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
-        "label": "datetime",
-        "importPath": "datetime",
-        "description": "datetime",
-        "isExtraImport": true,
-        "detail": "datetime",
-        "documentation": {}
-    },
-    {
         "label": "datetime",
         "importPath": "datetime",
         "description": "datetime",
@@ -1368,6 +1358,72 @@
         "description": "datetime",
         "isExtraImport": true,
         "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "timedelta",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "datetime",
+        "importPath": "datetime",
+        "description": "datetime",
+        "isExtraImport": true,
+        "detail": "datetime",
+        "documentation": {}
+    },
+    {
+        "label": "logging",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "logging",
+        "description": "logging",
+        "detail": "logging",
+        "documentation": {}
+    },
+    {
+        "label": "time",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "time",
+        "description": "time",
+        "detail": "time",
+        "documentation": {}
+    },
+    {
+        "label": "ThreadPoolExecutor",
+        "importPath": "concurrent.futures",
+        "description": "concurrent.futures",
+        "isExtraImport": true,
+        "detail": "concurrent.futures",
         "documentation": {}
     },
     {
@@ -1524,6 +1580,15 @@
         "documentation": {}
     },
     {
+        "label": "functools",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "functools",
+        "description": "functools",
+        "detail": "functools",
+        "documentation": {}
+    },
+    {
         "label": "urllib.parse",
         "kind": 6,
         "isExtraImport": true,
@@ -1546,6 +1611,23 @@
         "description": "urllib.parse",
         "isExtraImport": true,
         "detail": "urllib.parse",
+        "documentation": {}
+    },
+    {
+        "label": "rasterio.errors",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "rasterio.errors",
+        "description": "rasterio.errors",
+        "detail": "rasterio.errors",
+        "documentation": {}
+    },
+    {
+        "label": "transform_bounds",
+        "importPath": "rasterio.warp",
+        "description": "rasterio.warp",
+        "isExtraImport": true,
+        "detail": "rasterio.warp",
         "documentation": {}
     },
     {
@@ -2002,6 +2084,14 @@
         "documentation": {}
     },
     {
+        "label": "load_catalogue",
+        "importPath": "csa_portal.catalogue",
+        "description": "csa_portal.catalogue",
+        "isExtraImport": true,
+        "detail": "csa_portal.catalogue",
+        "documentation": {}
+    },
+    {
         "label": "warnings",
         "kind": 6,
         "isExtraImport": true,
@@ -2177,6 +2267,78 @@
         "description": "csa_portal.crop_classification",
         "isExtraImport": true,
         "detail": "csa_portal.crop_classification",
+        "documentation": {}
+    },
+    {
+        "label": "Facts",
+        "importPath": "csa_portal.facts",
+        "description": "csa_portal.facts",
+        "isExtraImport": true,
+        "detail": "csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "FactsError",
+        "importPath": "csa_portal.facts",
+        "description": "csa_portal.facts",
+        "isExtraImport": true,
+        "detail": "csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "load_places",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "PlaceIndex",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "COUNTRY_ID",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "FALLBACK_BBOX",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "BoundaryError",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "load_places",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
+        "documentation": {}
+    },
+    {
+        "label": "Place",
+        "importPath": "csa_portal.places",
+        "description": "csa_portal.places",
+        "isExtraImport": true,
+        "detail": "csa_portal.places",
         "documentation": {}
     },
     {
@@ -2385,54 +2547,6 @@
         "description": "csa_portal.hazards",
         "isExtraImport": true,
         "detail": "csa_portal.hazards",
-        "documentation": {}
-    },
-    {
-        "label": "PlaceIndex",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
-        "documentation": {}
-    },
-    {
-        "label": "COUNTRY_ID",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
-        "documentation": {}
-    },
-    {
-        "label": "FALLBACK_BBOX",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
-        "documentation": {}
-    },
-    {
-        "label": "BoundaryError",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
-        "documentation": {}
-    },
-    {
-        "label": "load_places",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
-        "documentation": {}
-    },
-    {
-        "label": "Place",
-        "importPath": "csa_portal.places",
-        "description": "csa_portal.places",
-        "isExtraImport": true,
-        "detail": "csa_portal.places",
         "documentation": {}
     },
     {
@@ -3399,7 +3513,7 @@
         "kind": 6,
         "importPath": "backend.csa_portal.assistant",
         "description": "backend.csa_portal.assistant",
-        "peekOfCode": "class AssistantService:\n    def __init__(\n        self,\n        catalogue: Catalogue,\n        places: PlaceIndex,\n        providers: Mapping[str, SectionDataProvider],\n        client: AssistantClient,\n        model: str,\n        *,\n        forecast_description: dict[str, Any] | None = None,",
+        "peekOfCode": "class AssistantService:\n    def __init__(\n        self,\n        catalogue: Catalogue,\n        places: PlaceIndex,\n        facts: Facts,\n        client: AssistantClient,\n        model: str,\n        *,\n        forecast_description: dict[str, Any] | None = None,",
         "detail": "backend.csa_portal.assistant",
         "documentation": {}
     },
@@ -3653,6 +3767,96 @@
         "description": "backend.csa_portal.crop_classification",
         "peekOfCode": "ClassifierFactory = Callable[[bytes, str, int], ClassificationResult]\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\ndef validate_image(content: bytes) -> None:\n    try:\n        with Image.open(io.BytesIO(content)) as image:\n            width, height = image.size\n            if width * height > MAX_IMAGE_PIXELS:\n                raise _error(413, \"Image dimensions are too large\", \"image-too-large\")\n            image.verify()",
         "detail": "backend.csa_portal.crop_classification",
+        "documentation": {}
+    },
+    {
+        "label": "FactsError",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class FactsError(Exception):\n    \"\"\"A question the portal cannot answer, with a short reason a caller can act on.\"\"\"\n    def __init__(self, reason: str, message: str) -> None:\n        super().__init__(message)\n        self.reason = reason\n        self.message = message\n@dataclass(frozen=True)\nclass Fact:\n    \"\"\"One value the portal holds, with the place and time it is for and where it came from.\"\"\"\n    label: str",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "Fact",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class Fact:\n    \"\"\"One value the portal holds, with the place and time it is for and where it came from.\"\"\"\n    label: str\n    value: float | int | str | None\n    unit: str\n    place: str\n    when: str | None\n    source: str\n    # The chart the value is drawn in, or None for a figure.\n    chart: str | None = None",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "ChartSummary",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class ChartSummary:\n    title: str\n    unit: str\n    headline: str | None = None\n@dataclass(frozen=True)\nclass SectionFacts:\n    \"\"\"A section's facts for the place and year it could answer for, which may differ from those asked.\"\"\"\n    place: Place\n    year: int | None\n    facts: list[Fact]",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "SectionFacts",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class SectionFacts:\n    \"\"\"A section's facts for the place and year it could answer for, which may differ from those asked.\"\"\"\n    place: Place\n    year: int | None\n    facts: list[Fact]\n    notes: list[str] = field(default_factory=list)\n    charts: list[ChartSummary] = field(default_factory=list)\n@dataclass(frozen=True)\nclass RiskFacts:\n    \"\"\"One hazard product's district risk at one valid time: the guidance, its bands and each district's value.\"\"\"",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "RiskFacts",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class RiskFacts:\n    \"\"\"One hazard product's district risk at one valid time: the guidance, its bands and each district's value.\"\"\"\n    hazard: str\n    title: str\n    time: str\n    run: str\n    threshold_version: str\n    disclaimer: str\n    statistic: str\n    risk: dict[str, str | None]",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "DistrictRisk",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class DistrictRisk(Protocol):\n    \"\"\"Where district risk comes from: the hazards module's service, or a stand-in in tests.\"\"\"\n    registry: HazardRegistry\n    def calculate(self, hazard: str, model: str, level: int, valid: datetime, run: datetime) -> dict[str, Any]: ...\n@dataclass(frozen=True)\nclass SectionOutline:\n    id: str\n    title: str\n    status: str\n    summary: str",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "SectionOutline",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class SectionOutline:\n    id: str\n    title: str\n    status: str\n    summary: str\n    years: tuple[int, int] | None\n    place_levels: list[str]\n@dataclass(frozen=True)\nclass LayerOutline:\n    id: str",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "LayerOutline",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class LayerOutline:\n    id: str\n    title: str\n    section_id: str\n@dataclass(frozen=True)\nclass Outline:\n    \"\"\"What the portal has: its sections, in order, and the layers each can draw.\"\"\"\n    sections: list[SectionOutline]\n    layers: list[LayerOutline]\nclass Facts:",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "Outline",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class Outline:\n    \"\"\"What the portal has: its sections, in order, and the layers each can draw.\"\"\"\n    sections: list[SectionOutline]\n    layers: list[LayerOutline]\nclass Facts:\n    def __init__(\n        self,\n        catalogue: Catalogue,\n        places: PlaceIndex,\n        providers: Mapping[str, SectionDataProvider],",
+        "detail": "backend.csa_portal.facts",
+        "documentation": {}
+    },
+    {
+        "label": "Facts",
+        "kind": 6,
+        "importPath": "backend.csa_portal.facts",
+        "description": "backend.csa_portal.facts",
+        "peekOfCode": "class Facts:\n    def __init__(\n        self,\n        catalogue: Catalogue,\n        places: PlaceIndex,\n        providers: Mapping[str, SectionDataProvider],\n        district_risk: DistrictRisk | None = None,\n    ) -> None:\n        self._catalogue = catalogue\n        self._risk = district_risk",
+        "detail": "backend.csa_portal.facts",
         "documentation": {}
     },
     {
@@ -4029,7 +4233,7 @@
         "kind": 2,
         "importPath": "backend.csa_portal.hazards",
         "description": "backend.csa_portal.hazards",
-        "peekOfCode": "def add_hazard_routes(\n    app: FastAPI,\n    registry: HazardRegistry,\n    places: PlaceIndex,\n    forecast: ForecastService | None = None,\n    derived: DerivedService | None = None,\n) -> None:\n    district_risk = DistrictRiskService(registry, places, forecast, derived)\n    @app.get(\"/api/hazards/products\")\n    def products() -> dict[str, object]:",
+        "peekOfCode": "def add_hazard_routes(\n    app: FastAPI,\n    registry: HazardRegistry,\n    places: PlaceIndex,\n    forecast: ForecastService | None = None,\n    derived: DerivedService | None = None,\n) -> DistrictRiskService:\n    \"\"\"Serve hazard products and district risk; the service is returned so other modules share its cache.\"\"\"\n    district_risk = DistrictRiskService(registry, places, forecast, derived)\n    @app.get(\"/api/hazards/products\")",
         "detail": "backend.csa_portal.hazards",
         "documentation": {}
     },
@@ -4128,7 +4332,7 @@
         "kind": 5,
         "importPath": "backend.csa_portal.main",
         "description": "backend.csa_portal.main",
-        "peekOfCode": "TileProvider = Callable[[int, int, int, int | None], tuple[bytes, str] | None]\nMAX_ZOOM = 24\nCOG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\ndef _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:\n    \"\"\"The forecast description, with any computed hazard models listed alongside the fetched layers.\"\"\"\n    if forecast is None:\n        return None",
+        "peekOfCode": "TileProvider = Callable[[int, int, int, int | None], tuple[bytes, str] | None]\nMAX_ZOOM = 24\nCOG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\n@functools.lru_cache(maxsize=64)\ndef _raster_bounds(path: Path, mtime: float) -> list[float] | None:\n    \"\"\"Where a raster has data, as west, south, east, north in degrees; the map asks for no tiles beyond it.\n    Keyed on the file's modified time, so a re-prepared raster is measured afresh.\"\"\"",
         "detail": "backend.csa_portal.main",
         "documentation": {}
     },
@@ -4137,7 +4341,7 @@
         "kind": 5,
         "importPath": "backend.csa_portal.main",
         "description": "backend.csa_portal.main",
-        "peekOfCode": "MAX_ZOOM = 24\nCOG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\ndef _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:\n    \"\"\"The forecast description, with any computed hazard models listed alongside the fetched layers.\"\"\"\n    if forecast is None:\n        return None\n    body = forecast.describe()",
+        "peekOfCode": "MAX_ZOOM = 24\nCOG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\n@functools.lru_cache(maxsize=64)\ndef _raster_bounds(path: Path, mtime: float) -> list[float] | None:\n    \"\"\"Where a raster has data, as west, south, east, north in degrees; the map asks for no tiles beyond it.\n    Keyed on the file's modified time, so a re-prepared raster is measured afresh.\"\"\"\n    try:",
         "detail": "backend.csa_portal.main",
         "documentation": {}
     },
@@ -4146,7 +4350,7 @@
         "kind": 5,
         "importPath": "backend.csa_portal.main",
         "description": "backend.csa_portal.main",
-        "peekOfCode": "COG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\ndef _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:\n    \"\"\"The forecast description, with any computed hazard models listed alongside the fetched layers.\"\"\"\n    if forecast is None:\n        return None\n    body = forecast.describe()\n    if derived is not None:",
+        "peekOfCode": "COG_PREFIX = \"/api/cog\"\nlogger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\n@functools.lru_cache(maxsize=64)\ndef _raster_bounds(path: Path, mtime: float) -> list[float] | None:\n    \"\"\"Where a raster has data, as west, south, east, north in degrees; the map asks for no tiles beyond it.\n    Keyed on the file's modified time, so a re-prepared raster is measured afresh.\"\"\"\n    try:\n        with rasterio.open(path) as source:",
         "detail": "backend.csa_portal.main",
         "documentation": {}
     },
@@ -4155,7 +4359,7 @@
         "kind": 5,
         "importPath": "backend.csa_portal.main",
         "description": "backend.csa_portal.main",
-        "peekOfCode": "logger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\ndef _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:\n    \"\"\"The forecast description, with any computed hazard models listed alongside the fetched layers.\"\"\"\n    if forecast is None:\n        return None\n    body = forecast.describe()\n    if derived is not None:\n        extra = derived.describe()",
+        "peekOfCode": "logger = logging.getLogger(\"uvicorn.error\")\ndef _error(status: int, message: str, reason: str) -> HTTPException:\n    return HTTPException(status_code=status, detail={\"message\": message, \"reason\": reason})\n@functools.lru_cache(maxsize=64)\ndef _raster_bounds(path: Path, mtime: float) -> list[float] | None:\n    \"\"\"Where a raster has data, as west, south, east, north in degrees; the map asks for no tiles beyond it.\n    Keyed on the file's modified time, so a re-prepared raster is measured afresh.\"\"\"\n    try:\n        with rasterio.open(path) as source:\n            return [round(v, 6) for v in transform_bounds(source.crs, \"EPSG:4326\", *source.bounds)]",
         "detail": "backend.csa_portal.main",
         "documentation": {}
     },
@@ -4353,7 +4557,7 @@
         "kind": 5,
         "importPath": "backend.csa_portal.sections",
         "description": "backend.csa_portal.sections",
-        "peekOfCode": "LAND_COVER = {\n    \"forest\": (\"Forest\", \"#2e7d32\"),\n    \"shrub\": (\"Shrub land\", \"#9ccc65\"),\n    \"bare\": (\"Bare land\", \"#bcaaa4\"),\n    \"irrigated\": (\"Irrigated cropland\", \"#2a78d6\"),\n    \"rainfed\": (\"Rainfed cropland\", \"#eda100\"),\n}\nHECTARES_TO_ACRES = 2.47105\nMILLION = 1_000_000\ndef _million_acres(hectares: float) -> float:",
+        "peekOfCode": "LAND_COVER = {\n    \"forest\": (\"Forest\", \"#2e7d32\"),\n    \"shrub\": (\"Shrub land\", \"#9ccc65\"),\n    \"bare\": (\"Others\", \"#bcaaa4\"),\n    \"irrigated\": (\"Irrigated cropland\", \"#2a78d6\"),\n    \"rainfed\": (\"Rainfed cropland\", \"#eda100\"),\n}\nHECTARES_TO_ACRES = 2.47105\nMILLION = 1_000_000\ndef _million_acres(hectares: float) -> float:",
         "detail": "backend.csa_portal.sections",
         "documentation": {}
     },
@@ -5676,7 +5880,16 @@
         "kind": 2,
         "importPath": "backend.tests.test_cog",
         "description": "backend.tests.test_cog",
-        "peekOfCode": "def test_a_converted_raster_is_ready_and_says_where_its_tiles_are(client):\n    forest = _layers(client)[\"forest\"]\n    assert forest[\"status\"] == \"ready\"\n    assert forest[\"tile_url\"] == TILE_URL\n    assert forest[\"max_zoom\"] == 14\n    assert client.get(\"/api/health\").json()[\"layers\"][\"forest\"] is True\ndef test_a_raster_that_is_not_converted_yet_is_not_ready(client):\n    shrub = _layers(client)[\"shrub-land\"]\n    assert shrub[\"status\"] == \"no-data\"\n    assert shrub[\"tile_url\"] is None",
+        "peekOfCode": "def test_a_converted_raster_is_ready_and_says_where_its_tiles_are(client):\n    forest = _layers(client)[\"forest\"]\n    assert forest[\"status\"] == \"ready\"\n    assert forest[\"tile_url\"] == TILE_URL\n    assert forest[\"max_zoom\"] == 14\n    assert client.get(\"/api/health\").json()[\"layers\"][\"forest\"] is True\ndef test_a_converted_raster_says_where_its_data_lies_so_the_map_asks_for_no_tiles_beyond(client):\n    west, south, east, north = _layers(client)[\"forest\"][\"bounds\"]\n    assert west == pytest.approx(70.0, abs=0.01) and east == pytest.approx(71.2, abs=0.01)\n    assert south == pytest.approx(28.8, abs=0.01) and north == pytest.approx(30.0, abs=0.01)",
+        "detail": "backend.tests.test_cog",
+        "documentation": {}
+    },
+    {
+        "label": "test_a_converted_raster_says_where_its_data_lies_so_the_map_asks_for_no_tiles_beyond",
+        "kind": 2,
+        "importPath": "backend.tests.test_cog",
+        "description": "backend.tests.test_cog",
+        "peekOfCode": "def test_a_converted_raster_says_where_its_data_lies_so_the_map_asks_for_no_tiles_beyond(client):\n    west, south, east, north = _layers(client)[\"forest\"][\"bounds\"]\n    assert west == pytest.approx(70.0, abs=0.01) and east == pytest.approx(71.2, abs=0.01)\n    assert south == pytest.approx(28.8, abs=0.01) and north == pytest.approx(30.0, abs=0.01)\ndef test_a_raster_that_is_not_converted_yet_is_not_ready(client):\n    shrub = _layers(client)[\"shrub-land\"]\n    assert shrub[\"status\"] == \"no-data\"\n    assert shrub[\"tile_url\"] is None\n    assert shrub[\"bounds\"] is None\n    assert client.get(\"/api/health\").json()[\"layers\"][\"shrub-land\"] is False",
         "detail": "backend.tests.test_cog",
         "documentation": {}
     },
@@ -5685,7 +5898,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_cog",
         "description": "backend.tests.test_cog",
-        "peekOfCode": "def test_a_raster_that_is_not_converted_yet_is_not_ready(client):\n    shrub = _layers(client)[\"shrub-land\"]\n    assert shrub[\"status\"] == \"no-data\"\n    assert shrub[\"tile_url\"] is None\n    assert client.get(\"/api/health\").json()[\"layers\"][\"shrub-land\"] is False\ndef test_a_raster_layer_without_a_source_is_left_alone(client):\n    plain = _layers(client)[\"plain\"]\n    assert plain[\"status\"] == \"ready\"\n    assert plain[\"tile_url\"] is None\ndef test_tiles_are_coloured_from_the_legend_and_clear_elsewhere(client):",
+        "peekOfCode": "def test_a_raster_that_is_not_converted_yet_is_not_ready(client):\n    shrub = _layers(client)[\"shrub-land\"]\n    assert shrub[\"status\"] == \"no-data\"\n    assert shrub[\"tile_url\"] is None\n    assert shrub[\"bounds\"] is None\n    assert client.get(\"/api/health\").json()[\"layers\"][\"shrub-land\"] is False\ndef test_a_raster_layer_without_a_source_is_left_alone(client):\n    plain = _layers(client)[\"plain\"]\n    assert plain[\"status\"] == \"ready\"\n    assert plain[\"tile_url\"] is None",
         "detail": "backend.tests.test_cog",
         "documentation": {}
     },
@@ -5957,6 +6170,141 @@
         "description": "backend.tests.test_crop_classification",
         "peekOfCode": "def test_predict_reports_unconfigured_model(settings, tmp_path):\n    client = TestClient(create_app(replace(settings, crop_model_dir=tmp_path)))\n    status = client.get(\"/api/crop-classification/status\").json()\n    assert status[\"configured\"] is False\n    response = client.post(\n        \"/api/crop-classification/predict\",\n        data={\"crop\": \"Rice\", \"top_k\": \"3\"},\n        files={\"image\": (\"leaf.png\", image_bytes(), \"image/png\")},\n    )\n    assert (response.status_code, response.json()[\"detail\"][\"reason\"]) == (503, \"classifier-unavailable\")",
         "detail": "backend.tests.test_crop_classification",
+        "documentation": {}
+    },
+    {
+        "label": "FakeRisk",
+        "kind": 6,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "class FakeRisk:\n    \"\"\"Stands in for the district risk service, which needs forecast files.\"\"\"\n    def __init__(self):\n        from csa_portal.hazards import HazardRegistry\n        self.registry = HazardRegistry.model_validate({\n            \"classification\": \"guidance\", \"threshold_version\": \"provisional-test\",\n            \"disclaimer\": \"Model-derived agricultural guidance. This is not an official warning.\",\n            \"products\": [{\n                \"id\": \"frost\", \"title\": \"Frost risk\", \"forecast_layer\": \"frost-degree-hours\", \"unit\": \"°C·h\",\n                \"direction\": \"above\", \"summary\": \"Cold below 0 °C.\", \"district_percentile\": 90,",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "irrigation",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def irrigation(place, year):\n    return {\n        \"figures\": [{\"label\": \"Land equipped for irrigation\", \"value\": 41.33, \"unit\": \"million acres\"}],\n        \"notes\": [\"Figures are for the latest survey.\"],\n        \"charts\": [],\n    }\ndef yearly(place, year):\n    return {\"figures\": [{\"label\": \"Food needed\", \"value\": year - 1830, \"unit\": \"\"}], \"notes\": [], \"charts\": []}\n@pytest.fixture\ndef facts():",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "yearly",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def yearly(place, year):\n    return {\"figures\": [{\"label\": \"Food needed\", \"value\": year - 1830, \"unit\": \"\"}], \"notes\": [], \"charts\": []}\n@pytest.fixture\ndef facts():\n    return Facts(\n        load_catalogue(FIXTURES / \"test_catalogue.json\"),\n        load_places(FIXTURES / \"boundaries\"),\n        {\"alpha-section\": yearly, \"beta-section\": irrigation},\n    )\ndef test_a_section_without_figures_for_a_district_answers_for_the_country(facts):",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "facts",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def facts():\n    return Facts(\n        load_catalogue(FIXTURES / \"test_catalogue.json\"),\n        load_places(FIXTURES / \"boundaries\"),\n        {\"alpha-section\": yearly, \"beta-section\": irrigation},\n    )\ndef test_a_section_without_figures_for_a_district_answers_for_the_country(facts):\n    answer = facts.section(\"beta-section\", \"PK101\")\n    assert answer.place.name == \"Pakistan\"\n    assert answer.year is None",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_a_section_without_figures_for_a_district_answers_for_the_country",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_a_section_without_figures_for_a_district_answers_for_the_country(facts):\n    answer = facts.section(\"beta-section\", \"PK101\")\n    assert answer.place.name == \"Pakistan\"\n    assert answer.year is None\n    assert [(f.label, f.value, f.unit, f.place, f.source) for f in answer.facts] == [\n        (\"Land equipped for irrigation\", 41.33, \"million acres\", \"Pakistan\", \"Beta section / Pakistan\"),\n    ]\n    assert answer.notes == [\"Figures are for the latest survey.\"]\ndef test_a_section_with_years_answers_for_its_latest_year_unless_asked_for_another(facts):\n    latest = facts.section(\"alpha-section\", \"PK101\")",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_a_section_with_years_answers_for_its_latest_year_unless_asked_for_another",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_a_section_with_years_answers_for_its_latest_year_unless_asked_for_another(facts):\n    latest = facts.section(\"alpha-section\", \"PK101\")\n    assert (latest.place.name, latest.year) == (\"District One\", 2010)\n    assert [(f.value, f.when, f.source) for f in latest.facts] == [(180, \"2010\", \"Alpha section / District One / 2010\")]\n    assert facts.section(\"alpha-section\", \"PK101\", 2004).facts[0].value == 174\ndef test_unknown_or_unanswerable_questions_say_why(facts):\n    for args, reason in [\n        ((\"ghost\", \"PK\"), \"unknown-section\"),\n        ((\"beta-section\", \"XX9\"), \"unknown-place\"),\n        ((\"alpha-section\", \"PK\", 1999), \"year-out-of-range\"),",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_unknown_or_unanswerable_questions_say_why",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_unknown_or_unanswerable_questions_say_why(facts):\n    for args, reason in [\n        ((\"ghost\", \"PK\"), \"unknown-section\"),\n        ((\"beta-section\", \"XX9\"), \"unknown-place\"),\n        ((\"alpha-section\", \"PK\", 1999), \"year-out-of-range\"),\n        ((\"empty-section\", \"PK\"), \"no-data\"),\n    ]:\n        with pytest.raises(FactsError) as error:\n            facts.section(*args)\n        assert error.value.reason == reason, args",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "charted",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def charted(place, year):\n    return {\"figures\": [], \"notes\": [], \"charts\": [\n        {\"title\": \"Food needs rise\", \"kind\": \"line\", \"unit\": \"Mt\", \"time\": True, \"categories\": [2009, 2010],\n         \"series\": [{\"name\": \"Food needed\", \"values\": [178, 180]}]},\n        {\"title\": \"Methane grew most\", \"kind\": \"bar\", \"unit\": \"times\", \"time\": False, \"categories\": [\"Methane\"],\n         \"series\": [{\"name\": \"Growth\", \"values\": [2.5]}]},\n        {\"title\": \"How the land is classified\", \"kind\": \"shares\", \"unit\": \"%\", \"time\": False,\n         \"categories\": [], \"series\": [], \"cells\": [{\"label\": \"Forest\", \"share\": 6.3, \"colour\": \"#000\", \"squares\": 6}]},\n        {\"title\": \"Where water comes from\", \"kind\": \"diverging\", \"unit\": \"%\", \"time\": False,\n         \"categories\": [], \"series\": [],",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_every_value_a_chart_draws_is_a_fact_naming_its_chart",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_every_value_a_chart_draws_is_a_fact_naming_its_chart():\n    facts = Facts(\n        load_catalogue(FIXTURES / \"test_catalogue.json\"), load_places(FIXTURES / \"boundaries\"), {\"alpha-section\": charted}\n    )\n    answer = facts.section(\"alpha-section\", \"PK\", 2010)\n    assert [(c.title, c.unit) for c in answer.charts] == [\n        (\"Food needs rise\", \"Mt\"), (\"Methane grew most\", \"times\"), (\"How the land is classified\", \"%\"),\n        (\"Where water comes from\", \"%\"), (\"Sprinkler is recommended most\", \"\"), (\"Sow wheat earlier\", \"\"),\n    ]\n    assert {f.chart for f in answer.facts} == {c.title for c in answer.charts}",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_a_place_is_found_by_name_however_it_is_typed",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_a_place_is_found_by_name_however_it_is_typed(facts):\n    names = lambda query: [place.name for place in facts.find_place(query)]  # noqa: E731\n    assert names(\"district one\") == [\"District One\"]\n    assert names(\"District-One\") == [\"District One\"]\n    assert names(\"  ALPHA \") == [\"Alpha\"]\n    # A part of a name finds every place it fits, exact matches first.\n    assert names(\"district\") == [\"District One\", \"District Three\", \"District Two\"]\n    assert names(\"Atlantis\") == []\ndef test_the_portal_outline_lists_sections_with_what_they_cover_and_their_layers(facts):\n    outline = facts.portal()",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_the_portal_outline_lists_sections_with_what_they_cover_and_their_layers",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_the_portal_outline_lists_sections_with_what_they_cover_and_their_layers(facts):\n    outline = facts.portal()\n    alpha = outline.sections[0]\n    assert (alpha.id, alpha.title, alpha.status, alpha.years, alpha.place_levels) == (\n        \"alpha-section\", \"Alpha section\", \"ready\", (2000, 2010), [\"national\", \"province\", \"district\"],\n    )\n    later = next(s for s in outline.sections if s.id == \"later-section\")\n    assert (later.status, later.summary, later.years) == (\"coming-soon\", \"Will show things later.\", None)\n    # Boundaries are how places are drawn, not something to ask about.\n    assert [(layer.id, layer.section_id) for layer in outline.layers] == [",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_district_risk_gives_each_district_its_value_and_band_with_the_guidance_disclaimer",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_district_risk_gives_each_district_its_value_and_band_with_the_guidance_disclaimer():\n    from datetime import datetime\n    risk = FakeRisk()\n    facts = Facts(load_catalogue(FIXTURES / \"test_catalogue.json\"), load_places(FIXTURES / \"boundaries\"), {}, risk)\n    answer = facts.district_risk(\"frost\", \"ECMWF\", \"2026101506\", \"2026101500\")\n    assert risk.asked == [(\"frost\", \"ECMWF\", 0, datetime(2026, 10, 15, 6), datetime(2026, 10, 15, 0))]\n    assert answer.disclaimer == \"Model-derived agricultural guidance. This is not an official warning.\"\n    assert (answer.title, answer.threshold_version) == (\"Frost risk\", \"provisional-test\")\n    assert answer.risk == {\"District One\": \"high\", \"District Two\": None}\n    source = \"Hazards / Frost risk / ECMWF run 2026101500\"",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_district_risk_says_why_it_cannot_answer",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_district_risk_says_why_it_cannot_answer():\n    places = load_places(FIXTURES / \"boundaries\")\n    catalogue = load_catalogue(FIXTURES / \"test_catalogue.json\")\n    for facts, args, reason in [\n        (Facts(catalogue, places, {}, FakeRisk()), (\"hail\", \"ECMWF\", \"2026101506\", \"2026101500\"), \"unknown-hazard\"),\n        (Facts(catalogue, places, {}, FakeRisk()), (\"frost\", \"ECMWF\", \"tomorrow\", \"2026101500\"), \"bad-time\"),\n        (Facts(catalogue, places, {}), (\"frost\", \"ECMWF\", \"2026101506\", \"2026101500\"), \"no-data\"),\n    ]:\n        with pytest.raises(FactsError) as error:\n            facts.district_risk(*args)",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "test_a_figure_that_is_a_share_of_a_whole_gives_its_share_as_a_fact_too",
+        "kind": 2,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "def test_a_figure_that_is_a_share_of_a_whole_gives_its_share_as_a_fact_too():\n    def shared(place, year):\n        return {\"figures\": [{\"label\": \"Served by groundwater\", \"value\": 12.78, \"unit\": \"million acres\",\n                             \"share\": 30.9, \"share_of\": \"of equipped land\"}], \"notes\": [], \"charts\": []}\n    facts = Facts(load_catalogue(FIXTURES / \"test_catalogue.json\"), load_places(FIXTURES / \"boundaries\"),\n                  {\"beta-section\": shared})\n    answer = facts.section(\"beta-section\", \"PK\")\n    assert [(f.label, f.value, f.unit, f.chart) for f in answer.facts] == [\n        (\"Served by groundwater\", 12.78, \"million acres\", None),\n        (\"Served by groundwater, share of equipped land\", 30.9, \"%\", None),",
+        "detail": "backend.tests.test_facts",
+        "documentation": {}
+    },
+    {
+        "label": "FIXTURES",
+        "kind": 5,
+        "importPath": "backend.tests.test_facts",
+        "description": "backend.tests.test_facts",
+        "peekOfCode": "FIXTURES = Path(__file__).parent / \"fixtures\"\ndef irrigation(place, year):\n    return {\n        \"figures\": [{\"label\": \"Land equipped for irrigation\", \"value\": 41.33, \"unit\": \"million acres\"}],\n        \"notes\": [\"Figures are for the latest survey.\"],\n        \"charts\": [],\n    }\ndef yearly(place, year):\n    return {\"figures\": [{\"label\": \"Food needed\", \"value\": year - 1830, \"unit\": \"\"}], \"notes\": [], \"charts\": []}\n@pytest.fixture",
+        "detail": "backend.tests.test_facts",
         "documentation": {}
     },
     {
@@ -7418,6 +7766,15 @@
         "documentation": {}
     },
     {
+        "label": "test_every_live_section_turns_into_facts_for_a_district_and_the_country",
+        "kind": 2,
+        "importPath": "backend.tests.test_real_catalogue",
+        "description": "backend.tests.test_real_catalogue",
+        "peekOfCode": "def test_every_live_section_turns_into_facts_for_a_district_and_the_country():\n    from csa_portal.facts import Facts\n    from csa_portal.places import load_places\n    from csa_portal.sections import build_providers\n    settings = Settings.from_env()\n    catalogue = load_catalogue(settings.catalogue_path)\n    places = load_places(settings.boundaries_dir)\n    providers, _ = build_providers(settings.data_dir, settings.boundaries_dir)\n    facts = Facts(catalogue, places, providers)\n    faisalabad = next(p for p in places.places if p.name == \"Faisalabad\")",
+        "detail": "backend.tests.test_real_catalogue",
+        "documentation": {}
+    },
+    {
         "label": "EXPECTED",
         "kind": 5,
         "importPath": "backend.tests.test_real_catalogue",
@@ -7719,7 +8076,7 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_land_cover_is_drawn_as_a_hundred_squares_in_the_map_colours(land_cover):\n    shares = _charts(land_cover(LAHORE, None))[\"land-cover-shares\"]\n    assert shares[\"kind\"] == \"shares\"\n    assert shares[\"title\"] == \"Irrigated cropland covers 80% of Lahore\"\n    cells = shares[\"cells\"]\n    # Largest first, each in the colour its layer has on the map, with its true percentage.\n    assert [(c[\"label\"], c[\"colour\"], c[\"share\"]) for c in cells] == [\n        (\"Irrigated cropland\", \"#2a78d6\", 80.0), (\"Rainfed cropland\", \"#eda100\", 20.0), (\"Forest\", \"#2e7d32\", 5.0),\n    ]\n    # Lahore's classes overlap and add up to 105%, so they are scaled back to fill exactly a hundred squares.",
+        "peekOfCode": "def test_land_cover_is_drawn_as_a_hundred_squares_in_the_map_colours(land_cover):\n    shares = _charts(land_cover(LAHORE, None))[\"land-cover-shares\"]\n    assert shares[\"kind\"] == \"shares\"\n    assert shares[\"title\"] == \"How Lahore's land is classified\"\n    assert \"%\" not in shares[\"title\"]\n    cells = shares[\"cells\"]\n    # Largest first, each in the colour its layer has on the map, with its true percentage.\n    assert [(c[\"label\"], c[\"colour\"], c[\"share\"]) for c in cells] == [\n        (\"Irrigated cropland\", \"#2a78d6\", 80.0), (\"Rainfed cropland\", \"#eda100\", 20.0), (\"Forest\", \"#2e7d32\", 5.0),\n    ]",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
@@ -7728,16 +8085,16 @@
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_squares_show_what_is_not_mapped_and_always_number_a_hundred():\n    from csa_portal.sections import _squares\n    cells = _squares([(\"Forest\", \"#1\", 6.3), (\"Bare\", \"#2\", 51.0), (\"Crop\", \"#3\", 27.6), (\"Shrub\", \"#4\", 6.6)])\n    assert [c[\"label\"] for c in cells] == [\"Bare\", \"Crop\", \"Shrub\", \"Forest\", \"Not mapped\"]\n    assert cells[-1][\"share\"] == 8.5\n    assert sum(c[\"squares\"] for c in cells) == 100\n    assert [c[\"squares\"] for c in cells] == [51, 28, 7, 6, 8]\n    # Parts that fill the whole leave no \"Not mapped\".\n    assert [c[\"label\"] for c in _squares([(\"A\", \"#1\", 60.0), (\"B\", \"#2\", 40.0)])] == [\"A\", \"B\"]\ndef test_the_land_cover_headline_adds_cropland_when_something_else_is_larger(dirs):",
+        "peekOfCode": "def test_squares_show_what_is_not_mapped_and_always_number_a_hundred():\n    from csa_portal.sections import _squares\n    cells = _squares([(\"Forest\", \"#1\", 6.3), (\"Bare\", \"#2\", 51.0), (\"Crop\", \"#3\", 27.6), (\"Shrub\", \"#4\", 6.6)])\n    assert [c[\"label\"] for c in cells] == [\"Bare\", \"Crop\", \"Shrub\", \"Forest\", \"Not mapped\"]\n    assert cells[-1][\"share\"] == 8.5\n    assert sum(c[\"squares\"] for c in cells) == 100\n    assert [c[\"squares\"] for c in cells] == [51, 28, 7, 6, 8]\n    # Parts that fill the whole leave no \"Not mapped\".\n    assert [c[\"label\"] for c in _squares([(\"A\", \"#1\", 60.0), (\"B\", \"#2\", 40.0)])] == [\"A\", \"B\"]\ndef test_the_land_cover_headline_names_the_place_and_gives_no_percentages(dirs):",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
     {
-        "label": "test_the_land_cover_headline_adds_cropland_when_something_else_is_larger",
+        "label": "test_the_land_cover_headline_names_the_place_and_gives_no_percentages",
         "kind": 2,
         "importPath": "backend.tests.test_sections",
         "description": "backend.tests.test_sections",
-        "peekOfCode": "def test_the_land_cover_headline_adds_cropland_when_something_else_is_larger(dirs):\n    data, boundaries = dirs\n    (data / \"land_cover.json\").write_text(json.dumps({\n        \"classes\": [\"forest\", \"irrigated\", \"rainfed\"],\n        \"places\": {\"PK\": _cover(\"Pakistan\", \"national\", None, 1000, 510, 199, 77)},\n    }), encoding=\"utf-8\")\n    sections, _ = build_providers(data, boundaries)\n    shares = _charts(sections[\"land-cover\"](PK, None))[\"land-cover-shares\"]\n    assert shares[\"title\"] == \"Forest covers 51% of Pakistan; cropland covers 28%\"\ndef test_land_cover_charts_carry_a_headline_and_no_line_of_explanation(land_cover):",
+        "peekOfCode": "def test_the_land_cover_headline_names_the_place_and_gives_no_percentages(dirs):\n    data, boundaries = dirs\n    (data / \"land_cover.json\").write_text(json.dumps({\n        \"classes\": [\"forest\", \"irrigated\", \"rainfed\"],\n        \"places\": {\"PK\": _cover(\"Pakistan\", \"national\", None, 1000, 510, 199, 77)},\n    }), encoding=\"utf-8\")\n    sections, _ = build_providers(data, boundaries)\n    shares = _charts(sections[\"land-cover\"](PK, None))[\"land-cover-shares\"]\n    assert shares[\"title\"] == \"How Pakistan's land is classified\"\ndef test_land_cover_charts_carry_a_headline_and_no_line_of_explanation(land_cover):",
         "detail": "backend.tests.test_sections",
         "documentation": {}
     },
