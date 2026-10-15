@@ -50,6 +50,9 @@ test('the map worker loads, so boundaries can be drawn', async ({ page }) => {
 test('a click names a district in a popup, and clicks drill from province to district', async ({ page }) => {
   await openPortal(page)
   await page.locator('[data-boundaries-drawn="true"]').waitFor()
+  // Each click selects a place and the camera moves to it, so every click waits for the camera to settle:
+  // a click during the move lands wherever the map happens to be under the pointer.
+  await page.locator('.map[data-camera-on="PK"]').waitFor()
   const box = (await page.locator('.map').boundingBox())!
   // The fixture country spans the map's width; its first quarter is District One, in province Alpha.
   const x = box.x + box.width * 0.15
@@ -66,7 +69,9 @@ test('a click names a district in a popup, and clicks drill from province to dis
   await page.mouse.click(x, y)
   await expect(popup.locator('strong')).toHaveText('District One')
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha'])
-  await page.mouse.click(x, y)
+  // Now fitted to Alpha, whose left half is District One; below the popup, which opens above its point.
+  await page.locator('.map[data-camera-on="PK1"]').waitFor()
+  await page.mouse.click(box.x + box.width / 2 - 40, box.y + box.height * 0.7)
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha', 'District One'])
   // The popup stays open when the pointer moves away, until it is closed.
   await page.mouse.move(box.x + box.width - 30, box.y + box.height - 30, { steps: 3 })
@@ -81,7 +86,7 @@ test('clicking the map outside every district clears the selection', async ({ pa
   const crumbs = page.getByRole('navigation', { name: 'Selected place' }).getByRole('listitem')
   await expect(crumbs).toHaveText(['Pakistan', 'Alpha'])
   // The map has zoomed to province Alpha, which is taller than it is wide, so the left edge is outside it.
-  await page.waitForTimeout(1200)
+  await page.locator('.map[data-camera-on="PK1"]').waitFor()
   const box = (await page.locator('.map').boundingBox())!
   await page.mouse.click(box.x + 40, box.y + box.height / 2)
   await expect(crumbs).toHaveText(['Pakistan'])
