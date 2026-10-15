@@ -533,13 +533,14 @@ def test_land_cover_figures_give_area_and_each_measured_class(land_cover):
     # How the areas were measured is documentation, not something to repeat under every set of figures.
     assert "Measured from the rasters." not in body["notes"]
     # The only note left says which classes are still missing, when any are.
-    assert body["notes"] == ["Not measured yet: Shrub land, Bare land."]
+    assert body["notes"] == ["Not measured yet: Shrub land, Others."]
 
 
 def test_land_cover_is_drawn_as_a_hundred_squares_in_the_map_colours(land_cover):
     shares = _charts(land_cover(LAHORE, None))["land-cover-shares"]
     assert shares["kind"] == "shares"
-    assert shares["title"] == "Irrigated cropland covers 80% of Lahore"
+    assert shares["title"] == "How Lahore's land is classified"
+    assert "%" not in shares["title"]
     cells = shares["cells"]
     # Largest first, each in the colour its layer has on the map, with its true percentage.
     assert [(c["label"], c["colour"], c["share"]) for c in cells] == [
@@ -562,7 +563,7 @@ def test_squares_show_what_is_not_mapped_and_always_number_a_hundred():
     assert [c["label"] for c in _squares([("A", "#1", 60.0), ("B", "#2", 40.0)])] == ["A", "B"]
 
 
-def test_the_land_cover_headline_adds_cropland_when_something_else_is_larger(dirs):
+def test_the_land_cover_headline_names_the_place_and_gives_no_percentages(dirs):
     data, boundaries = dirs
     (data / "land_cover.json").write_text(json.dumps({
         "classes": ["forest", "irrigated", "rainfed"],
@@ -570,7 +571,7 @@ def test_the_land_cover_headline_adds_cropland_when_something_else_is_larger(dir
     }), encoding="utf-8")
     sections, _ = build_providers(data, boundaries)
     shares = _charts(sections["land-cover"](PK, None))["land-cover-shares"]
-    assert shares["title"] == "Forest covers 51% of Pakistan; cropland covers 28%"
+    assert shares["title"] == "How Pakistan's land is classified"
 
 
 def test_land_cover_charts_carry_a_headline_and_no_line_of_explanation(land_cover):

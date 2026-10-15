@@ -6,6 +6,7 @@ import { Table2 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import type { ChartSpec } from '../api/types'
 import { chartHeight, chartOption, formatNumber, markedYear, REPLAY_MS } from '../charts/chartOption'
+import { useDarkTheme } from '../state/useDarkTheme'
 import { viewStore } from '../state/viewState'
 
 registerEChartsModules([
@@ -30,6 +31,7 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
   const chart = useRef<ECharts | null>(null)
   const latest = useRef(spec)
   const draw = useRef(() => {})
+  const dark = useDarkTheme()
 
   useEffect(() => {
     latest.current = spec
@@ -56,13 +58,13 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
   }, [spec.id])
 
   useEffect(() => {
-    chart.current?.setOption(chartOption(spec, year, large), true)
+    chart.current?.setOption(chartOption(spec, year, large, dark), true)
     // Emptying the chart first makes it draw in from nothing, as it did when it first appeared.
     draw.current = () => {
       chart.current?.clear()
-      chart.current?.setOption(chartOption(spec, year, large), true)
+      chart.current?.setOption(chartOption(spec, year, large, dark), true)
     }
-  }, [spec, year, large])
+  }, [spec, year, large, dark])
 
   useEffect(() => {
     const element = plot.current

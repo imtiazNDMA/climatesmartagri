@@ -464,7 +464,7 @@ def _crop_calendar(data: dict[str, Any]) -> SectionDataProvider:
 LAND_COVER = {
     "forest": ("Forest", "#2e7d32"),
     "shrub": ("Shrub land", "#9ccc65"),
-    "bare": ("Bare land", "#bcaaa4"),
+    "bare": ("Others", "#bcaaa4"),
     "irrigated": ("Irrigated cropland", "#2a78d6"),
     "rainfed": ("Rainfed cropland", "#eda100"),
 }
@@ -535,15 +535,11 @@ def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
         return shown, selected
 
     def cover_squares(entry: dict[str, Any], measured: list[str]) -> dict[str, Any]:
-        name = entry["name"]
         shares = {c: _share(entry[c], entry["area_ha"]) or 0 for c in measured}
-        top = max(measured, key=lambda c: shares[c])
-        title = f"{LAND_COVER[top][0]} covers {_pct(shares[top])}% of {name}"
-        cropland = shares.get("irrigated", 0) + shares.get("rainfed", 0)
-        if top not in ("irrigated", "rainfed") and "irrigated" in shares and "rainfed" in shares and cropland >= 1:
-            title += f"; cropland covers {_pct(cropland)}%"
+        # The strip and bars show the proportions; the headline carries no percentages.
         return {
-            "id": "land-cover-shares", "title": title, "kind": "shares", "unit": "%", "time": False,
+            "id": "land-cover-shares", "title": f"How {entry['name']}'s land is classified", "kind": "shares",
+            "unit": "%", "time": False,
             "categories": [], "series": [],
             "cells": _squares([(LAND_COVER[c][0], LAND_COVER[c][1], shares[c]) for c in measured]),
         }

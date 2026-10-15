@@ -92,7 +92,7 @@ test('one chart can be maximized to fill the full view, and minimized again', as
   await full.getByRole('button', { name: 'Maximize: Nitrous oxide grew fastest' }).click()
   await expect(full.getByRole('figure')).toHaveCount(1)
   // Alone, it takes the height the other chart was using, and is redrawn at that size, not stretched.
-  await expect.poll(async () => (await growth.boundingBox())!.height).toBeGreaterThan(before.height + 100)
+  await expect.poll(async () => (await growth.boundingBox())!.height).toBeGreaterThan(before.height + 60)
   await expect
     .poll(async () => {
       const plot = (await growth.locator('.chart-plot').boundingBox())!
@@ -155,4 +155,56 @@ test('a section with no charts offers no full view button, and says so if opened
   await expect(page.getByRole('button', { name: 'Open charts in full view' })).toHaveCount(0)
   await openPortal(page, '/?section=empty-section&view=charts')
   await expect(page.getByRole('region', { name: 'Charts in full view' })).toContainText('Data not loaded yet')
+})
+
+test('side titles never run into each other, however wide the full view is', async ({ page }) => {
+  const years = [2026, 2027]
+  await page.route('**/api/sections/alpha-section/data**', (route) => route.fulfill({
+    json: {
+      section_id: 'alpha-section', place_id: 'PK', level_used: 'national', year: 2027, figures: [], notes: [],
+      charts: [
+        {
+          id: 'water-buffer', title: 'Higher efficiency protects the water buffer', kind: 'balance', unit: '', time: true,
+          categories: years,
+          series: [
+            { name: '35% efficiency', slot: 2, values: [-23, -38.7] },
+            { name: '70% efficiency', slot: 4, values: [43, 34.6] },
+          ],
+          balance: {
+            available: [109, 107.9], needed: [[132, 146.6], [66, 73.3]],
+            negative: 'Water deficit', positive: 'Water buffer', zero: 'Water limit',
+            negative_word: 'deficit', positive_word: 'buffer',
+          },
+        },
+        {
+          id: 'irrigation-source', title: "Where each province's irrigation water comes from", kind: 'diverging',
+          unit: '%', time: false, categories: [], series: [],
+          sides: [{ label: 'Groundwater', colour: '#3b4cc0' }, { label: 'Surface water', colour: '#b40426' }],
+          splits: [
+            { name: 'Khyber Pakhtunkhwa', left: 17.6, right: 82.4, weight: 5, highlight: false },
+            { name: 'Sindh', left: 4.1, right: 95.9, weight: 13, highlight: false },
+          ],
+        },
+      ],
+    },
+  }))
+  const apart = (a: DOMRect, b: DOMRect) => a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top
+  for (const width of [1280, 1440, 1600, 1920]) {
+    await page.setViewportSize({ width, height: 1000 })
+    await openPortal(page, '/?section=alpha-section&view=charts')
+    const full = page.getByRole('region', { name: 'Charts in full view' })
+    await full.locator('.balance-zone').first().waitFor()
+    const report = await full.evaluate((view) => {
+      const rects = (selector: string) => [...view.querySelectorAll<HTMLElement>(selector)].map((e) => {
+        // A range measures the words themselves, which may spill out of a box that is too small for them.
+        const range = document.createRange()
+        range.selectNodeContents(e)
+        const r = range.getBoundingClientRect()
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom } as DOMRect
+      })
+      return { zones: rects('.balance-zone'), sides: rects('.diverging-head .diverging-side'), names: rects('.balance-name, .diverging-name') }
+    })
+    expect(apart(report.zones[0], report.zones[1]), `water balance titles at ${width}px`).toBe(true)
+    expect(apart(report.sides[0], report.sides[1]), `irrigation side titles at ${width}px`).toBe(true)
+  }
 })

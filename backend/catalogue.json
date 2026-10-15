@@ -2,7 +2,7 @@
   "sections": [
     {
       "id": "land-cover",
-      "title": "Land cover",
+      "title": "Land Classification",
       "icon": "trees",
       "order": 1,
       "status": "ready",
@@ -14,7 +14,7 @@
     },
     {
       "id": "irrigation",
-      "title": "Irrigation practices",
+      "title": "Climate Smart Irrigation Practices",
       "icon": "droplets",
       "order": 2,
       "status": "ready",
@@ -90,7 +90,7 @@
     },
     {
       "id": "crop-classification",
-      "title": "Crop health scanner",
+      "title": "AI Crop Disease and Pest Detector",
       "icon": "scan-search",
       "order": 8,
       "status": "ready",

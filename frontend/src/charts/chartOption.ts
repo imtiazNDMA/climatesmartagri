@@ -3,12 +3,11 @@ import type { ChartSpec, ChartSeries } from '../api/types'
 /** Categorical colours in fixed slot order; a series keeps its slot wherever it appears. */
 export const SLOT_COLOURS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
 
-const INK = '#52514e'
-const STRONG = '#1c1c1a'
-const MUTED = '#898781'
-const GRID = '#e1e0d9'
-const AXIS = '#c3c2b7'
-const SURFACE = '#ffffff'
+/** The colours a chart writes and rules in, for the page's light or dark theme. */
+interface Ink { ink: string; strong: string; muted: string; grid: string; axis: string; surface: string }
+const LIGHT: Ink = { ink: '#52514e', strong: '#1c1c1a', muted: '#898781', grid: '#e1e0d9', axis: '#c3c2b7', surface: '#ffffff' }
+// On the dark card (#18243a) every text colour here reads at 4.5:1 or better.
+const DARK: Ink = { ink: '#d4dbe6', strong: '#ffffff', muted: '#a8b6c9', grid: '#2b3a51', axis: '#3d4f6b', surface: '#18243a' }
 /** The page's font, by name: labels are measured before they are drawn, and 'inherit' measures as another font. */
 const FONT = "system-ui, 'Segoe UI', sans-serif"
 const SURPLUS = '#2a78d6'
@@ -38,8 +37,8 @@ function spoken(value: number | null | undefined, unit: string): string {
   return formatNumber(value)
 }
 
-const colourOf = (series: ChartSeries) =>
-  series.colour ?? (series.emphasis === 'strong' ? STRONG : SLOT_COLOURS[(series.slot - 1) % SLOT_COLOURS.length])
+const colourOf = (series: ChartSeries, p: Ink) =>
+  series.colour ?? (series.emphasis === 'strong' ? p.strong : SLOT_COLOURS[(series.slot - 1) % SLOT_COLOURS.length])
 
 /** The year a chart over time marks: the chosen year if the chart has it, otherwise its latest. */
 export function markedYear(spec: ChartSpec, year: number | null): number | null {
@@ -57,24 +56,24 @@ export function chartHeight(spec: ChartSpec, large = false): number {
   return large ? 380 : 250
 }
 
-const valueAxis = (unit: string, fontSize: number, hidden = false, min?: number, max?: number) => ({
+const valueAxis = (p: Ink, unit: string, fontSize: number, hidden = false, min?: number, max?: number) => ({
   type: 'value',
   ...(min !== undefined ? { min } : {}),
   ...(max !== undefined ? { max } : {}),
   // With its numbers hidden the axis has nothing to name, and the longest bar may run its full length.
   name: hidden || unit === 'times' || unit === '%' ? '' : unit,
   ...(hidden ? { max: 'dataMax' } : {}),
-  nameTextStyle: { color: MUTED, align: 'left', fontSize },
+  nameTextStyle: { color: p.muted, align: 'left', fontSize },
   // On a narrow plot the larger text would run together, so a number that would touch its neighbour is left out.
-  axisLabel: { show: !hidden, color: MUTED, fontSize, hideOverlap: true, formatter: (value: number) => spoken(value, unit) },
-  splitLine: { show: !hidden, lineStyle: { color: GRID } },
+  axisLabel: { show: !hidden, color: p.muted, fontSize, hideOverlap: true, formatter: (value: number) => spoken(value, unit) },
+  splitLine: { show: !hidden, lineStyle: { color: p.grid } },
 })
 
-const categoryAxis = (categories: (string | number)[], fontSize: number, extra: object = {}, label: object = {}) => ({
+const categoryAxis = (p: Ink, categories: (string | number)[], fontSize: number, extra: object = {}, label: object = {}) => ({
   type: 'category',
   data: categories.map(String),
-  axisLabel: { color: MUTED, fontSize, ...label },
-  axisLine: { lineStyle: { color: AXIS } },
+  axisLabel: { color: p.muted, fontSize, ...label },
+  axisLine: { lineStyle: { color: p.axis } },
   axisTick: { show: false },
   ...extra,
 })
@@ -110,12 +109,12 @@ export function endLabelOffsets(spec: ChartSpec, height: number): number[] {
   return offsets
 }
 
-function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, height: number, fontSize: number) {
+function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boolean, height: number, fontSize: number) {
   const stacked = spec.kind === 'stacked-area'
   const marked = markedYear(spec, year)
   const offsets = endLabels ? endLabelOffsets(spec, height) : spec.series.map(() => 0)
   return spec.series.map((series, index) => {
-    const colour = colourOf(series)
+    const colour = colourOf(series, p)
     const marks: object[] = []
     if (index === 0 && marked !== null) marks.push({ xAxis: spec.categories.indexOf(marked) })
     if (index === 0 && spec.zero_line) marks.push({ yAxis: 0, label: { show: false } })
@@ -125,7 +124,7 @@ function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, he
       itemStyle: { color: colour },
       // Stacked bands are separated by a thin line in the surface colour.
       lineStyle: stacked
-        ? { width: 1.5, color: SURFACE }
+        ? { width: 1.5, color: p.surface }
         : { width: series.emphasis === 'strong' ? 3.5 : 2, color: colour },
       ...(stacked ? { stack: 'total', areaStyle: { color: colour, opacity: 0.9 } } : {}),
       symbol: 'circle',
@@ -138,7 +137,7 @@ function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, he
       endLabel: {
         show: endLabels,
         formatter: '{a}',
-        color: series.emphasis === 'strong' ? STRONG : INK,
+        color: series.emphasis === 'strong' ? p.strong : p.ink,
         fontWeight: series.emphasis === 'strong' ? 'bold' : 'normal',
         fontSize: textSize(endLabels),
         distance: 8,
@@ -151,8 +150,8 @@ function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, he
               silent: true,
               // The year marker stays put while the lines draw in.
               animation: false,
-              lineStyle: { color: INK, type: 'dashed', width: 1 },
-              label: { formatter: marked !== null ? String(marked) : '', color: INK, fontSize },
+              lineStyle: { color: p.ink, type: 'dashed', width: 1 },
+              label: { formatter: marked !== null ? String(marked) : '', color: p.ink, fontSize },
               data: marks,
             },
           }
@@ -161,12 +160,12 @@ function timeSeries(spec: ChartSpec, year: number | null, endLabels: boolean, he
   })
 }
 
-function barColour(spec: ChartSpec, series: ChartSeries, index: number, value: number | null): string {
+function barColour(p: Ink, spec: ChartSpec, series: ChartSeries, index: number, value: number | null): string {
   if (spec.bar_colours?.[index]) return spec.bar_colours[index]
   if (series.colour) return series.colour
   if (spec.colour_by_sign) return (value ?? 0) < 0 ? SHORTFALL : SURPLUS
   if (spec.bar_slots) return SLOT_COLOURS[(spec.bar_slots[index] - 1) % SLOT_COLOURS.length]
-  return colourOf(series)
+  return colourOf(series, p)
 }
 
 /** The widest a bar may grow: a few upright bars are broad columns, not thin sticks. */
@@ -182,7 +181,7 @@ export function barLabel(spec: ChartSpec, index: number, value: number | null): 
   return spec.stacked ? note : `${spoken(value, spec.unit)} · ${note}`
 }
 
-function barSeries(spec: ChartSpec, large: boolean) {
+function barSeries(p: Ink, spec: ChartSpec, large: boolean) {
   const lastSeries = spec.series.length - 1
   const rounded = spec.horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]
   return spec.series.map((series, seriesIndex) => ({
@@ -192,23 +191,23 @@ function barSeries(spec: ChartSpec, large: boolean) {
     barMaxWidth: barMaxWidth(spec, large),
     barCategoryGap: spec.horizontal ? '35%' : '45%',
     // In a stacked bar only the far end is rounded, so the parts meet squarely.
-    itemStyle: { color: colourOf(series), borderRadius: !spec.stacked || seriesIndex === lastSeries ? rounded : 0 },
+    itemStyle: { color: colourOf(series, p), borderRadius: !spec.stacked || seriesIndex === lastSeries ? rounded : 0 },
     label: {
       // A stacked bar is labelled once, at its end; bars with notes are always labelled.
       show: spec.bar_notes
         ? !spec.stacked || seriesIndex === lastSeries
         : spec.categories.length <= MAX_LABELLED_BARS,
       position: spec.horizontal ? 'right' : 'top',
-      color: INK,
+      color: p.ink,
       fontSize: textSize(large),
       formatter: (params: { value: number | null; dataIndex: number }) => barLabel(spec, params.dataIndex, params.value),
     },
     data: series.values.map((value, i) => ({
       value,
       // Every bar is drawn at full strength. The bars the headline is about are told by their bold labels.
-      itemStyle: { color: barColour(spec, series, i, value) },
+      itemStyle: { color: barColour(p, spec, series, i, value) },
       ...(spec.highlights
-        ? { label: spec.highlights.includes(i) ? { color: STRONG, fontWeight: 'bold' } : { color: INK } }
+        ? { label: spec.highlights.includes(i) ? { color: p.strong, fontWeight: 'bold' } : { color: p.ink } }
         : {}),
       // A bar below zero hangs down to the axis names, so its label goes at the zero line instead.
       ...(value !== null && value < 0 && !spec.horizontal ? { label: { position: 'top' } } : {}),
@@ -225,8 +224,9 @@ function labelRoom(spec: ChartSpec, large: boolean): number {
   return Math.round(longest * textSize(large) * 0.6) + 20
 }
 
-/** The ECharts option for a chart the backend describes. `large` is the full view. */
-export function chartOption(spec: ChartSpec, year: number | null, large = false): Record<string, unknown> {
+/** The ECharts option for a chart the backend describes. `large` is the full view; `dark` the dark theme. */
+export function chartOption(spec: ChartSpec, year: number | null, large = false, dark = false): Record<string, unknown> {
+  const p = dark ? DARK : LIGHT
   const isBar = spec.kind === 'bar'
   const endLabels = large && !isBar && Boolean(spec.end_labels)
   const showLegend = spec.series.length > 1 && !endLabels
@@ -234,12 +234,13 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false)
   // A few named bars always keep their names, wrapped onto a second line when they are long.
   const named = isBar && !spec.time && spec.categories.length <= MAX_LABELLED_BARS
   const categories = categoryAxis(
+    p,
     spec.categories,
     fontSize,
     isBar ? {} : { boundaryGap: false },
     named && !spec.horizontal ? { interval: 0, width: large ? 170 : 110, overflow: 'break' } : {},
   )
-  const values = valueAxis(spec.unit, fontSize, Boolean(spec.hide_axis), spec.axis_min, spec.axis_max)
+  const values = valueAxis(p, spec.unit, fontSize, Boolean(spec.hide_axis), spec.axis_min, spec.axis_max)
   const horizontal = isBar && Boolean(spec.horizontal)
   const longestName = Math.max(...spec.series.map((s) => s.name.length))
   return {
@@ -253,7 +254,9 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false)
       right: endLabels ? Math.max(140, Math.min(360, 24 + longestName * 9)) : horizontal ? labelRoom(spec, large) : 28,
       top: showLegend ? 48 : 32,
       bottom: 4,
-      containLabel: true,
+      // ECharts 6's form of the old containLabel: the margins hold the axis labels too.
+      outerBoundsMode: 'same',
+      outerBoundsContain: 'axisLabel',
     },
     legend: {
       show: showLegend,
@@ -262,7 +265,7 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false)
       icon: 'roundRect',
       itemWidth: 12,
       itemHeight: 12,
-      textStyle: { color: INK, fontSize },
+      textStyle: { color: p.ink, fontSize },
     },
     tooltip: {
       textStyle: { fontSize },
@@ -273,6 +276,6 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false)
     },
     xAxis: horizontal ? values : categories,
     yAxis: horizontal ? { ...categories, inverse: true } : values,
-    series: isBar ? barSeries(spec, large) : timeSeries(spec, year, endLabels, chartHeight(spec, large), fontSize),
+    series: isBar ? barSeries(p, spec, large) : timeSeries(p, spec, year, endLabels, chartHeight(spec, large), fontSize),
   }
 }

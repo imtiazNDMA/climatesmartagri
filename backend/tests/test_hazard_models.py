@@ -268,6 +268,15 @@ def test_file_is_cached_and_rebuilt_from_values_without_downloading_again(derive
     assert forecast.source.attempts == attempts
 
 
+def test_value_file_keeps_the_derived_physical_values(derived):
+    target = BASE + timedelta(hours=24)
+    path = derived.value_file("frost-degree-hours", "model-a", 0, target)
+    with rasterio.open(path) as stored:
+        values = stored.read(1, masked=True)
+    assert stored.dtypes == ("float32",)
+    assert float(np.ma.median(values)) == pytest.approx(18, abs=0.05)
+
+
 def test_file_rejects_a_run_that_never_had_that_time(derived):
     with pytest.raises(ForecastError) as err:
         derived.file("frost-degree-hours", "model-a", 0, BASE + timedelta(hours=24), run=datetime(1999, 1, 1))

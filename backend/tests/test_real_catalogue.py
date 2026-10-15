@@ -202,11 +202,12 @@ def test_land_cover_figures_come_from_the_rasters():
     district = client.get("/api/sections/land-cover/data", params={"place": faisalabad["id"]}).json()
     assert district["level_used"] == "district"
     shares = next(c for c in district["charts"] if c["id"] == "land-cover-shares")
-    assert shares["title"].startswith("Irrigated cropland covers")
+    assert shares["title"] == "How Faisalabad's land is classified"
     assert sum(cell["squares"] for cell in shares["cells"]) == 100
     # The country as a whole: what the charts say, from the real figures.
     titles = {c["id"]: c["title"] for c in country["charts"]}
-    assert titles["land-cover-shares"] == "Bare land covers 51% of Pakistan; cropland covers 28%"
+    assert titles["land-cover-shares"] == "How Pakistan's land is classified"
+    assert "Others" in [cell["label"] for cell in next(c for c in country["charts"] if c["id"] == "land-cover-shares")["cells"]]
     assert titles["land-cover-cropland"] == "Balochistan and Khyber Pakhtunkhwa farm mostly on rain"
     assert titles["land-cover-forest-ranking"] == (
         "Khyber Pakhtunkhwa and Jammu and Kashmir hold 58% of Pakistan's forest"

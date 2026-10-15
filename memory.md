@@ -9,7 +9,8 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 ## Running it
 
 - **Start:** double-click `start-portal.cmd`, or `npm run dev` from the repo root.
-- **Addresses:** frontend `http://127.0.0.1:9080`, backend on port 9988. The user chose these ports.
+- **Addresses:** frontend `http://127.0.0.1:9080`, backend on port 9988. The user chose these ports. Both `npm run dev` and the production scripts bind to `0.0.0.0`, so other machines on the same network can reach the portal at `http://<host-IP>:9080` (frontend proxies `/api` to the backend, so no CORS; Windows Firewall may need an inbound allow for Node/Python).
+- **Local AI guide:** backend-only LM Studio integration at `http://127.0.0.1:1234`, model id `qwen/qwen3.8-27b` by default. Configure with `CSA_LM_STUDIO_*`. Overview and guided tour are deterministic; chat sends compact current-view context to Qwen.
 - **Tests:** `npm test` (pytest, Vitest, Playwright). Browser tests use their own ports (8010 and 5183) and a fixture catalogue, so they can run while the portal is open.
 - **At the end of the session:** 159 backend, 124 frontend logic and 58 browser tests passing.
 
@@ -23,8 +24,8 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 
 | Section | State | Source |
 | --- | --- | --- |
-| Land cover | Live: 4 raster layers, figures and charts per district | `data/geospatial/rasters/*.tif` |
-| Irrigation practices | Live: 4 map layers, figures and charts per district | `Irr_Prac.shp`, irrigation sheet |
+| Land Classification | Live: 4 raster layers, figures and charts per district | `data/geospatial/rasters/*.tif` |
+| Climate Smart Irrigation Practices | Live: 4 map layers, figures and charts per district | `Irr_Prac.shp`, irrigation sheet |
 | Greenhouse-gas emissions | Live: charts, 1994–2021, national | `Pakistan_GHG_1994_2021_Excel_Data.xlsx` |
 | Crop water balance | Live: charts, 2026–2047, national | `CRW(efficiency) 25sep.xlsx` |
 | Food security projections | Live: charts, 2026–2047, national | `food security projection CSA 17 sep.xlsx` |

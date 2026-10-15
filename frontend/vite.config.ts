@@ -8,8 +8,9 @@ export default defineConfig({
   // MapLibre's worker is an ES module that shares a chunk with the main bundle.
   worker: { format: 'es' },
   server: {
-    // 127.0.0.1 with strictPort, so a port already used by another project fails loudly.
-    host: '127.0.0.1',
+    // All interfaces, so other machines on the same network can reach the portal.
+    // strictPort, so a port already used by another project fails loudly.
+    host: true,
     port: Number(process.env.CSA_FRONTEND_PORT ?? 9080),
     strictPort: true,
     proxy: {
@@ -30,7 +31,7 @@ export default defineConfig({
     },
   },
   preview: {
-    host: '127.0.0.1',
+    host: true,
     port: Number(process.env.CSA_FRONTEND_PORT ?? 9080),
     strictPort: true,
     proxy: {

@@ -10,7 +10,7 @@ function Shell({ spec, large, kind, children, table }: {
   large: boolean
   kind: string
   children: ReactNode
-  table: ReactNode
+  table?: ReactNode
 }) {
   return (
     <figure className={`chart ${kind}-chart${large ? ' chart-large' : ''}`} aria-label={spec.title}>
@@ -19,13 +19,15 @@ function Shell({ spec, large, kind, children, table }: {
       </figcaption>
       {children}
       {spec.note && <p className="chart-note">{spec.note}</p>}
-      <details className="chart-table">
-        <summary title="Show table">
-          <Table2 size={17} aria-hidden />
-          <span>Show table</span>
-        </summary>
-        {table}
-      </details>
+      {table && (
+        <details className="chart-table">
+          <summary title="Show table">
+            <Table2 size={17} aria-hidden />
+            <span>Show table</span>
+          </summary>
+          {table}
+        </details>
+      )}
     </figure>
   )
 }
@@ -77,8 +79,9 @@ export function DivergingChart({ spec, large = false }: { spec: ChartSpec; large
       >
         <div className="diverging-row diverging-head">
           <span />
-          <span className="diverging-side diverging-left">← {left.label}</span>
-          <span className="diverging-side diverging-right">{right.label} →</span>
+          {/* A no-break space keeps each arrow with its word when a title wraps. */}
+          <span className="diverging-side diverging-left">←{' '}{left.label}</span>
+          <span className="diverging-side diverging-right">{right.label}{' '}→</span>
         </div>
         {splits.map((split, index) => (
           <div
@@ -175,7 +178,7 @@ export function CountsChart({ spec, large = false }: { spec: ChartSpec; large?: 
 
 /**
  * A whole and its parts: one strip divided up in the parts' colours, then each part on a line of
- * its own with a bar and its percentage, largest first.
+ * its own with a bar, largest first. The proportions are shown, not written out as percentages.
  */
 export function SharesChart({ spec, large = false }: { spec: ChartSpec; large?: boolean }) {
   const cells = spec.cells ?? []
@@ -185,35 +188,17 @@ export function SharesChart({ spec, large = false }: { spec: ChartSpec; large?: 
       spec={spec}
       large={large}
       kind="shares"
-      table={
-        <table>
-          <thead>
-            <tr>
-              <th />
-              <th>Share</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cells.map((cell) => (
-              <tr key={cell.label}>
-                <th>{cell.label}</th>
-                <td>{formatNumber(cell.share)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      }
     >
       <div
         className="shares"
         role="img"
-        aria-label={cells.map((cell) => `${cell.label} ${formatNumber(cell.share)}%`).join(', ')}
+        aria-label={cells.map((cell) => cell.label).join(', ')}
       >
         <div className="shares-whole">
           {cells.map((cell) => (
             <span
               key={cell.label}
-              title={`${cell.label}: ${formatNumber(cell.share)}%`}
+              title={cell.label}
               style={{ flexGrow: cell.squares, background: cell.colour }}
             />
           ))}
@@ -228,7 +213,6 @@ export function SharesChart({ spec, large = false }: { spec: ChartSpec; large?: 
                 <span style={{ width: `${Math.min(100, cell.share)}%` }} />
               </span>
             </div>
-            <strong className="shares-value">{formatNumber(cell.share)}%</strong>
           </div>
         ))}
       </div>

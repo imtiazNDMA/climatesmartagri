@@ -3,6 +3,10 @@ import {
   ApiError,
   BackendUnreachableError,
   classifyCropImage,
+  askAssistant,
+  fetchAssistantOverview,
+  fetchAssistantTour,
+  fetchDistrictRisk,
   fetchHazardProducts,
   fetchBoundaries,
   fetchCatalogue,
@@ -95,6 +99,52 @@ describe('client', () => {
     vi.stubGlobal('fetch', fetchMock)
     await expect(fetchHazardProducts()).resolves.toMatchObject({ classification: 'forecast-guidance' })
     expect(fetchMock).toHaveBeenCalledWith('/api/hazards/products')
+  })
+
+  it('fetches the deterministic assistant overview and tour', async () => {
+    const fetchMock = respond(200, { steps: [], sections: [] })
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchAssistantOverview()
+    await fetchAssistantTour()
+    expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+      '/api/assistant/overview',
+      '/api/assistant/tour',
+    ])
+  })
+
+  it('sends questions with bounded history and current portal context', async () => {
+    const fetchMock = respond(200, { answer: 'Local answer', sources: [], model: 'qwen' })
+    vi.stubGlobal('fetch', fetchMock)
+    const history = Array.from({ length: 10 }, (_, index) => ({
+      role: (index % 2 ? 'assistant' : 'user') as 'assistant' | 'user',
+      content: `Message ${index}`,
+    }))
+    await askAssistant('Explain this', history, {
+      section_id: 'hazards', place_id: 'PK101', year: null, active_layer_ids: ['forest'],
+      forecast: null, district_risk: null,
+    })
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit]
+    expect(url).toBe('/api/assistant/chat')
+    expect(init.method).toBe('POST')
+    const body = JSON.parse(init.body as string)
+    expect(body.question).toBe('Explain this')
+    expect(body.history).toHaveLength(8)
+    expect(body.history[0].content).toBe('Message 2')
+    expect(body.view).toMatchObject({ section_id: 'hazards', place_id: 'PK101' })
+  })
+
+  it('requests district risk for an exact forecast time and run', async () => {
+    const fetchMock = respond(200, { districts: [] })
+    vi.stubGlobal('fetch', fetchMock)
+    await fetchDistrictRisk(
+      'frost',
+      { layer: 'frost-degree-hours', model: 'gfs', level: 0 },
+      '2026101406',
+      '2026101400',
+    )
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/hazards/district-risk?hazard=frost&model=gfs&level=0&time=2026101406&run=2026101400',
+    )
   })
 
   it('probes the root tile and reports success or failure', async () => {

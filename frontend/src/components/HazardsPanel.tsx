@@ -3,6 +3,7 @@ import { AlertTriangle, CloudFog, CloudRain, Snowflake, ThermometerSun, Wind, ty
 import type { ForecastCatalogue, HazardProduct } from '../api/types'
 import type { ForecastTimesState } from '../data/useForecastTimes'
 import type { HazardProductsState } from '../data/useHazardProducts'
+import type { DistrictRiskState } from '../data/useDistrictRisk'
 import { chooseLayer, formatRun, formatTime, levelsFor } from '../forecast/choice'
 import { useView, viewStore } from '../state/viewState'
 
@@ -17,14 +18,19 @@ const ICONS: Record<string, LucideIcon> = {
 const threshold = (product: HazardProduct, value: number) =>
   `${product.direction === 'above' ? '≥' : '≤'} ${value} ${product.unit}`
 
+const riskLabel = (index: number, count: number) =>
+  index === count - 1 ? 'High risk' : index === 0 ? 'Low risk' : 'Medium risk'
+
 export function HazardsPanel({
   catalogue,
   products,
   times,
+  districtRisk,
 }: {
   catalogue: ForecastCatalogue | null
   products: HazardProductsState
   times: ForecastTimesState
+  districtRisk: DistrictRiskState
 }) {
   const choice = useView((state) => state.forecast)
 
@@ -90,10 +96,13 @@ export function HazardsPanel({
           <p>{active.summary}</p>
           {slot && <small>PMD model run: {formatRun(slot.run)}</small>}
           <div className="hazard-bands">
-            {active.bands.map((band) => (
+            {active.bands.map((band, index) => (
               <div key={band.severity}>
                 <i style={{ background: band.colour }} />
-                <span><strong>{band.label}</strong><small>{threshold(active, band.threshold)}</small></span>
+                <span>
+                  <strong>{riskLabel(index, active.bands.length)} · {band.label}</strong>
+                  <small>{threshold(active, band.threshold)}</small>
+                </span>
               </div>
             ))}
           </div>
@@ -107,6 +116,12 @@ export function HazardsPanel({
             </select>
           </label>
           <p className="hazard-method">Threshold set: {products.data.threshold_version}. Values show the underlying forecast field; severity thresholds are interpretive guidance for screening.</p>
+          {districtRisk.status === 'ready' && (
+            <p className="hazard-method">District shading uses the {districtRisk.data.statistic.label.toLowerCase()}.</p>
+          )}
+          {districtRisk.status === 'error' && (
+            <p className="deck-warning" role="alert">District risk shading could not load: {districtRisk.message}</p>
+          )}
         </section>
       )}
     </div>

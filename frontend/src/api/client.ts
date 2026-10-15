@@ -1,5 +1,18 @@
 import type { FeatureCollection } from 'geojson'
-import type { Catalogue, CropClassificationResult, ForecastTime, HazardCatalogue, Layer, Place, SectionData } from './types'
+import type {
+  Catalogue,
+  AssistantChatMessage,
+  AssistantChatResponse,
+  AssistantOverview,
+  AssistantTour,
+  CropClassificationResult,
+  DistrictRiskResponse,
+  ForecastTime,
+  HazardCatalogue,
+  Layer,
+  Place,
+  SectionData,
+} from './types'
 
 export class ApiError extends Error {
   status: number
@@ -45,7 +58,8 @@ async function responseJson<T>(request: () => Promise<Response>): Promise<T> {
   let response: Response
   try {
     response = await request()
-  } catch {
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
     throw new BackendUnreachableError()
   }
   if (GATEWAY_STATUSES.includes(response.status)) {
@@ -107,10 +121,57 @@ export function fetchHazardProducts() {
   return getJson<HazardCatalogue>('/api/hazards/products')
 }
 
+export const fetchAssistantOverview = () => getJson<AssistantOverview>('/api/assistant/overview')
+
+export const fetchAssistantTour = () => getJson<AssistantTour>('/api/assistant/tour')
+
+export function askAssistant(
+  question: string,
+  history: AssistantChatMessage[],
+  view: {
+    section_id: string | null
+    place_id: string | null
+    year: number | null
+    active_layer_ids: string[]
+    forecast: { layer: string; model: string; level: number; time: string | null } | null
+    district_risk: {
+      hazard: string
+      statistic: string
+      districts: { id: string; name: string; value: number; risk: 'low' | 'medium' | 'high' | null }[]
+    } | null
+  },
+  signal?: AbortSignal,
+) {
+  return responseJson<AssistantChatResponse>(() =>
+    fetch('/api/assistant/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, history: history.slice(-8), view }),
+      signal,
+    }),
+  )
+}
+
 interface ForecastAddress {
   layer: string
   model: string
   level: number
+}
+
+export function fetchDistrictRisk(
+  hazard: string,
+  choice: ForecastAddress,
+  time: string,
+  run: string,
+): Promise<DistrictRiskResponse> {
+  const params = new URLSearchParams({
+    hazard,
+    model: choice.model,
+    level: String(choice.level),
+    time,
+    run,
+  })
+  return getJson<DistrictRiskResponse>(`/api/hazards/district-risk?${params}`)
 }
 
 const forecastQuery = ({ layer, model, level }: ForecastAddress) => `layer=${layer}&model=${model}&level=${level}`

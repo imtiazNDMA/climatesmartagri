@@ -7,12 +7,15 @@ import { createRoot } from 'react-dom/client'
 import { forecastTileUrl, layerGeojsonUrl, layerTileUrl } from '../api/client'
 import { COUNTRY_ID, type Layer } from '../api/types'
 import type { ForecastTimesState } from '../data/useForecastTimes'
+import type { DistrictRiskState } from '../data/useDistrictRisk'
 import type { PortalData } from '../data/usePortalData'
+import type { StoryCamera } from '../api/types'
 import { runOf } from '../forecast/choice'
 import { ForecastFrames, type FrameMap } from '../map/forecastFrames'
 import { basemapById, type BasemapId } from '../map/basemaps'
 import { extremeColours, fillColour, glowStrength, shapeColour } from '../map/layerStyle'
 import { tooltipTable } from '../map/tooltip'
+import { DEFAULT_RISK_COLOURS, districtRiskColour, districtRiskOpacity } from '../map/districtRisk'
 import { clickTarget, effectiveYear } from '../state/selectors'
 import { uiStore, useUi } from '../state/uiState'
 import { useView, viewStore } from '../state/viewState'
@@ -57,7 +60,6 @@ function applyMapTheme(map: MapLibreMap, darkMode: boolean, imagery = false) {
       continue
     }
     if (layer.id === 'districts-fill') {
-      map.setPaintProperty(layer.id, 'fill-color', darkMode ? '#60a5fa' : '#1d4ed8')
       continue
     }
 
@@ -119,8 +121,8 @@ function addBoundaries(map: MapLibreMap, data: PortalData) {
       type: 'fill',
       source: 'districts',
       paint: {
-        'fill-color': '#1d4ed8',
-        'fill-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 0.15, 0],
+        'fill-color': districtRiskColour(DEFAULT_RISK_COLOURS, '#1d4ed8') as never,
+        'fill-opacity': districtRiskOpacity as never,
       },
     })
     map.addLayer({
@@ -262,8 +264,11 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
     map.addSource(id, { type: 'vector', tiles })
     map.addLayer({ id, type: 'fill', source: id, 'source-layer': layer.id, paint: { 'fill-color': colour } })
   } else {
-    // Beyond the data's own detail the map stretches tiles and asks for no more.
-    map.addSource(id, { type: 'raster', tiles, tileSize: 256, maxzoom: layer.max_zoom ?? 22 })
+    // Beyond the data's own detail the map stretches tiles and asks for no more, and outside the
+    // data's extent it asks for none at all (the tile server answers those with 404).
+    map.addSource(id, {
+      type: 'raster', tiles, tileSize: 256, maxzoom: layer.max_zoom ?? 22, bounds: layer.bounds ?? undefined,
+    })
     map.addLayer({ id, type: 'raster', source: id })
   }
 }
@@ -286,11 +291,15 @@ export function MapView({
   darkMode,
   basemap,
   forecastTimes,
+  districtRisk,
+  storyCamera,
 }: {
   data: PortalData
   darkMode: boolean
   basemap: BasemapId
   forecastTimes: ForecastTimesState
+  districtRisk: DistrictRiskState
+  storyCamera: StoryCamera | null
 }) {
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
@@ -298,6 +307,7 @@ export function MapView({
   const framesRef = useRef<ForecastFrames | null>(null)
   const shownForecast = useRef<string | null>(null)
   const frameChoice = useRef<string | null>(null)
+  const riskDistricts = useRef(new Set<string>())
   const [ready, setReady] = useState(false)
   const [boundariesDrawn, setBoundariesDrawn] = useState(false)
   const layers = useView((s) => s.layers)
@@ -312,6 +322,7 @@ export function MapView({
     let cancelled = false
     let map: MapLibreMap | null = null
     const builtLayers = built.current
+    const riskSet = riskDistricts.current
     const country = data.places.find((p) => p.id === COUNTRY_ID)
 
     const selectedBasemap = basemapById(basemap)
@@ -375,6 +386,7 @@ export function MapView({
       framesRef.current = null
       shownForecast.current = null
       frameChoice.current = null
+      riskSet.clear()
       setReady(false)
       setBoundariesDrawn(false)
     }
@@ -387,6 +399,41 @@ export function MapView({
     if (!ready || !map) return
     applyMapTheme(map, darkMode, basemapById(basemap).imagery)
   }, [darkMode, ready, basemap])
+
+  // Story mode moves the map as the guide advances through its narrative chapters.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map || !storyCamera) return
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reducedMotion) {
+      map.jumpTo(storyCamera)
+      return
+    }
+    map.flyTo({ ...storyCamera, essential: false })
+  }, [ready, storyCamera])
+
+  // Shade districts by the selected hazard's low, medium, and high guidance thresholds.
+  useEffect(() => {
+    const map = mapRef.current
+    if (!ready || !map || !map.getSource('districts')) return
+    if (districtRisk.status === 'loading' && !districtRisk.clear) return
+    for (const id of riskDistricts.current) {
+      map.removeFeatureState({ source: 'districts', id }, 'risk')
+    }
+    riskDistricts.current.clear()
+    const colours = districtRisk.status === 'ready' ? districtRisk.data.colours : DEFAULT_RISK_COLOURS
+    map.setPaintProperty(
+      'districts-fill',
+      'fill-color',
+      districtRiskColour(colours, darkMode ? '#60a5fa' : '#1d4ed8') as never,
+    )
+    if (districtRisk.status !== 'ready') return
+    for (const district of districtRisk.data.districts) {
+      if (!district.risk) continue
+      map.setFeatureState({ source: 'districts', id: district.id }, { risk: district.risk })
+      riskDistricts.current.add(district.id)
+    }
+  }, [ready, districtRisk, darkMode])
 
   // Outline the selection and move the map to it.
   useEffect(() => {

@@ -9,6 +9,7 @@
       "forecast_layer": "frost-degree-hours",
       "unit": "°C·h",
       "direction": "above",
+      "district_percentile": 90,
       "summary": "Accumulated cold below 0 °C over the last 24 hours: deeper and longer cold means more frost damage to sensitive crops, especially in exposed and low-lying fields.",
       "bands": [
         { "severity": "advisory", "label": "Light frost", "threshold": 3, "colour": "#facc15" },
@@ -22,6 +23,7 @@
       "forecast_layer": "temperature-max",
       "unit": "°C",
       "direction": "above",
+      "district_percentile": 90,
       "summary": "High daytime temperatures that can stress crops and livestock; crop stage and humidity alter impacts.",
       "bands": [
         { "severity": "advisory", "label": "Elevated heat", "threshold": 35, "colour": "#facc15" },
@@ -35,6 +37,7 @@
       "forecast_layer": "rain-24h",
       "unit": "mm / 24h",
       "direction": "above",
+      "district_percentile": 90,
       "summary": "Rainfall intensity that may cause waterlogging or contribute to flash-flood conditions; not an inundation forecast.",
       "bands": [
         { "severity": "advisory", "label": "Heavy rain", "threshold": 25, "colour": "#facc15" },
@@ -48,6 +51,7 @@
       "forecast_layer": "gust",
       "unit": "m/s",
       "direction": "above",
+      "district_percentile": 90,
       "summary": "Wind gusts that may lodge tall crops, damage orchards, and disrupt field operations.",
       "bands": [
         { "severity": "advisory", "label": "Strong gusts", "threshold": 10, "colour": "#facc15" },
@@ -61,6 +65,7 @@
       "forecast_layer": "visibility",
       "unit": "km",
       "direction": "below",
+      "district_percentile": 10,
       "summary": "Low visibility that may disrupt harvesting, spraying, transport, and livestock movement.",
       "bands": [
         { "severity": "advisory", "label": "Reduced visibility", "threshold": 5, "colour": "#facc15" },

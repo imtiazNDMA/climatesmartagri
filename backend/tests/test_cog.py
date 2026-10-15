@@ -87,10 +87,17 @@ def test_a_converted_raster_is_ready_and_says_where_its_tiles_are(client):
     assert client.get("/api/health").json()["layers"]["forest"] is True
 
 
+def test_a_converted_raster_says_where_its_data_lies_so_the_map_asks_for_no_tiles_beyond(client):
+    west, south, east, north = _layers(client)["forest"]["bounds"]
+    assert west == pytest.approx(70.0, abs=0.01) and east == pytest.approx(71.2, abs=0.01)
+    assert south == pytest.approx(28.8, abs=0.01) and north == pytest.approx(30.0, abs=0.01)
+
+
 def test_a_raster_that_is_not_converted_yet_is_not_ready(client):
     shrub = _layers(client)["shrub-land"]
     assert shrub["status"] == "no-data"
     assert shrub["tile_url"] is None
+    assert shrub["bounds"] is None
     assert client.get("/api/health").json()["layers"]["shrub-land"] is False
 
 

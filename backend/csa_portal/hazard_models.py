@@ -27,6 +27,7 @@ from .forecast import (
     ForecastService,
     Slot,
     write_positions,
+    write_values,
 )
 from .models import COMPUTES
 
@@ -189,6 +190,17 @@ class DerivedService:
 
     def file(self, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None = None) -> Path:
         """The stored file for a derived model at a time, computed if this is the first request for it."""
+        return self._file(layer_id, model_id, level, valid, run, values=False)
+
+    def value_file(
+        self, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None = None
+    ) -> Path:
+        """The derived model's real values, for calculations such as district risk."""
+        return self._file(layer_id, model_id, level, valid, run, values=True)
+
+    def _file(
+        self, layer_id: str, model_id: str, level: int, valid: datetime, run: datetime | None, *, values: bool
+    ) -> Path:
         spec = self._choice(layer_id, level)
         slots = self.times(layer_id, model_id, level)
         if run is None:
@@ -204,17 +216,23 @@ class DerivedService:
         layer = spec.layer()
         folder = self._forecast.cache_dir / "_derived" / layer_id / model_id / str(level)
         scale = "_".join(f"{value:g}" for value in layer.colour_values(level, model_id))
-        path = folder / f"{valid:{HOUR}}_{run:{HOUR}}_{scale}.tif"
-        if path.is_file():
-            return path
-        with self._lock(path):
-            if path.is_file():
-                return path
+        colour_path = folder / f"{valid:{HOUR}}_{run:{HOUR}}_{scale}.tif"
+        value_path = folder / f"{valid:{HOUR}}_{run:{HOUR}}_values.tif"
+        wanted = value_path if values else colour_path
+        if wanted.is_file():
+            return wanted
+        with self._lock((colour_path, value_path)):
+            if wanted.is_file():
+                return wanted
             stack, transform = self._stack(model_id, run, window, spec)
             result = COMPUTES[spec.compute](stack, step_hours(window), spec.params)
-            write_positions(np.ma.masked_invalid(result), transform, path, layer, level, model_id)
+            result = np.ma.masked_invalid(result)
+            if not colour_path.is_file():
+                write_positions(result, transform, colour_path, layer, level, model_id)
+            if not value_path.is_file():
+                write_values(result, transform, value_path)
         self._forecast.prune()
-        return path
+        return wanted
 
     def _choice(self, layer_id: str, level: int) -> DerivedSpec:
         spec = self.spec(layer_id)

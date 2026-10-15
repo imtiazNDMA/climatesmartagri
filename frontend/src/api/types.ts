@@ -58,6 +58,8 @@ export interface Layer {
   tile_url?: string | null
   /** The deepest zoom the data has detail for. */
   max_zoom?: number | null
+  /** Where a raster has data (west, south, east, north); the map asks for no tiles beyond it. */
+  bounds?: [number, number, number, number] | null
 }
 
 export interface ForecastLayer {
@@ -130,6 +132,7 @@ export interface HazardProduct {
   forecast_layer: string
   unit: string
   direction: 'above' | 'below'
+  district_percentile: number
   summary: string
   bands: HazardBand[]
 }
@@ -139,6 +142,62 @@ export interface HazardCatalogue {
   threshold_version: string
   disclaimer: string
   products: HazardProduct[]
+}
+
+export type DistrictRiskLevel = 'low' | 'medium' | 'high'
+
+export interface DistrictRiskResponse {
+  hazard: string
+  forecast_layer: string
+  time: string
+  run: string
+  unit: string
+  threshold_version: string
+  statistic: { percentile: number; label: string }
+  colours: Record<DistrictRiskLevel, string>
+  districts: { id: string; name: string; value: number; risk: DistrictRiskLevel | null }[]
+}
+
+export interface AssistantOverview {
+  title: string
+  summary: string
+  model: string
+  local_model: boolean
+  sections: { id: string; title: string; summary: string; status: string }[]
+  suggested_questions: string[]
+}
+
+export type AssistantTourAction = { type: 'open-section'; section_id: string }
+
+export interface AssistantTourStep {
+  id: string
+  title: string
+  body: string
+  action?: AssistantTourAction
+  camera: StoryCamera
+}
+
+export interface StoryCamera {
+  center: [number, number]
+  zoom: number
+  bearing: number
+  pitch: number
+  duration: number
+}
+
+export interface AssistantTour {
+  steps: AssistantTourStep[]
+}
+
+export interface AssistantChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface AssistantChatResponse {
+  answer: string
+  sources: string[]
+  model: string
 }
 
 export interface Place {

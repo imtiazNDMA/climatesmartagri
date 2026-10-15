@@ -23,7 +23,10 @@ WATCHED = [
 
 
 def serve(port: int) -> None:
-    uvicorn.run("csa_portal.main:create_app", factory=True, app_dir=str(BACKEND), port=port)
+    # 0.0.0.0 so other machines on the same network can reach the API.
+    uvicorn.run(
+        "csa_portal.main:create_app", factory=True, app_dir=str(BACKEND), host="0.0.0.0", port=port
+    )
 
 
 if __name__ == "__main__":

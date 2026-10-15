@@ -547,7 +547,9 @@ class ForecastService:
         """
         colour, values = self._paths(layer, model_id, level, valid, run)
         wanted = colour if want == "colour" else values
-        with self._lock(("file", wanted)):
+        # Colour tiles and district statistics may ask for the same remote field together.
+        # One shared lock keeps those two views from downloading it twice.
+        with self._lock(("file", colour, values)):
             if wanted.is_file():
                 return wanted
             failed = self._failed.get(("download", remote))

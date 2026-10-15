@@ -336,3 +336,33 @@ describe('a value axis that does not start at zero', () => {
     expect(option(lines).yAxis.min).toBeUndefined()
   })
 })
+
+describe('dark mode', () => {
+  const luminance = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+  }
+  const contrast = (a: string, b: string) => {
+    const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+    return (hi + 0.05) / (lo + 0.05)
+  }
+  const CARD = '#18243a'
+  const dark = (spec: ChartSpec, large = false) => chartOption(spec, null, large, true) as Loose
+
+  it('writes every label in a colour that reads on the dark card', () => {
+    const line = dark(lines)
+    const bar = dark({ ...bars, highlights: [0] })
+    const texts = [
+      line.legend.textStyle.color, line.xAxis.axisLabel.color, line.yAxis.axisLabel.color, line.yAxis.nameTextStyle.color,
+      line.series[0].markLine.label.color, bar.series[0].label.color,
+      bar.series[0].data[0].label.color, bar.series[0].data[1].label.color,
+    ]
+    for (const colour of texts) expect(contrast(colour, CARD)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('separates stacked bands in the card colour, and leaves the light theme as it was', () => {
+    expect(dark(stacked).series[0].lineStyle.color).toBe(CARD)
+    expect(option(lines).legend.textStyle.color).toBe('#52514e')
+  })
+})

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import functools
 import logging
+import urllib.parse
 from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Annotated, Any, Literal
@@ -11,12 +13,16 @@ from .geoenv import use_bundled_proj
 
 use_bundled_proj()  # before anything imports rasterio
 
+import rasterio  # noqa: E402
+import rasterio.errors  # noqa: E402
 from fastapi import FastAPI, HTTPException, Query, Request, Response  # noqa: E402
+from rasterio.warp import transform_bounds  # noqa: E402
 from titiler.core.dependencies import parse_color  # noqa: E402
 from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers  # noqa: E402
 from titiler.core.factory import TilerFactory  # noqa: E402
 
 from .catalogue import Layer, load_catalogue  # noqa: E402
+from .assistant import AssistantClient, AssistantService, LmStudioClient, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
 from .hazards import add_hazard_routes, load_hazards  # noqa: E402
 from .hazard_models import DerivedRegistryError, DerivedService, load_hazard_models  # noqa: E402
@@ -44,6 +50,19 @@ def _error(status: int, message: str, reason: str) -> HTTPException:
     return HTTPException(status_code=status, detail={"message": message, "reason": reason})
 
 
+@functools.lru_cache(maxsize=64)
+def _raster_bounds(path: Path, mtime: float) -> list[float] | None:
+    """Where a raster has data, as west, south, east, north in degrees; the map asks for no tiles beyond it.
+
+    Keyed on the file's modified time, so a re-prepared raster is measured afresh."""
+    try:
+        with rasterio.open(path) as source:
+            return [round(v, 6) for v in transform_bounds(source.crs, "EPSG:4326", *source.bounds)]
+    except rasterio.errors.RasterioError as err:
+        logger.warning("Could not read the extent of %s: %s", path, err)
+        return None
+
+
 def _describe_forecast(forecast: ForecastService | None, derived: DerivedService | None) -> dict[str, Any] | None:
     """The forecast description, with any computed hazard models listed alongside the fetched layers."""
     if forecast is None:
@@ -63,6 +82,7 @@ def create_app(
     geojson_providers: Mapping[str, GeoJsonProvider] | None = None,
     forecast_source: ForecastSource | None = None,
     crop_classifier: CropClassifier | None = None,
+    assistant_client: AssistantClient | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     catalogue = load_catalogue(settings.catalogue_path)
@@ -86,7 +106,7 @@ def create_app(
 
     classifier = crop_classifier or CropClassifier(settings.crop_model_dir)
     add_crop_classification_routes(app, classifier)
-    add_hazard_routes(app, load_hazards(settings.hazard_products_path))
+    hazards = load_hazards(settings.hazard_products_path)
 
     # --- Land-cover rasters, served by TiTiler from converted (cloud-optimized) files.
     def raster_file(layer: Layer) -> Path | None:
@@ -100,11 +120,14 @@ def create_app(
         """A layer as the catalogue reports it: a raster is ready only once its file is converted."""
         body = layer.model_dump()
         body["tile_url"] = None
+        body["bounds"] = None
         if layer.kind == "raster" and layer.source:
-            if raster_file(layer) is None:
+            path = raster_file(layer)
+            if path is None:
                 body["status"] = "no-data"
             elif layer.status == "ready":
                 body["tile_url"] = f"{COG_PREFIX}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}.png?layer={layer.id}"
+                body["bounds"] = _raster_bounds(path, path.stat().st_mtime)
         return body
 
     def cog_layer(layer_id: str) -> Layer:
@@ -162,6 +185,27 @@ def create_app(
                 logger.error("Hazard models could not be loaded: %s", err)
             add_forecast_routes(app, forecast, derived)
 
+    add_hazard_routes(app, hazards, places, forecast, derived)
+    local_assistant = assistant_client or LmStudioClient(
+        settings.lm_studio_url,
+        settings.lm_studio_model,
+        settings.lm_studio_timeout,
+        settings.lm_studio_api_key,
+    )
+    add_assistant_routes(
+        app,
+        AssistantService(
+            catalogue,
+            places,
+            section_data,
+            local_assistant,
+            settings.lm_studio_model,
+            forecast_description=_describe_forecast(forecast, derived),
+            hazard_description=hazards.model_dump(mode="json"),
+            local_model=urllib.parse.urlparse(settings.lm_studio_url).hostname in {"127.0.0.1", "localhost", "::1"},
+        ),
+    )
+
     @app.get("/api/health")
     def health() -> dict[str, Any]:
         return {
@@ -169,6 +213,7 @@ def create_app(
             "boundaries_loaded": places.loaded,
             "boundaries_error": boundaries_error,
             "crop_classifier_configured": classifier.configured,
+            "assistant_model": settings.lm_studio_model,
             "layers": {
                 layer.id: places.loaded
                 if layer.kind == "boundary"

@@ -13,6 +13,14 @@ DEFAULT_HAZARD_PRODUCTS = BACKEND_DIR / "hazard_products.json"
 DEFAULT_HAZARD_MODELS = BACKEND_DIR / "hazard_models.json"
 
 
+def positive_float(value: str, fallback: float) -> float:
+    try:
+        parsed = float(value)
+    except ValueError:
+        return fallback
+    return parsed if 0 < parsed < float("inf") else fallback
+
+
 def read_env_file(path: Path) -> dict[str, str]:
     """The NAME=value lines of a .env file. Blank lines and lines starting with # are skipped."""
     values: dict[str, str] = {}
@@ -44,6 +52,11 @@ class Settings:
     crop_model_dir: Path = DEFAULT_CROP_MODEL_DIR
     hazard_products_path: Path = DEFAULT_HAZARD_PRODUCTS
     hazard_models_path: Path = DEFAULT_HAZARD_MODELS
+    # Local OpenAI-compatible model server (LM Studio by default).
+    lm_studio_url: str = "http://127.0.0.1:1234"
+    lm_studio_model: str = "qwen/qwen3.8-27b"
+    lm_studio_api_key: str = ""
+    lm_studio_timeout: float = 60
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -76,4 +89,8 @@ class Settings:
             crop_model_dir=Path(environ.get("CSA_CROP_MODEL_DIR", DEFAULT_CROP_MODEL_DIR)),
             hazard_products_path=Path(environ.get("CSA_HAZARD_PRODUCTS", DEFAULT_HAZARD_PRODUCTS)),
             hazard_models_path=Path(environ.get("CSA_HAZARD_MODELS", DEFAULT_HAZARD_MODELS)),
+            lm_studio_url=environ.get("CSA_LM_STUDIO_URL", "http://127.0.0.1:1234"),
+            lm_studio_model=environ.get("CSA_LM_STUDIO_MODEL", "qwen/qwen3.8-27b"),
+            lm_studio_api_key=environ.get("CSA_LM_STUDIO_API_KEY", ""),
+            lm_studio_timeout=positive_float(environ.get("CSA_LM_STUDIO_TIMEOUT", "60"), 60),
         )

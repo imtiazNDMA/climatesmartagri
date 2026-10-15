@@ -10,6 +10,7 @@ import { ChartFigure } from './ChartFigure'
 import { CropClassificationPanel } from './CropClassificationPanel'
 import { HazardsPanel } from './HazardsPanel'
 import type { HazardProductsState } from '../data/useHazardProducts'
+import type { DistrictRiskState } from '../data/useDistrictRisk'
 import { ForecastPanel } from './ForecastPanel'
 import { fieldArt, layerColours } from './fieldArt'
 import { groupLayers, layerAbout, layerScope } from './panelParts'
@@ -125,11 +126,12 @@ function LayerCard({ layer, on, at }: { layer: Layer; on: boolean; at: number })
   )
 }
 
-export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts }: {
+export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts, districtRisk }: {
   data: PortalData
   sectionData: SectionDataState
   forecastTimes: ForecastTimesState
   hazardProducts: HazardProductsState
+  districtRisk: DistrictRiskState
 }) {
   const sectionId = useView((s) => s.section)
   const full = useView((s) => s.full)
@@ -200,7 +202,12 @@ export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts 
         </div>
       ) : section.kind === 'hazards' ? (
         <div className="panel-body">
-          <HazardsPanel catalogue={data.catalogue.forecast ?? null} products={hazardProducts} times={forecastTimes} />
+          <HazardsPanel
+            catalogue={data.catalogue.forecast ?? null}
+            products={hazardProducts}
+            times={forecastTimes}
+            districtRisk={districtRisk}
+          />
         </div>
       ) : (
         <div className="panel-body">
