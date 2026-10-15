@@ -8,6 +8,9 @@ const fixtures = path.join(root, 'backend', 'tests', 'fixtures')
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // GitHub's runners are slower and busier than a developer's machine: a test that fails once there is tried
+  // again, and Playwright still reports it as flaky rather than hiding it. Locally a failure is a failure.
+  retries: process.env.CI ? 2 : 0,
   use: { baseURL: 'http://127.0.0.1:5183', viewport: { width: 1440, height: 900 } },
   webServer: [
     {

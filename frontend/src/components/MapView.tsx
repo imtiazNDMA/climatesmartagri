@@ -310,6 +310,8 @@ export function MapView({
   const riskDistricts = useRef(new Set<string>())
   const [ready, setReady] = useState(false)
   const [boundariesDrawn, setBoundariesDrawn] = useState(false)
+  // The place the camera last came to rest on, or '' while it is moving. Tests wait on it before clicking.
+  const [cameraOn, setCameraOn] = useState('')
   const layers = useView((s) => s.layers)
   const place = useView((s) => s.place)
   const year = useView((s) => s.year)
@@ -445,7 +447,12 @@ export function MapView({
     if (map.getLayer('selected-province')) map.setFilter('selected-province', ['==', ['get', 'id'], provinceId])
     if (map.getLayer('selected-district')) map.setFilter('selected-district', ['==', ['get', 'id'], districtId])
     const target = selected ?? data.places.find((p) => p.id === COUNTRY_ID)
-    if (target) map.fitBounds(target.bbox, { padding: 48, duration: 600 })
+    if (target) {
+      setCameraOn('')
+      // An interrupted move also ends, so each move names its own place and the last one to end wins.
+      map.once('moveend', () => setCameraOn(target.id))
+      map.fitBounds(target.bbox, { padding: 48, duration: 600 })
+    }
   }, [ready, place, data])
 
   // Keep the map's data layers in step with the active layers list.
@@ -554,5 +561,5 @@ export function MapView({
     return () => window.clearInterval(timer)
   }, [ready, layers, data])
 
-  return <div ref={container} className="map" data-map-ready={ready} data-boundaries-drawn={boundariesDrawn} />
+  return <div ref={container} className="map" data-map-ready={ready} data-boundaries-drawn={boundariesDrawn} data-camera-on={cameraOn} />
 }
