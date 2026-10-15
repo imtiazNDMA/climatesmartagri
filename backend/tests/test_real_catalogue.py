@@ -261,3 +261,26 @@ def test_the_shipped_forecast_layer_list_is_valid_and_served():
     assert fetched[-1] == "frost-degree-hours"
     without_data = [layer["id"] for layer in served["layers"] if not any(layer["levels"].values())]
     assert without_data == ["max-wind-10m", "cin", "theta-se", "vapour-transport"]
+
+
+def test_every_live_section_turns_into_facts_for_a_district_and_the_country():
+    from csa_portal.facts import Facts
+    from csa_portal.places import load_places
+    from csa_portal.sections import build_providers
+
+    settings = Settings.from_env()
+    catalogue = load_catalogue(settings.catalogue_path)
+    places = load_places(settings.boundaries_dir)
+    providers, _ = build_providers(settings.data_dir, settings.boundaries_dir)
+    facts = Facts(catalogue, places, providers)
+    faisalabad = next(p for p in places.places if p.name == "Faisalabad")
+    for section in catalogue.sections:
+        if section.id not in providers:
+            continue
+        for place_id in ("PK", faisalabad.id):
+            answer = facts.section(section.id, place_id)
+            assert answer.facts, (section.id, place_id)
+            assert all(fact.source.startswith(section.title) for fact in answer.facts)
+    # The water balance chart's values are facts that a grounding check can find.
+    water = facts.section("water-balance", "PK", 2047)
+    assert any(f.label == "35% efficiency" and f.value == -38.7 and f.when == "2047" for f in water.facts)

@@ -6,15 +6,14 @@ import json
 import threading
 import urllib.error
 import urllib.request
-from collections.abc import Mapping
 from typing import Any, Literal, Protocol
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from .catalogue import Catalogue
+from .facts import Facts, FactsError
 from .places import COUNTRY_ID, PlaceIndex
-from .sections import SectionDataProvider
 
 
 class AssistantError(Exception):
@@ -132,7 +131,7 @@ class AssistantService:
         self,
         catalogue: Catalogue,
         places: PlaceIndex,
-        providers: Mapping[str, SectionDataProvider],
+        facts: Facts,
         client: AssistantClient,
         model: str,
         *,
@@ -142,7 +141,7 @@ class AssistantService:
     ) -> None:
         self.catalogue = catalogue
         self.places = places
-        self.providers = providers
+        self.facts = facts
         self.client = client
         self.model = model
         self.forecast_description = forecast_description
@@ -269,32 +268,27 @@ class AssistantService:
         sources = ["Portal catalogue", f"Place: {place.name}"]
         if section:
             sources.append(f"Section: {section.title}")
-            provider = self.providers.get(section.id)
-            if provider is not None and section.kind == "standard":
-                year = view.year
-                if section.years is None:
-                    year = None
-                elif year is None:
-                    year = section.years.last
-                elif not section.years.first <= year <= section.years.last:
-                    raise AssistantError(422, "bad-view", f"Year {year} is outside the section's range")
-                target = place
-                while target.level not in section.place_levels and target.parent_id in self.places.by_id:
-                    target = self.places.by_id[target.parent_id]
-                if target.level not in section.place_levels:
-                    target = self.places.by_id[COUNTRY_ID]
-                data = provider(target, year)
-                context["current_section_data"] = {
-                    "place": target.as_dict(),
-                    "year": year,
-                    "figures": data.get("figures", []),
-                    "notes": data.get("notes", []),
-                    "charts": [
-                        {key: chart.get(key) for key in ("title", "headline", "unit") if chart.get(key) is not None}
-                        for chart in data.get("charts", [])
-                    ],
-                }
-                sources.append(f"Current figures: {section.title} / {target.name}")
+            if section.kind == "standard":
+                try:
+                    answer = self.facts.section(section.id, place.id, view.year)
+                except FactsError as err:
+                    if err.reason != "no-data":
+                        raise AssistantError(422, "bad-view", err.message) from err
+                else:
+                    context["current_section_data"] = {
+                        "place": answer.place.as_dict(),
+                        "year": answer.year,
+                        "figures": [
+                            {"label": f.label, "value": f.value, "unit": f.unit} for f in answer.facts if f.chart is None
+                        ],
+                        "notes": answer.notes,
+                        "charts": [
+                            {key: value for key, value in (("title", c.title), ("headline", c.headline), ("unit", c.unit))
+                             if value is not None}
+                            for c in answer.charts
+                        ],
+                    }
+                    sources.append(f"Current figures: {section.title} / {answer.place.name}")
         return context, sources
 
 
