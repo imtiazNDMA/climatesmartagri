@@ -24,6 +24,7 @@ from titiler.core.factory import TilerFactory  # noqa: E402
 from .catalogue import Layer, load_catalogue  # noqa: E402
 from .assistant import AssistantClient, AssistantService, LmStudioClient, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
+from .facts import Facts  # noqa: E402
 from .hazards import add_hazard_routes, load_hazards  # noqa: E402
 from .hazard_models import DerivedRegistryError, DerivedService, load_hazard_models  # noqa: E402
 from .forecast import (  # noqa: E402
@@ -185,7 +186,8 @@ def create_app(
                 logger.error("Hazard models could not be loaded: %s", err)
             add_forecast_routes(app, forecast, derived)
 
-    add_hazard_routes(app, hazards, places, forecast, derived)
+    district_risk = add_hazard_routes(app, hazards, places, forecast, derived)
+    facts = Facts(catalogue, places, section_data, district_risk)
     local_assistant = assistant_client or LmStudioClient(
         settings.lm_studio_url,
         settings.lm_studio_model,
@@ -197,7 +199,7 @@ def create_app(
         AssistantService(
             catalogue,
             places,
-            section_data,
+            facts,
             local_assistant,
             settings.lm_studio_model,
             forecast_description=_describe_forecast(forecast, derived),

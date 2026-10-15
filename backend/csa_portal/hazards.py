@@ -190,7 +190,8 @@ def add_hazard_routes(
     places: PlaceIndex,
     forecast: ForecastService | None = None,
     derived: DerivedService | None = None,
-) -> None:
+) -> DistrictRiskService:
+    """Serve hazard products and district risk; the service is returned so other modules share its cache."""
     district_risk = DistrictRiskService(registry, places, forecast, derived)
 
     @app.get("/api/hazards/products")
@@ -203,3 +204,5 @@ def add_hazard_routes(
             return district_risk.calculate(hazard, model, level, parse_hour(time), parse_hour(run))
         except ForecastError as err:
             raise _http(err) from err
+
+    return district_risk
