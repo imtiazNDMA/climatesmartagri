@@ -72,3 +72,22 @@ def passing():
     from csa_portal.ai.evals.scorers import GATING
 
     return {name: Score(1.0, True, "ok") for name in GATING}
+
+
+def test_any_failure_of_the_judge_gives_no_verdict_instead_of_ending_the_run():
+    class Broken:
+        def complete(self, messages, tools=None, output=None):
+            raise ValueError("unknown url type: '/v1/chat/completions'")
+
+    assert Judge(Broken(), "gemma").assess("Q", "A", []) is None
+
+
+def test_the_judge_is_shown_the_portal_context_the_assistant_saw():
+    model = ScriptedModel([Completion(data=VERDICT)])
+    context = {"portal": {"sections": [{"id": "land-cover", "title": "Land Classification"}]}}
+
+    Judge(model, "gemma").assess("What does the portal show?", "It shows Land Classification.", [], context)
+
+    data = json.loads(model.sent[0][1]["content"])
+    assert data["context"] == context
+    assert "CONTEXT" in JUDGE_PROMPT

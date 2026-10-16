@@ -43,7 +43,7 @@ def main(argv: list[str] | None = None, ask: Callable[[str], str] = input, say: 
         parser.error("no AI store: set CSA_AI_DB or pass --db")
     store = AiStore(db)
 
-    pending = store.unlabelled_results(args.limit)
+    pending = store.unlabelled_results(args.limit, args.judge_model or settings.judge_model or None)
     if not pending:
         say("Nothing to label. Run a live evaluation (npm run eval:live) first.")
         return 0

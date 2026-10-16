@@ -190,10 +190,23 @@ def test_unlabelled_results_come_newest_run_first_with_their_question_and_answer
 
     unlabelled = store.unlabelled_results()
 
-    assert [(u.result_id, u.question, u.answer) for u in unlabelled] == [
-        (newer[1], "Question 1", "Answer 1"), (older[0], "Question 0", "Answer 0"),
-    ]
+    # older[0] gave the same answer to the same case as the labelled newer[0], so it needs no label of its own.
+    assert [(u.result_id, u.question, u.answer) for u in unlabelled] == [(newer[1], "Question 1", "Answer 1")]
     assert store.unlabelled_results(limit=1)[0].result_id == newer[1]
+
+
+def test_the_queue_offers_each_distinct_answer_once_and_only_from_judged_runs(tmp_path):
+    store = AiStore(tmp_path / "ai.db")
+    judged = judged_run(store, "j" * 32, "gemma", [True, True])
+    repeated = judged_run(store, "k" * 32, "gemma", [True], started=NOW - timedelta(hours=1))
+    unjudged = judged_run(store, "u" * 32, None, [True], started=NOW + timedelta(hours=1))
+
+    queue = store.unlabelled_results()
+
+    # "k" repeats judged[0]'s case and answer word for word; "u" was never graded by a judge.
+    assert [u.result_id for u in queue] == judged
+    assert unjudged[0] not in [u.result_id for u in queue] and repeated[0] not in [u.result_id for u in queue]
+    assert [u.result_id for u in store.unlabelled_results(judge_model="glm")] == []
 
 
 def test_calibration_pairs_belong_to_one_judge_and_skip_results_it_did_not_grade(tmp_path):

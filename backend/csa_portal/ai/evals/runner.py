@@ -47,7 +47,7 @@ def run_case(service: AssistantService, case: EvalCase, run_id: str) -> CaseRun:
         return CaseRun("", error.reason, [], time.perf_counter() - started, None, None, None)
     return CaseRun(
         detail.body["answer"], None, detail.steps, time.perf_counter() - started,
-        detail.input_tokens, detail.output_tokens, detail.body["trace_id"], detail.facts,
+        detail.input_tokens, detail.output_tokens, detail.body["trace_id"], detail.facts, detail.context,
     )
 
 
@@ -80,7 +80,7 @@ def run_dataset(
                 if run.error is not None:
                     scores.update({name: Score(None, None, "no answer") for name in JUDGE_SCORERS})
                 else:
-                    scores.update(judge_scores(judge.assess(case.question, run.answer, run.facts), gates=judge_gates))
+                    scores.update(judge_scores(judge.assess(case.question, run.answer, run.facts, run.context), gates=judge_gates))
             answer = run.answer if run.error is None else f"Evaluation error: {run.error}"
             results.append(CaseResult(case.id, repeat, run.trace_id, case_passed(scores), scores, answer))
     summary = summarise(results, repeats)

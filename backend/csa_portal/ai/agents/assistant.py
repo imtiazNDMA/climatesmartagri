@@ -157,6 +157,8 @@ class AnswerDetail:
     input_tokens: int | None
     output_tokens: int | None
     facts: list[Fact] = field(default_factory=list)
+    # The PORTAL CONTEXT the model was shown, so a judge can grade against the same thing.
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 class AssistantService:
@@ -312,7 +314,7 @@ class AssistantService:
             "tool_calls": tool_calls,
             "trace_id": trace.id,
         }
-        return AnswerDetail(body, result.steps, result.input_tokens, result.output_tokens, used_facts)
+        return AnswerDetail(body, result.steps, result.input_tokens, result.output_tokens, used_facts, context)
 
     def _view_facts(self, view: AssistantView) -> list[Fact]:
         if not view.section_id:

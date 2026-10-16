@@ -320,16 +320,29 @@ class AiStore:
             ).fetchall()
         return [LabelRecord(r[0], r[1], r[2], bool(r[3]), r[4], r[5], _time(r[6])) for r in rows]
 
-    def unlabelled_results(self, limit: int = 20) -> list[UnlabelledResult]:
-        """Results nobody has labelled yet whose trace kept its question and answer, newest run first."""
+    def unlabelled_results(self, limit: int = 20, judge_model: str | None = None) -> list[UnlabelledResult]:
+        """Answers waiting for a person's label, newest run first: only from runs a judge graded (a label pairs with
+        a verdict), each distinct answer to a case once, and none whose text was already labelled for that case, so
+        twenty labels are twenty different answers rather than one answer's repeats."""
+        judged = "u.judge_model = ?" if judge_model else "u.judge_model IS NOT NULL"
         with self._lock:
             rows = self._db.execute(
                 "SELECT r.id, r.run_id, r.case_id, t.question_text, t.answer_text FROM eval_results r "
                 "JOIN eval_runs u ON u.id = r.run_id JOIN traces t ON t.id = r.trace_id "
-                "WHERE t.answer_text IS NOT NULL AND NOT EXISTS (SELECT 1 FROM labels l WHERE l.result_id = r.id) "
-                "ORDER BY u.started_at DESC, r.rowid LIMIT ?", (limit,),
+                f"WHERE t.answer_text IS NOT NULL AND {judged} AND NOT EXISTS ("
+                "  SELECT 1 FROM labels l JOIN eval_results r2 ON r2.id = l.result_id JOIN traces t2 ON t2.id = r2.trace_id"
+                "  WHERE r2.case_id = r.case_id AND t2.answer_text = t.answer_text"
+                ") ORDER BY u.started_at DESC, r.rowid",
+                (judge_model,) if judge_model else (),
             ).fetchall()
-        return [UnlabelledResult(*row) for row in rows]
+        seen: set[tuple[str, str]] = set()
+        pending = []
+        for row in rows:
+            if (row[2], row[4]) in seen:
+                continue
+            seen.add((row[2], row[4]))
+            pending.append(UnlabelledResult(*row))
+        return pending[:limit] if limit > 0 else []
 
     def calibration_pairs(self, judge_model: str) -> list[tuple[bool, bool]]:
         """(person said faithful, judge said faithful) for every label on an answer this judge graded."""

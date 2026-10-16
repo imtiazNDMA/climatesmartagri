@@ -47,6 +47,7 @@ class CaseRun:
     output_tokens: int | None
     trace_id: str | None
     facts: list[Fact] = field(default_factory=list)
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 def grounded_numbers(case: EvalCase, run: CaseRun) -> Score:

@@ -159,3 +159,16 @@ def test_the_report_names_the_judge_and_whether_it_is_calibrated(settings):
     report = markdown_report([(ONE, outcome)])
 
     assert "- Judge `gemma` (uncalibrated): faithful 0.0%, mean helpfulness 2.0/5, unavailable 0" in report
+
+
+def test_the_judge_grades_with_the_context_and_facts_the_assistant_was_shown(settings):
+    import json as json_module
+
+    judge_model = ScriptedModel([Completion(data=JudgeVerdict(faithful=True, helpfulness=5, reason="Fine."))])
+    model = ScriptedModel([Completion(text="hello")])
+
+    run_dataset(assistant(settings, model), ONE, mode="live", model="qwen", judge=Judge(judge_model, "gemma"))
+
+    data = json_module.loads(judge_model.sent[0][1]["content"])
+    assert data["context"]["portal"]["title"] == "Climate Smart Agriculture Portal"
+    assert "current_view" in data["context"]

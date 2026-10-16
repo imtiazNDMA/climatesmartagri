@@ -123,6 +123,7 @@ class Settings:
             ai_concurrency=positive_int(environ.get("CSA_AI_CONCURRENCY", "1"), 1),
             ai_queue_seconds=positive_float(environ.get("CSA_AI_QUEUE_SECONDS", "5"), 5),
             otlp_endpoint=environ.get("CSA_OTLP_ENDPOINT", ""),
-            judge_url=environ.get("CSA_JUDGE_URL", environ.get("CSA_LM_STUDIO_URL", "http://127.0.0.1:1234")),
+            # Empty counts as unset: copying .env.example leaves CSA_JUDGE_URL= with no value.
+            judge_url=environ.get("CSA_JUDGE_URL") or environ.get("CSA_LM_STUDIO_URL") or "http://127.0.0.1:1234",
             judge_model=environ.get("CSA_JUDGE_MODEL", ""),
         )

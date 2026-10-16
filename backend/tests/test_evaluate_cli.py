@@ -130,3 +130,13 @@ def test_a_judged_recorded_run_records_the_judge_and_says_it_is_uncalibrated(tin
     assert code == 0
     assert "Judge gemma: 0 labels, uncalibrated" in capsys.readouterr().out
     assert "- Judge `gemma` (uncalibrated): faithful 100.0%" in report.read_text(encoding="utf-8")
+
+
+def test_an_empty_judge_url_falls_back_to_the_assistants_server():
+    """Copying .env.example leaves CSA_JUDGE_URL= empty; that means unset, not an empty address."""
+    from csa_portal.settings import Settings
+
+    settings = Settings._from({"CSA_JUDGE_URL": "", "CSA_LM_STUDIO_URL": "http://gpu:1234"})
+
+    assert settings.judge_url == "http://gpu:1234"
+    assert Settings._from({"CSA_JUDGE_URL": "", "CSA_LM_STUDIO_URL": ""}).judge_url == "http://127.0.0.1:1234"
