@@ -113,7 +113,12 @@ class OpsQueries:
         )
         durations = sorted(row[1] for row in rows)
         errors = [row for row in rows if row[2] == "error"]
+        # Every UTC day of the window, quiet ones too, so a chart shows a day with no traffic instead of skipping it.
         days: dict[str, dict[str, Any]] = {}
+        day = since.astimezone(UTC).date()
+        while day <= self.now().astimezone(UTC).date():
+            days[day.isoformat()] = {"day": day.isoformat(), "requests": 0, "errors": 0}
+            day += timedelta(days=1)
         for started, _, status, *_ in rows:
             day = days.setdefault(started[:10], {"day": started[:10], "requests": 0, "errors": 0})
             day["requests"] += 1

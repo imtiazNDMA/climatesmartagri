@@ -171,7 +171,9 @@ def test_live_metrics_for_the_week_count_every_live_trace_and_no_evaluation_trac
     assert (live["p50_latency_ms"], live["p95_latency_ms"]) == (9000.0, 30000.0)
     assert (live["input_tokens"], live["output_tokens"]) == (2110, 250)
     assert live["error_reasons"] == [{"reason": "assistant-unavailable", "count": 1}, {"reason": "tool-limit", "count": 1}]
-    assert [d["day"] for d in live["by_day"]] == ["2026-10-14", "2026-10-15", "2026-10-16"]
+    # Every day of the window is listed, quiet ones with zeros, so a chart shows an outage instead of skipping it.
+    assert [d["day"] for d in live["by_day"]] == [f"2026-10-{day:02d}" for day in range(9, 17)]
+    assert live["by_day"][1] == {"day": "2026-10-10", "requests": 0, "errors": 0}
 
 
 def test_the_latest_live_run_is_compared_with_the_live_run_before_it(seeded):
