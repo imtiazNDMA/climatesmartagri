@@ -20,11 +20,14 @@ class GroundingScore:
 
 
 _NUMBER = re.compile(r"(?<![\w.])[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\w)")
+# "1.", "2)" or "(3)" opening a line numbers a list; it is not a figure.
+_LIST_MARKER = re.compile(r"(?m)^[ \t]*(?:\d{1,2}[.)]|\(\d{1,2}\))[ \t]+")
 
 
 def answer_numbers(answer: str) -> tuple[float, ...]:
-    """Numbers a reader sees, excluding digits embedded in words such as CO2 or model names."""
-    return tuple(float(match.group().replace(",", "")) for match in _NUMBER.finditer(answer))
+    """Numbers a reader sees, excluding digits embedded in words such as CO2 or model names, and list numbering."""
+    text = _LIST_MARKER.sub("", answer)
+    return tuple(float(match.group().replace(",", "")) for match in _NUMBER.finditer(text))
 
 
 def score_grounding(answer: str, fact_values: Sequence[float], *, relative_tolerance: float = 0.015) -> GroundingScore:

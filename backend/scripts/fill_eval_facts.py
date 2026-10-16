@@ -2,7 +2,8 @@
 
 Run after changing a case's view or expected tools, or after the portal's data changes:
     uv run python backend/scripts/fill_eval_facts.py
-Numbers already listed by hand are kept. Only grounded and any cases are filled: a refusal has nothing to quote.
+Numbers already listed by hand are kept. Every case is filled: an answer that declines a request may still
+quote what the portal holds, and that is grounded; forbidden_values still fail it.
 """
 
 from __future__ import annotations
@@ -32,10 +33,9 @@ def main() -> int:
     for name in args.datasets or ["golden", "adversarial"]:
         dataset = load_dataset(name)
         for case in dataset.cases:
-            if case.expected_kind in {"grounded", "any"}:
-                case.fact_values = sorted(set(case.fact_values) | set(shown_numbers(service, case)))
+            case.fact_values = sorted(set(case.fact_values) | set(shown_numbers(service, case)))
         dataset_path(name).write_text(dump_dataset(dataset), encoding="utf-8", newline="\n")
-        print(f"{name}: filled {sum(case.expected_kind in {'grounded', 'any'} for case in dataset.cases)} cases")
+        print(f"{name}: filled {len(dataset.cases)} cases")
     return 0
 
 
