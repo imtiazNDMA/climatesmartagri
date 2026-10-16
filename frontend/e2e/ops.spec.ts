@@ -86,4 +86,23 @@ test.describe('with the token', () => {
     await expect(bars.first()).toHaveAttribute('aria-label', /agent assistant, 7\.99 s/)
     await expect(page.getByText('Question text not kept for live traces')).toBeVisible()
   })
+
+  test('answers are labelled by keyboard, and typing a note does not change the label', async ({ page }) => {
+    await page.goto('/ops#/labels')
+
+    const before = await page.getByRole('group', { name: 'Judge gemma' }).textContent()
+    await expect(page.getByText('Answer for case-b')).toBeVisible()
+    await page.getByLabel('Your name').fill('E2E officer')
+    // Clicking the answer's text moves the focus out of the inputs, so the keys are shortcuts again.
+    await page.getByText('Answer for case-b').click()
+    await page.keyboard.press('n')
+    await page.keyboard.press('2')
+    await page.getByLabel('Note').fill('yes 5 n')
+    await expect(page.getByRole('radio', { name: 'Not faithful' })).toBeChecked()
+    await expect(page.getByRole('radio', { name: '2' })).toBeChecked()
+    await page.getByRole('button', { name: 'Save label' }).click()
+
+    await expect(page.getByText('Answer for case-c')).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Judge gemma' })).not.toHaveText(before ?? '')
+  })
 })

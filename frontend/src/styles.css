@@ -1463,3 +1463,8 @@ h2, h3 { margin: 0; }
 .ops-span-workflow { background: #eda100; }
 .ops-span-error { background: repeating-linear-gradient(45deg, #e34948, #e34948 4px, #b8322f 4px, #b8322f 8px); }
 .ops-span-time { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); }
+.ops-label { display: grid; gap: 10px; max-width: 900px; }
+.ops-label h3 { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+.ops-label p { margin: 0; }
+.ops-label fieldset { border: 1px solid var(--line); border-radius: 8px; display: flex; gap: 16px; flex-wrap: wrap; padding: 8px 12px; }
+.ops-label label { display: inline-flex; align-items: center; gap: 6px; }
