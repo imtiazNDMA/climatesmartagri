@@ -12,7 +12,7 @@ import type { DistrictRiskState } from '../data/useDistrictRisk'
 import { useView, viewStore } from '../state/viewState'
 
 type Mode = 'overview' | 'chat' | 'tour'
-type ChatEntry = AssistantChatMessage & { sources?: string[] }
+type ChatEntry = AssistantChatMessage & { sources?: string[]; grounded?: boolean; uncheckedNumbers?: number[] }
 
 function applyTourStep(
   step: AssistantTourStep,
@@ -112,10 +112,15 @@ export function AssistantPanel({
         district_risk: districtRisk.status === 'ready' ? {
           hazard: districtRisk.data.hazard,
           statistic: districtRisk.data.statistic.label,
+          time: districtRisk.data.time,
+          run: districtRisk.data.run,
           districts: districtRisk.data.districts,
         } : null,
       }, controller.signal)
-      setMessages((current) => [...current, { role: 'assistant', content: reply.answer, sources: reply.sources }])
+      setMessages((current) => [...current, {
+        role: 'assistant', content: reply.answer, sources: reply.source_names,
+        grounded: reply.grounded, uncheckedNumbers: reply.unchecked_numbers,
+      }])
     } catch (problem) {
       setMessages((current) => current.slice(0, -1))
       if (!(problem instanceof DOMException && problem.name === 'AbortError')) {
@@ -204,6 +209,12 @@ export function AssistantPanel({
                   <p>{message.content}</p>
                   {message.sources && message.sources.length > 0 && (
                     <small>Sources: {message.sources.join(' · ')}</small>
+                  )}
+                  {message.role === 'assistant' && message.grounded === false && (
+                    <small className="assistant-unchecked" role="status">
+                      A figure in this answer could not be checked against the facts used.
+                      {message.uncheckedNumbers?.length ? ` Unchecked: ${message.uncheckedNumbers.join(', ')}.` : ''}
+                    </small>
                   )}
                 </div>
               ))}

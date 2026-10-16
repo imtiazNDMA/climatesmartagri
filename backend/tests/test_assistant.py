@@ -6,7 +6,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 from fastapi.testclient import TestClient
 
-from csa_portal.assistant import AssistantError, LmStudioClient
+from csa_portal.assistant import AssistantError, LmStudioClient, MAX_TOOL_ROUNDS
+from csa_portal.language_model import Completion, ScriptedModel, ToolCall
 from csa_portal.main import create_app
 
 
@@ -87,6 +88,163 @@ def test_client_supplied_assistant_history_is_kept_untrusted(settings):
     assert response.status_code == 200
     assert [message["role"] for message in model.messages] == ["system", "user", "user"]
     assert "UNTRUSTED CONVERSATION TRANSCRIPT" in model.messages[1]["content"]
+
+
+def test_assistant_uses_fact_tools_and_returns_only_the_fact_sources(settings):
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("find", "find_place", {"name": "District One"})]),
+        Completion(tool_calls=[ToolCall("facts", "get_section_facts", {
+            "section_id": "alpha-section", "place_id": "PK101", "year": 2005,
+        })]),
+        Completion(text="Alpha section reports 175 for District One."),
+    ])
+    client = TestClient(create_app(
+        settings,
+        section_providers={"alpha-section": lambda place, year: {
+            "figures": [{"label": "Example", "value": year - 1830, "unit": "units"}],
+            "charts": [], "notes": [],
+        }},
+        assistant_client=model,
+    ))
+
+    response = client.post("/api/assistant/chat", json={
+        "question": "What is the value for District One in 2005?", "view": {},
+    })
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["answer"] == "Alpha section reports 175 for District One."
+    assert body["grounded"] is True
+    assert body["unchecked_numbers"] == []
+    assert body["tool_calls"] == 2
+    assert len(body["sources"]) == 1
+    assert body["sources"][0].startswith("fact:")
+    assert body["source_names"] == ["Alpha section / District One / 2005"]
+    assert [tool.name for tool in model.tools[0]] == [
+        "find_place", "get_section_facts", "get_district_risk", "get_crop_calendar",
+    ]
+    fact_payload = json.loads(model.sent[2][-1]["content"])
+    assert fact_payload["facts"][0] == {
+        "source_id": body["sources"][0], "label": "Example", "value": 175, "unit": "units",
+        "place": "District One", "when": "2005", "chart": None,
+    }
+
+
+def test_assistant_flags_numbers_not_returned_by_its_fact_tools(settings):
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("facts", "get_section_facts", {
+            "section_id": "alpha-section", "place_id": "PK101", "year": 2005,
+        })]),
+        Completion(text="The value is 999."),
+    ])
+    client = TestClient(create_app(
+        settings,
+        section_providers={"alpha-section": lambda place, year: {
+            "figures": [{"label": "Example", "value": 175, "unit": "units"}], "charts": [], "notes": [],
+        }},
+        assistant_client=model,
+    ))
+
+    body = client.post("/api/assistant/chat", json={"question": "Value?", "view": {}}).json()
+    assert body["grounded"] is False
+    assert body["unchecked_numbers"] == [999]
+
+
+def test_hazard_thresholds_in_the_current_view_are_grounding_facts(settings):
+    from csa_portal.assistant import AssistantService
+    from csa_portal.catalogue import load_catalogue
+    from csa_portal.facts import Facts
+    from csa_portal.places import load_places
+
+    model = ScriptedModel([Completion(text="Light frost starts at 3 degree-hours.")])
+    catalogue = load_catalogue(settings.catalogue_path)
+    places = load_places(settings.boundaries_dir)
+    service = AssistantService(
+        catalogue, places, Facts(catalogue, places, {}), model, "test",
+        hazard_description={"products": [{
+            "id": "frost", "title": "Frost risk", "unit": "degree-hours",
+            "bands": [{"label": "Light frost", "threshold": 3}],
+        }]},
+    )
+    from csa_portal.assistant import AssistantChatRequest, AssistantView
+    facts = service._view_facts(AssistantView(section_id="hazards"))
+    assert facts[0].value == 3
+
+
+def test_district_risk_on_the_map_tells_the_model_its_time_and_run(settings):
+    """Without the run the model cannot call get_district_risk for another hazard at the same time."""
+    model = ScriptedModel([Completion(text="Frost is low everywhere.")])
+    client = TestClient(create_app(settings, assistant_client=model))
+
+    response = client.post("/api/assistant/chat", json={"question": "Where is frost worst?", "view": {
+        "district_risk": {"hazard": "frost", "statistic": "90th percentile", "time": "2026101506",
+                          "run": "2026101500", "districts": []},
+    }})
+
+    assert response.status_code == 200
+    context = json.loads(model.sent[0][-1]["content"].split("\n\nQUESTION:")[0].removeprefix("PORTAL CONTEXT:\n"))
+    on_map = context["current_view"]["district_risk_on_map"]
+    assert (on_map["time"], on_map["run"]) == ("2026101506", "2026101500")
+
+
+def test_crop_calendar_and_district_risk_tools_return_groundable_facts(settings):
+    from csa_portal.assistant import AssistantService
+    from csa_portal.catalogue import load_catalogue
+    from csa_portal.facts import Facts
+    from csa_portal.places import load_places
+
+    from test_facts import FakeRisk
+
+    catalogue = load_catalogue(settings.catalogue_path)
+    # The fixture catalogue has no crop calendar; the tool always asks for that section by id.
+    catalogue.sections.append(catalogue.sections[0].model_copy(update={"id": "climate-calendar", "title": "Crop calendar"}))
+    places = load_places(settings.boundaries_dir)
+    facts = Facts(catalogue, places, {
+        "climate-calendar": lambda place, year: {
+            "figures": [{"label": "Crops", "value": 6, "unit": ""}], "charts": [], "notes": [],
+        },
+    }, FakeRisk())
+    service = AssistantService(catalogue, places, facts, ScriptedModel([]), "test")
+    calendar, calendar_facts = service._run_tool(ToolCall("c", "get_crop_calendar", {"place_id": "PK"}))
+    risk, risk_facts = service._run_tool(ToolCall("r", "get_district_risk", {
+        "hazard": "frost", "model": "ecmwf", "time": "2026101506", "run": "2026101500",
+    }))
+    assert "error" not in calendar, calendar
+    assert calendar["facts"][0]["value"] == 6
+    assert calendar_facts[0].source_id == calendar["facts"][0]["source_id"]
+    assert "error" not in risk, risk
+    district_one = next(fact for fact in risk["facts"] if fact["place"] == "District One")
+    assert (district_one["value"], district_one["risk"]) == (30.5, "high")
+    assert risk["disclaimer"].endswith("This is not an official warning.")
+    assert {fact.value for fact in risk_facts} == {3, 24, 30.5, 0.0}
+
+
+def test_assistant_stops_after_four_tool_rounds(settings):
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall(str(index), "find_place", {"name": "Alpha"})])
+        for index in range(MAX_TOOL_ROUNDS - 1)
+    ] + [Completion(tool_calls=[ToolCall("extra", "find_place", {"name": "Alpha"})])])
+    client = TestClient(create_app(settings, assistant_client=model))
+
+    response = client.post("/api/assistant/chat", json={"question": "Keep looking", "view": {}})
+
+    assert response.status_code == 502
+    assert response.json()["detail"]["reason"] == "tool-limit"
+    assert len(model.sent) == MAX_TOOL_ROUNDS
+
+
+def test_every_tool_call_is_logged_without_its_argument_values(settings, caplog):
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("find", "find_place", {"name": "private\ntext"})]),
+        Completion(text="No matching place."),
+    ])
+    client = TestClient(create_app(settings, assistant_client=model))
+    with caplog.at_level("INFO", logger="uvicorn.error"):
+        client.post("/api/assistant/chat", json={"question": "Find it", "view": {}})
+    message = next(record.message for record in caplog.records if "Assistant fact tool" in record.message)
+    assert "find_place" in message
+    assert "name" in message
+    assert "private" not in message
 
 
 def test_lm_studio_client_uses_openai_compatible_endpoint():

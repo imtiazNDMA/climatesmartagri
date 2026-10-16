@@ -57,23 +57,33 @@ def main() -> int:
     parser.add_argument("--mode", choices=("recorded", "live"), default="recorded")
     parser.add_argument("--golden", type=Path, default=BACKEND_DIR / "evaluations" / "assistant_golden.json")
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--case", action="append", dest="case_ids", help="Run only this case id; repeat as needed")
     args = parser.parse_args()
 
     golden = load_golden_set(args.golden)
+    if args.case_ids:
+        requested = set(args.case_ids)
+        golden.cases = [case for case in golden.cases if case.id in requested]
+        missing = requested - {case.id for case in golden.cases}
+        if missing:
+            parser.error("unknown case ids: " + ", ".join(sorted(missing)))
     recorded = [case.recorded_answer for case in golden.cases] if args.mode == "recorded" else None
     settings = Settings.from_env()
     service = build_service(settings, recorded)
     scores = []
     for case in golden.cases:
         started = time.perf_counter()
+        tool_calls = 0
+        result: dict = {}
         try:
             result = service.answer(
                 AssistantChatRequest(question=case.question, view=AssistantView.model_validate(case.view.model_dump()))
             )
             answer = result["answer"]
+            tool_calls = result.get("tool_calls", 0)
         except ModelError as error:
             answer = f"Evaluation error: {error.reason}: {error.message}"
-        scores.append(score_answer(case, answer, time.perf_counter() - started))
+        scores.append(score_answer(case, answer, time.perf_counter() - started, tool_calls))
         print(f"{case.id}: {'pass' if scores[-1].passed else 'FAIL'} ({scores[-1].latency_seconds:.2f}s)")
 
     model = "scripted-recording" if args.mode == "recorded" else settings.lm_studio_model

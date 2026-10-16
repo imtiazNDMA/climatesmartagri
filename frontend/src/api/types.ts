@@ -196,8 +196,14 @@ export interface AssistantChatMessage {
 
 export interface AssistantChatResponse {
   answer: string
+  /** Fact source ids, for tracing and evaluation. */
   sources: string[]
+  /** Readable names of the same sources, for readers. */
+  source_names: string[]
   model: string
+  grounded: boolean
+  unchecked_numbers: number[]
+  tool_calls: number
 }
 
 export interface Place {

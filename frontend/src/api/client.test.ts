@@ -113,7 +113,10 @@ describe('client', () => {
   })
 
   it('sends questions with bounded history and current portal context', async () => {
-    const fetchMock = respond(200, { answer: 'Local answer', sources: [], model: 'qwen' })
+    const fetchMock = respond(200, {
+      answer: 'Local answer', sources: ['fact:123'], source_names: ['Alpha / Pakistan'], model: 'qwen', grounded: false,
+      unchecked_numbers: [999], tool_calls: 1,
+    })
     vi.stubGlobal('fetch', fetchMock)
     const history = Array.from({ length: 10 }, (_, index) => ({
       role: (index % 2 ? 'assistant' : 'user') as 'assistant' | 'user',

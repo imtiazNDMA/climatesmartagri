@@ -134,6 +134,8 @@ h2, h3 { margin: 0; }
 .assistant-message.user span { text-align: right; }
 .assistant-message p { margin: 0; padding: 10px 12px; border-radius: 14px; background: var(--panel-bg); line-height: 1.45; white-space: pre-wrap; }
 .assistant-message.user p { background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.assistant-unchecked { display: block; margin-top: 5px; color: #9a3412; font-weight: 650; }
+:root[data-theme='dark'] .assistant-unchecked { color: #fdba74; }
 .assistant-message.assistant p { border-bottom-left-radius: 4px; }
 .assistant-message > small { color: var(--muted); font-size: 10.5px; line-height: 1.35; }
 .assistant-thinking { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); font-size: 13px; }

@@ -50,8 +50,9 @@ def test_the_recorded_golden_set_passes_and_covers_the_ticket_scope():
 
 def test_markdown_report_summarises_scores_and_answers():
     golden = load_golden_set(GOLDEN_SET)
-    scores = [score_answer(case, case.recorded_answer, 0.25) for case in golden.cases[:2]]
+    scores = [score_answer(case, case.recorded_answer, 0.25, index) for index, case in enumerate(golden.cases[:2])]
     report = markdown_report(golden, scores, "scripted", "recorded")
     assert "Overall: 2/2 (100.0%)" in report
     assert "Mean latency: 0.25 s" in report
+    assert "Used fact tools: 1/2" in report
     assert "## Answers" in report
