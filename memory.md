@@ -1,6 +1,6 @@
 # CSA Portal — session memory
 
-Written 2026-10-05. A record of what was built in this session, the decisions behind it, and what is still open, so the next session can pick up without re-deriving it.
+Written 2026-10-05, last updated 2026-10-15. A record of what was built in this session, the decisions behind it, and what is still open, so the next session can pick up without re-deriving it.
 
 ## What this is
 
@@ -10,23 +10,24 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 
 - **Start:** double-click `start-portal.cmd`, or `npm run dev` from the repo root.
 - **Addresses:** frontend `http://127.0.0.1:9080`, backend on port 9988. The user chose these ports. Both `npm run dev` and the production scripts bind to `0.0.0.0`, so other machines on the same network can reach the portal at `http://<host-IP>:9080` (frontend proxies `/api` to the backend, so no CORS; Windows Firewall may need an inbound allow for Node/Python).
-- **Local AI guide:** backend-only LM Studio integration at `http://127.0.0.1:1234`, model id `qwen/qwen3.8-27b` by default. Configure with `CSA_LM_STUDIO_*`. Overview and guided tour are deterministic; chat sends compact current-view context to Qwen.
+- **Local AI guide:** backend-only LM Studio integration at `http://127.0.0.1:1234`, model id `qwen/qwen3.8-27b` by default. Configure with `CSA_LM_STUDIO_*`. Overview and guided tour are deterministic; chat sends compact current-view context to Qwen, built through the facts module and sent through the language model seam (see *AI integration*). A grounded answer takes about 10 s on this machine.
 - **Tests:** `npm test` (pytest, Vitest, Playwright). Browser tests use their own ports (8010 and 5183) and a fixture catalogue, so they can run while the portal is open.
-- **At the end of the session:** 159 backend, 124 frontend logic and 58 browser tests passing.
+- **On 2026-10-15:** 287 backend, 241 frontend logic and 75 browser tests passing. CI (`.github/workflows/ci.yml`: `quality` and `e2e` jobs) runs on every pull request; Playwright retries twice on CI only.
 
 ## State of the code
 
-- **Branch:** `feat/portal-data`, on top of `feat/portal-shell`, on top of `docs/csa-portal-shell-spec`, on top of `main`. `feat/portal-data` was pushed to GitHub on 2026-10-12 and is the only branch there; nothing is merged.
-- **Uncommitted and not mine to touch:** `CLAUDE.md`, `docs/agents/`, the deleted `crop_water_balance_trend.png`, `.vscode/`, and the untracked `data/geospatial/vectors/sajid(2oct)/` folder (about 700 MB).
+- **Branch:** `feat/portal-data` is GitHub's default branch for `imtiazNDMA/climatesmartagri` (public). Since 2026-10-15 work goes on a branch per ticket (`feat/<issue>-<slug>`, `fix/...`) with a pull request into `feat/portal-data`, merged with a merge commit once CI is green; `Closes #N` in the PR closes the issue. `main` and the shell branches beneath have never been pushed.
+- **Kept out of git:** `data/geospatial/vectors/sajid(2oct)/` (about 700 MB) and `Aamir Ai  Project/` (2.4 GB: a separate crop-disease project with wheat, cotton and sugarcane data and a treatment guide), both in `.gitignore`.
+- **Domain language and decisions:** `CONTEXT.md` (glossary: place, guidance vs warning, district risk, crop stage, fact, grounded, view action, advisory, crop health screening) and `docs/adr/` (0001 local model by default, 0002 advisories need officer approval).
 - **Design documents:** spec and plan for the shell only, under `docs/superpowers/`. Everything after the shell was built from short designs agreed in chat.
 
 ## Sections
 
 | Section | State | Source |
 | --- | --- | --- |
-| Land Classification | Live: 4 raster layers, figures and charts per district | `data/geospatial/rasters/*.tif` |
+| Land Classification | Live: 4 raster layers (bare land shown as "Others"), figures and charts per district | `data/geospatial/rasters/*.tif` |
 | Climate Smart Irrigation Practices | Live: 4 map layers, figures and charts per district | `Irr_Prac.shp`, irrigation sheet |
-| Greenhouse-gas emissions | Live: charts, 1994–2021, national | `Pakistan_GHG_1994_2021_Excel_Data.xlsx` |
+| Greenhouse-gas emissions | Live: charts, 1994–2025, national | `Pakistan_GHG_1994_2021_Excel_Data.xlsx` |
 | Crop water balance | Live: charts, 2026–2047, national | `CRW(efficiency) 25sep.xlsx` |
 | Food security projections | Live: charts, 2026–2047, national | `food security projection CSA 17 sep.xlsx` |
 | Climate-smart crop calendar | Live: calendar chart per province | `apps/climate calender 28 sep 2026/script.js` |
@@ -48,7 +49,7 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Layer kinds:** `geojson` (shapes coloured from the legend by a feature property), `raster` with a `source` file (served by TiTiler), `boundary`.
 - **TiTiler** is mounted inside the backend at `/api/cog`. It only opens catalogue layers, never an arbitrary path, and colours tiles from the layer's legend.
 - **Section data** (`backend/csa_portal/sections.py`): one provider per section returns figures, notes and chart specs. Charts are described by the backend and drawn generically by the frontend.
-- **Chart kinds:** `line`, `stacked-area`, `bar` (ECharts, SVG renderer) and `calendar` (custom component).
+- **Chart kinds:** `line`, `stacked-area`, `bar` (ECharts, SVG renderer); custom components for `calendar`, `shares`, `diverging`, `counts`, `balance`, `outlook`, `explorer` and `grid`.
 - **View state:** one Zustand store (open section, full view, active layers, place, year), mirrored to the URL: `section`, `view=charts`, `layers`, `hidden`, `place`, `year`.
 - **Place fallback:** a section without figures at the selected level uses the nearest level above that has them (district → province → country).
 
@@ -101,6 +102,25 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **A derived time appears only when its input window is full enough.** `times()` keeps a slot only when the run offers at least `min_points` (4) input valids inside the last `window_hours` (24). Computing reads each window time's real-value file, stacks them, runs the pure function in `backend/csa_portal/models/frost.py`, and caches the result under `_derived/`. First view of a window costs up to 8 downloads; the frontend's `/api/forecast/cog/info` prefetch warms it.
 - **Adding another model is JSON plus a pure function.** Heat degree-hours, heavy-rain rolling totals and wind lodging follow the same pattern: a compute function registered in `models/__init__.py`'s `COMPUTES`, a spec in `hazard_models.json`, and a band set in `hazard_products.json`.
 
+## Changes on 2026-10-15
+
+- **Land-cover tiles no longer 404 outside Pakistan.** Each ready raster layer in `/api/catalogue` carries `bounds` (its extent in degrees, read from the file and cached by modified time), and the map passes them to MapLibre so it asks for no tiles beyond. The 404s were TiTiler correctly answering "outside bounds" for every tile on screen.
+- **ECharts 6:** `grid.containLabel` replaced by `outerBoundsMode: 'same', outerBoundsContain: 'axisLabel'`.
+- **Renamed at the user's request:** sections "Land Classification" and "Climate Smart Irrigation Practices"; the land-cover class "Bare land" is "Others" in charts and figures (the map layer and its legend still say "Bare land"; the user was asked and has not said). The portal title is 40px.
+- **The land-cover shares chart shows no percentages:** headline "How <place>'s land is classified", no values beside the bars, no table.
+- **Dark mode reads at 4.5:1 or better everywhere.** ECharts takes a dark palette (`chartOption(spec, year, large, dark)`, theme from `state/useDarkTheme.ts`); dark-only CSS overrides at the end of `styles.css` cover the water balance, explorer, calendar, irrigation counts and diverging titles. Light mode is unchanged. A contrast audit (every visible HTML and SVG text against its real background, panel and full view) found these; the tests did not.
+- **Full-view side titles no longer collide** on cards narrower than 520px (two to a row at about 1600px): container queries shrink names and titles, and the irrigation chart's left title may reach over the name column.
+- **CI flake fixed:** the map-click test clicked while the camera was still moving to the place it had just selected. The map now sets `data-camera-on` to the place id when a move ends; tests wait on it instead of on fixed timeouts.
+
+## AI integration (planned and started 2026-10-15)
+
+- **Plan:** PRD issue #1 with 20 sub-issues (#2–#21), linked as GitHub sub-issues with native blocking dependencies, labelled `ai` plus a triage label. Tracks: foundations (#2–#5), assistant v2 (#6–#10), advisories (#11–#14), crop health (#15–#18), research (#19–#21).
+- **User decisions:** local model by default with a hosted model optional per deployment (ADR 0001); AI-drafted advisories are approved by an officer before they leave the portal (ADR 0002); all four tracks in scope.
+- **Done:** #3 facts (`backend/csa_portal/facts.py`: `section`, `district_risk`, `find_place`, `portal`; every value a chart draws is a fact with a source) and #2 language model seam (`backend/csa_portal/language_model.py`: `chat`, `complete` with tools or a pydantic output shape, `stream`; adapters `LmStudioModel` and `ScriptedModel`). Merged as PRs #22 and #23.
+- **Qwen3 on LM Studio files a schema-bound reply as `reasoning_content` and leaves `content` empty.** The adapter reads it from there. Found only by testing against the real server; the fake server could not show it.
+- **Next on the critical path:** #4 evaluation suite (baseline score of the current assistant before #7 changes it), then #7 tools over facts. #5 and #6 are also unblocked.
+- **The separate AI project** (`Aamir Ai  Project/`) covers wheat, cotton and sugarcane with a treatment guide; #15 and #17 plan to bring it in. The portal's own classifier (`improved-002`) is Rice and Maize only and untested on Pakistan field images.
+
 ## Decisions the user made
 
 - Audience is general disaster management stakeholders; everything must be interactive.
@@ -148,5 +168,16 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Units for water and food** are still unknown.
 - **Only the shell had an independent code review.** Everything on `feat/portal-data` has tests but no second reviewer.
 - **Deferred from the shell review:** search says "No places match" when boundaries are missing; lenient number parsing in the URL; the URL is rewritten on every change; some validation errors use a different shape; "Check again" gives no feedback when the backend is still down.
-- **Only `feat/portal-data` is on GitHub, and nothing is merged.** `main` and the two branches between have not been pushed, so there is no base to open a pull request against yet. The user has not said whether to merge to `main` or open a pull request.
-- **GitHub triage labels** (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) were created on `imtiazNDMA/climatesmartagri` at the start of the session.
+- **`main` has never been pushed.** Everything merges into `feat/portal-data`, the default branch; the user has not said whether it should ever reach `main`.
+- **This repo is public, and this file names the PMD server's address and port** (*Weather forecast*). The user was told on 2026-10-15 and has not decided whether to remove it.
+- **AI decisions waiting on the user:** #12 how officers sign in (local accounts or NDMA single sign-on), #21 which documents the assistant may answer from, #15 which agronomist reviews management guidance.
+- **The `/api/sections/{id}/data` route still has its own copy of the place fallback**; moving it onto the facts module is a small follow-up.
+- **GitHub labels:** the triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) and `ai` exist on `imtiazNDMA/climatesmartagri`.
+
+## AI platform core (designed 2026-10-16)
+
+- **Goal:** turn the assistant into an agentic AI platform with proper evaluation and a monitoring dashboard; the user also wants it as a CV piece.
+- **Spec:** `docs/superpowers/specs/2026-10-16-ai-platform-core-design.md`, PR #26 (branch `docs/ai-platform-core-spec`). The user approved a written spec for this one because it spans about 7 PRs; short chat designs still apply to smaller builds.
+- **Issues:** PRD #27 (sub-issue of #1) with steps #28 runtime, #29 tracing and store, #30 evaluation v2, #31 local judge, #32 ops API, #33 `/ops` dashboard, each blocked by the one before; #28 is blocked by #7. #5 is covered by #29 and #30.
+- **User decisions:** own span schema in SQLite with OpenTelemetry GenAI names and optional OTLP export (not Langfuse/Phoenix or LangGraph); thin in-house agent runtime, workflows as plain Python; LLM judge is a second **local** model, trusted only once calibrated against human labels (20+ labels, kappa 0.6+); dashboard at `/ops` in the portal behind `CSA_OPS_TOKEN`.
+- **Next:** step 0, finish #7 on `feat/7-assistant-fact-tools` and run the live evaluation for the before-platform number, then the implementation plan for #28.

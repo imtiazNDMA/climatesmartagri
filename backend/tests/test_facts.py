@@ -41,6 +41,8 @@ def test_a_section_without_figures_for_a_district_answers_for_the_country(facts)
         ("Land equipped for irrigation", 41.33, "million acres", "Pakistan", "Beta section / Pakistan"),
     ]
     assert answer.notes == ["Figures are for the latest survey."]
+    assert answer.facts[0].source_id.startswith("fact:")
+    assert answer.facts[0].source_id == facts.section("beta-section", "PK").facts[0].source_id
 
 
 def test_a_section_with_years_answers_for_its_latest_year_unless_asked_for_another(facts):

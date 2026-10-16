@@ -137,6 +137,8 @@ export function askAssistant(
     district_risk: {
       hazard: string
       statistic: string
+      time: string
+      run: string
       districts: { id: string; name: string; value: number; risk: 'low' | 'medium' | 'high' | null }[]
     } | null
   },

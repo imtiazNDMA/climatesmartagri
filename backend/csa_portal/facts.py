@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
+import hashlib
 from typing import Any, Protocol
 
 from .catalogue import Catalogue
@@ -39,6 +40,13 @@ class Fact:
     source: str
     # The chart the value is drawn in, or None for a figure.
     chart: str | None = None
+
+    @property
+    def source_id(self) -> str:
+        """Stable public id for the source behind this fact, without exposing a filesystem path."""
+        identity = "\x1f".join((self.source, self.label, str(self.value), self.unit, self.place, self.when or "", self.chart or ""))
+        digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:12]
+        return f"fact:{digest}"
 
 
 @dataclass(frozen=True)
