@@ -32,6 +32,9 @@ backend/rasters/
 # Forecast rasters fetched from PMD on demand (a cache; safe to delete)
 backend/forecast/
 
+# The AI store: traces and evaluation results (CSA_AI_DB), with SQLite's WAL files.
+backend/ai.db*
+
 # Browser automation logs
 .playwright-mcp/
 
