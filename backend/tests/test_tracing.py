@@ -139,3 +139,39 @@ def test_finished_traces_also_go_to_the_exporter():
         pass
 
     assert [t.id for t in exporter.traces] == [t.id for t in sink.traces]
+
+
+def test_a_traced_model_records_one_llm_span_per_call_with_its_usage():
+    from csa_portal.ai.model import Completion, ScriptedModel, ToolCall
+    from csa_portal.ai.tracing import traced
+
+    sink = Sink()
+    model = traced(ScriptedModel([
+        Completion(tool_calls=[ToolCall("a", "lookup", {})], input_tokens=300, output_tokens=12),
+        Completion(text="Done."),
+    ]), "qwen")
+    with Tracer(sink).trace("assistant", model="qwen", question="Q"):
+        model.complete([{"role": "user", "content": "Q"}], tools=[])
+        model.complete([{"role": "user", "content": "Q"}])
+
+    first, second = sink.traces[0].spans
+    assert (first.kind, first.name) == ("llm", "chat qwen")
+    assert first.attributes == {
+        "gen_ai.operation.name": "chat", "gen_ai.request.model": "qwen",
+        "gen_ai.usage.input_tokens": 300, "gen_ai.usage.output_tokens": 12, "csa.tool_calls": 1,
+    }
+    assert "gen_ai.usage.input_tokens" not in second.attributes
+    assert sink.traces[0].input_tokens == 300
+
+
+def test_a_chat_only_model_stays_chat_only_when_traced():
+    from csa_portal.ai.tracing import traced
+
+    class ChatOnly:
+        def chat(self, messages):
+            return "Plain."
+
+    model = traced(ChatOnly(), "fake")
+
+    assert not hasattr(model, "complete")
+    assert model.chat([]) == "Plain."

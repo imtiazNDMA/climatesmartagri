@@ -194,3 +194,43 @@ class Tracer:
 def _total(spans: list[Span], attribute: str) -> int | None:
     values = [s.attributes[attribute] for s in spans if isinstance(s.attributes.get(attribute), int)]
     return sum(values) if values else None
+
+
+class _TracedChat:
+    """A model that can only chat, with each call an `llm` span."""
+
+    def __init__(self, inner: Any, model_name: str) -> None:
+        self.inner = inner
+        self.model_name = model_name
+
+    def _attributes(self) -> dict[str, Any]:
+        return {"gen_ai.operation.name": "chat", "gen_ai.request.model": self.model_name}
+
+    def chat(self, messages: list[dict[str, Any]]) -> str:
+        with span("llm", f"chat {self.model_name}", **self._attributes()):
+            return self.inner.chat(messages)
+
+
+class TracedModel(_TracedChat):
+    """A language model whose every `complete` and `chat` call is an `llm` span with request and usage attributes."""
+
+    def complete(self, messages: list[dict[str, Any]], tools: Any = None, output: Any = None) -> Any:
+        with span("llm", f"chat {self.model_name}", **self._attributes()) as current:
+            reply = (
+                self.inner.complete(messages, tools=tools)
+                if output is None
+                else self.inner.complete(messages, tools=tools, output=output)
+            )
+            usage = {"gen_ai.usage.input_tokens": reply.input_tokens, "gen_ai.usage.output_tokens": reply.output_tokens}
+            current.set(**{name: value for name, value in usage.items() if value is not None})
+            current.set(**{"csa.tool_calls": len(reply.tool_calls)})
+            return reply
+
+    def stream(self, messages: list[dict[str, Any]]) -> Iterator[str]:
+        # Streaming is traced with #6; a span cannot safely stay open across a generator's yields here.
+        return self.inner.stream(messages)
+
+
+def traced(model: Any, model_name: str) -> Any:
+    """`model` with its calls traced. A chat-only model stays chat-only, so callers can still tell."""
+    return TracedModel(model, model_name) if hasattr(model, "complete") else _TracedChat(model, model_name)

@@ -47,11 +47,14 @@ class ToolCall:
 
 @dataclass(frozen=True)
 class Completion:
-    """What the model gave back: words, tool calls to run before it can answer, or an object of the asked shape."""
+    """What the model gave back: words, tool calls to run before it can answer, or an object of the asked shape.
+    Token counts are the server's own, when it reports them."""
 
     text: str | None = None
     tool_calls: list[ToolCall] = field(default_factory=list)
     data: Any = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class LanguageModel(Protocol):
@@ -92,11 +95,12 @@ class LmStudioModel:
                 {"type": "function", "function": {"name": t.name, "description": t.description, "parameters": t.parameters}}
                 for t in tools
             ]
-        message = self._message(self._post(payload))
+        body = self._post(payload)
+        message = self._message(body)
         calls = [_tool_call(call) for call in message.get("tool_calls") or []]
         content = message.get("content")
         text = content.strip() if isinstance(content, str) and content.strip() else None
-        return Completion(text=text, tool_calls=calls)
+        return Completion(text=text, tool_calls=calls, **_token_counts(body))
 
     def _shaped(self, messages: list[dict[str, Any]], output: type[Shape]) -> Shape:
         payload = self._payload(messages)
@@ -193,6 +197,14 @@ def _tool_call(call: Any) -> ToolCall:
         return ToolCall(str(call["id"]), str(call["function"]["name"]), arguments)
     except (KeyError, TypeError, ValueError) as err:
         raise ModelError(502, "bad-model-response", "The local AI model asked for a tool in a form it cannot use") from err
+
+
+def _token_counts(body: Any) -> dict[str, int]:
+    usage = body.get("usage") if isinstance(body, dict) else None
+    if not isinstance(usage, dict):
+        return {}
+    counts = {"input_tokens": usage.get("prompt_tokens"), "output_tokens": usage.get("completion_tokens")}
+    return {name: value for name, value in counts.items() if isinstance(value, int)}
 
 
 class ScriptedModel:
