@@ -46,7 +46,7 @@ def run_case(service: AssistantService, case: EvalCase, run_id: str) -> CaseRun:
         return CaseRun("", error.reason, [], time.perf_counter() - started, None, None, None)
     return CaseRun(
         detail.body["answer"], None, detail.steps, time.perf_counter() - started,
-        detail.input_tokens, detail.output_tokens, detail.body["trace_id"],
+        detail.input_tokens, detail.output_tokens, detail.body["trace_id"], detail.facts,
     )
 
 

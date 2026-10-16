@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from ...evaluation import answer_numbers, score_grounding
+from ...facts import Fact
 from ..agent import AgentStep
 from .datasets import EvalCase, ExpectedTool
 
@@ -45,6 +46,7 @@ class CaseRun:
     input_tokens: int | None
     output_tokens: int | None
     trace_id: str | None
+    facts: list[Fact] = field(default_factory=list)
 
 
 def grounded_numbers(case: EvalCase, run: CaseRun) -> Score:
