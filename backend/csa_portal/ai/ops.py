@@ -19,6 +19,10 @@ _TRACE_FIELDS = (
     "id", "source", "agent", "model", "started_at", "duration_ms", "status", "error_reason", "input_tokens",
     "output_tokens", "eval_run_id",
 )
+_RUN_FIELDS = (
+    "id", "dataset", "dataset_version", "mode", "model", "judge_model", "git_sha", "started_at", "finished_at",
+    "repeats", "status", "summary",
+)
 
 
 class OpsQueries:
@@ -53,6 +57,42 @@ class OpsQueries:
         record = self.store.get_trace(trace_id)
         return None if record is None else _jsonable(asdict(record))
 
+    def eval_runs(self, dataset: str | None = None, limit: int = 50) -> list[dict[str, Any]]:
+        where, params = ("WHERE dataset = ?", (dataset,)) if dataset else ("", ())
+        rows = self.store.read(
+            f"SELECT {', '.join(_RUN_FIELDS)} FROM eval_runs {where} ORDER BY started_at DESC, id DESC LIMIT ?",
+            (*params, limit),
+        )
+        return [_run(row) for row in rows]
+
+    def eval_run(self, run_id: str) -> dict[str, Any] | None:
+        found = self.store.get_eval_run(run_id)
+        if found is None:
+            return None
+        run, results = found
+        return {"run": _jsonable(asdict(run)), "results": [asdict(result) for result in results]}
+
+    def compare(self, a: str, b: str) -> dict[str, Any]:
+        """Case by case, `a` (before) against `b` (after); a case passed when it passed every repeat."""
+        found = {run_id: self.store.get_eval_run(run_id) for run_id in (a, b)}
+        for run_id, value in found.items():
+            if value is None:
+                raise LookupError(run_id)
+        (run_a, results_a), (run_b, results_b) = found[a], found[b]
+        if run_a.dataset != run_b.dataset:
+            raise ValueError("different-datasets")
+        before, after = _pass_k(results_a), _pass_k(results_b)
+        both = before.keys() & after.keys()
+        return {
+            "a": _jsonable(asdict(run_a)),
+            "b": _jsonable(asdict(run_b)),
+            "regressions": sorted(c for c in both if before[c] and not after[c]),
+            "fixes": sorted(c for c in both if not before[c] and after[c]),
+            "still_failing": sorted(c for c in both if not before[c] and not after[c]),
+            "new_cases": sorted(after.keys() - before.keys()),
+            "removed_cases": sorted(before.keys() - after.keys()),
+        }
+
 
 def _jsonable(node: Any) -> Any:
     if isinstance(node, datetime):
@@ -62,3 +102,18 @@ def _jsonable(node: Any) -> Any:
     if isinstance(node, list):
         return [_jsonable(item) for item in node]
     return node
+
+
+def _run(row: tuple) -> dict[str, Any]:
+    body = dict(zip(_RUN_FIELDS, row))
+    body["started_at"] = _time(body["started_at"]).isoformat()
+    body["finished_at"] = _time(body["finished_at"]).isoformat()
+    body["summary"] = json.loads(body["summary"])
+    return body
+
+
+def _pass_k(results: list[Any]) -> dict[str, bool]:
+    passed: dict[str, bool] = {}
+    for result in results:
+        passed[result.case_id] = passed.get(result.case_id, True) and result.passed
+    return passed
