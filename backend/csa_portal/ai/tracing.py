@@ -188,7 +188,12 @@ class Tracer:
                     self.failures += 1
                 logger.warning("Trace %s could not be stored", record.id, exc_info=True)
         if self.exporter is not None:
-            self.exporter.write_trace(record)
+            try:
+                self.exporter.write_trace(record)
+            except Exception:
+                with self._lock:
+                    self.failures += 1
+                logger.warning("Trace %s could not be exported", record.id, exc_info=True)
 
 
 def _total(spans: list[Span], attribute: str) -> int | None:

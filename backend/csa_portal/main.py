@@ -93,7 +93,13 @@ def _build_tracer(settings: Settings) -> Tracer:
         logger.error("The AI store could not be opened; answering without traces: %s", err)
         return Tracer(None, capture_content=settings.trace_content, exporter=exporter, unavailable=str(err))
     cutoff = datetime.now(UTC) - timedelta(days=settings.trace_retention_days)
-    removed = store.delete_live_traces_before(cutoff)
+    try:
+        removed = store.delete_live_traces_before(cutoff)
+    except sqlite3.Error as err:
+        # A read-only or locked file opens fine; this delete is the first write that finds out.
+        store.close()
+        logger.error("The AI store could not be written; answering without traces: %s", err)
+        return Tracer(None, capture_content=settings.trace_content, exporter=exporter, unavailable=str(err))
     if removed:
         logger.info("Deleted %d live traces older than %d days", removed, settings.trace_retention_days)
     return Tracer(store, capture_content=settings.trace_content, exporter=exporter)

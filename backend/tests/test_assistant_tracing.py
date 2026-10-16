@@ -195,3 +195,21 @@ def test_ai_settings_are_read_from_the_environment():
     assert (defaults.ai_concurrency, defaults.ai_queue_seconds, defaults.otlp_endpoint) == (1, 5, "")
     assert Settings._from({"CSA_AI_CONCURRENCY": "0"}).ai_concurrency == 1
     assert Settings._from({"CSA_AI_DB": ""}).ai_db_path is None
+
+
+def test_a_database_that_cannot_be_written_at_startup_leaves_the_portal_running_without_traces(
+    settings, tmp_path, monkeypatch
+):
+    """Opening can succeed on a read-only or locked file; the retention delete is then the first write."""
+    def cannot_write(self, cutoff):
+        raise sqlite3.OperationalError("attempt to write a readonly database")
+
+    monkeypatch.setattr(AiStore, "delete_live_traces_before", cannot_write)
+
+    client = TestClient(create_app(dataclasses.replace(settings, ai_db_path=tmp_path / "ai.db"),
+                                   assistant_client=ScriptedModel([Completion(text="Answered.")])))
+
+    assert client.post("/api/assistant/chat", json={"question": "Q", "view": {}}).status_code == 200
+    health = client.get("/api/health").json()
+    assert health["tracing"] == "degraded"
+    assert "readonly" in health["tracing_error"]

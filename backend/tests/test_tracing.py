@@ -175,3 +175,19 @@ def test_a_chat_only_model_stays_chat_only_when_traced():
 
     assert not hasattr(model, "complete")
     assert model.chat([]) == "Plain."
+
+
+def test_an_exporter_that_cannot_send_is_counted_and_logged_and_the_answer_goes_on(caplog):
+    class NoThreads:
+        def write_trace(self, trace):
+            raise RuntimeError("can't start new thread")
+
+    sink = Sink()
+    tracer = Tracer(sink, exporter=NoThreads())
+    with caplog.at_level(logging.WARNING, logger="uvicorn.error"):
+        with tracer.trace("assistant", model="qwen", question="Q") as active:
+            active.answered("Still answered.")
+
+    assert len(sink.traces) == 1
+    assert (tracer.failures, tracer.status) == (1, "degraded")
+    assert any("could not be exported" in record.getMessage() for record in caplog.records)
