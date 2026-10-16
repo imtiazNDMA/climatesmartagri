@@ -16,6 +16,7 @@ from ...places import COUNTRY_ID, PlaceIndex
 from ..agent import Agent, AgentPolicy
 from ..model import Completion, LmStudioModel, ModelError, Tool, ToolCall
 from ..tools import ToolArguments, ToolOutput, ToolRegistry
+from ..tracing import Tracer, traced
 
 
 # Every model failure is a ModelError; the assistant's own refusals (bad view, busy) use the same type.
@@ -158,6 +159,9 @@ class AssistantService:
         forecast_description: dict[str, Any] | None = None,
         hazard_description: dict[str, Any] | None = None,
         local_model: bool = True,
+        tracer: Tracer | None = None,
+        concurrency: int = 1,
+        queue_seconds: float = 5,
     ) -> None:
         self.catalogue = catalogue
         self.places = places
@@ -167,8 +171,11 @@ class AssistantService:
         self.forecast_description = forecast_description
         self.hazard_description = hazard_description
         self.local_model = local_model
-        self._agent = Agent("assistant", SYSTEM_PROMPT, assistant_tools(facts), client)
-        self._generation_lock = threading.Lock()
+        self.tracer = tracer or Tracer()
+        self.queue_seconds = queue_seconds
+        self._agent = Agent("assistant", SYSTEM_PROMPT, assistant_tools(facts), traced(client, model))
+        # Questions the model may answer at once; a question waits up to queue_seconds for a slot.
+        self._slots = threading.BoundedSemaphore(concurrency)
         self._sections = {section.id: section for section in catalogue.sections}
         self._layers = {layer.id: layer for layer in catalogue.layers}
 
@@ -233,6 +240,11 @@ class AssistantService:
         return {"steps": steps}
 
     def answer(self, request: AssistantChatRequest) -> dict[str, Any]:
+        """Answer one question; every answer, and every failure to answer, leaves a trace."""
+        with self.tracer.trace("assistant", model=self.model, question=request.question) as trace:
+            return self._answer(request, trace)
+
+    def _answer(self, request: AssistantChatRequest, trace: Any) -> dict[str, Any]:
         context, _ = self._context(request.view)
         context_facts = self._view_facts(request.view)
         messages: list[dict[str, Any]] = []
@@ -250,17 +262,18 @@ class AssistantService:
                 "content": f"PORTAL CONTEXT:\n{json.dumps(context, ensure_ascii=True)}\n\nQUESTION:\n{request.question.strip()}",
             }
         )
-        if not self._generation_lock.acquire(blocking=False):
+        if not self._slots.acquire(timeout=self.queue_seconds):
             raise AssistantError(429, "assistant-busy", "The local AI model is answering another question")
         try:
             result = self._agent.run(messages)
         finally:
-            self._generation_lock.release()
+            self._slots.release()
         answer = result.answer
         tool_calls = len(result.steps)
         used_facts = [*context_facts, *result.facts]
         grounding = score_grounding(answer, _grounding_values(used_facts))
         cited = [fact for fact in used_facts if _answer_mentions_value(answer, fact)]
+        trace.answered(answer)
         return {
             "answer": answer,
             "sources": list(dict.fromkeys(fact.source_id for fact in cited)),
@@ -270,6 +283,7 @@ class AssistantService:
             "grounded": grounding.passed,
             "unchecked_numbers": list(grounding.unsupported),
             "tool_calls": tool_calls,
+            "trace_id": trace.id,
         }
 
     def _view_facts(self, view: AssistantView) -> list[Fact]:
