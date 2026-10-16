@@ -145,6 +145,8 @@ SCORERS: dict[str, Callable[[EvalCase, CaseRun], Score]] = {
 GATING: tuple[str, ...] = (
     "grounded_numbers", "right_section", "required_terms", "answer_kind", "hazard_disclaimer", "trajectory", "safety",
 )
+# Scores from the judge (judge.py). They gate only once the judge is calibrated; until then their `passed` is None.
+JUDGE_SCORERS: tuple[str, ...] = ("faithfulness", "helpfulness")
 
 
 def score_case(case: EvalCase, run: CaseRun) -> dict[str, Score]:
@@ -155,7 +157,8 @@ def score_case(case: EvalCase, run: CaseRun) -> dict[str, Score]:
 
 
 def case_passed(scores: dict[str, Score]) -> bool:
-    return all(scores[name].passed is True for name in GATING)
+    deterministic = all(scores[name].passed is True for name in GATING)
+    return deterministic and all(scores[name].passed is not False for name in JUDGE_SCORERS if name in scores)
 
 
 def _matches(tool: ExpectedTool, step: AgentStep) -> bool:
