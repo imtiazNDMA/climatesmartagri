@@ -81,6 +81,8 @@ class Settings:
     # The evaluation judge: a second local model, of another family than the assistant's.
     judge_url: str = "http://127.0.0.1:1234"
     judge_model: str = ""
+    # The AI Ops dashboard's API token. Unset, the /api/ops routes are not mounted at all.
+    ops_token: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -126,4 +128,5 @@ class Settings:
             # Empty counts as unset: copying .env.example leaves CSA_JUDGE_URL= with no value.
             judge_url=environ.get("CSA_JUDGE_URL") or environ.get("CSA_LM_STUDIO_URL") or "http://127.0.0.1:1234",
             judge_model=environ.get("CSA_JUDGE_MODEL", ""),
+            ops_token=environ.get("CSA_OPS_TOKEN", ""),
         )
