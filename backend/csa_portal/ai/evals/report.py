@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .datasets import Dataset
 from .runner import CaseResult, RunOutcome
-from .scorers import GATING
+from .scorers import GATING, JUDGE_SCORERS
 
 
 def markdown_report(outcomes: list[tuple[Dataset, RunOutcome]]) -> str:
@@ -22,6 +22,7 @@ def markdown_report(outcomes: list[tuple[Dataset, RunOutcome]]) -> str:
             f"({summary['pass_rate']:.1%})",
             f"- Flaky: {', '.join(f'`{case_id}`' for case_id in summary['flaky_cases']) or 'none'}",
             f"- Mean latency: {_seconds(summary['mean_latency_seconds'])}, p95: {_seconds(summary['p95_latency_seconds'])}",
+            *_judge_line(summary.get("judge")),
             "",
             "| Scorer | Runs passed |",
             "| --- | ---: |",
@@ -45,11 +46,21 @@ def markdown_report(outcomes: list[tuple[Dataset, RunOutcome]]) -> str:
 
 def _first_failure(runs: list[CaseResult]) -> str:
     for run in runs:
-        for name in GATING:
-            if run.scores[name].passed is False:
+        for name in (*GATING, *JUDGE_SCORERS):
+            if name in run.scores and run.scores[name].passed is False:
                 return f"{name}: {run.scores[name].reason}"
     return "-"
 
 
 def _seconds(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.2f} s"
+
+
+def _judge_line(judge: dict | None) -> list[str]:
+    if not judge:
+        return []
+    state = "calibrated" if judge["calibrated"] else "uncalibrated"
+    faithful = "n/a" if judge["faithful_rate"] is None else f"{judge['faithful_rate']:.1%}"
+    helpful = "n/a" if judge["mean_helpfulness"] is None else f"{judge['mean_helpfulness']:.1f}/5"
+    return [f"- Judge `{judge['model']}` ({state}): faithful {faithful}, mean helpfulness {helpful}, "
+            f"unavailable {judge['unavailable']}"]
