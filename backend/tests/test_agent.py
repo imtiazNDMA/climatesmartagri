@@ -141,3 +141,22 @@ def test_each_tool_call_is_logged_with_argument_names_only(caplog):
     assert message.startswith("Assistant fact tool lookup")
     assert "place_id" in message
     assert "private-text" not in message
+
+
+def test_the_assistant_offers_its_four_fact_tools_in_order_with_checked_arguments():
+    from csa_portal.ai.agents.assistant import assistant_tools
+
+    class NoFacts:
+        def find_place(self, name):
+            return []
+
+    registry = assistant_tools(NoFacts())
+
+    assert [tool.name for tool in registry.tools] == [
+        "find_place", "get_section_facts", "get_district_risk", "get_crop_calendar",
+    ]
+    section = next(tool for tool in registry.tools if tool.name == "get_section_facts")
+    assert section.parameters["required"] == ["section_id", "place_id"]
+    risk = next(tool for tool in registry.tools if tool.name == "get_district_risk")
+    assert risk.parameters["required"] == ["hazard", "model", "time", "run"]
+    assert registry.run(ToolCall("1", "find_place", {"name": "Lahore"})).result == {"places": []}

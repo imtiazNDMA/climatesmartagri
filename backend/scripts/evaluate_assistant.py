@@ -14,15 +14,14 @@ from csa_portal.geoenv import use_bundled_proj  # noqa: E402
 
 use_bundled_proj()
 
-from csa_portal.assistant import AssistantChatRequest, AssistantService, AssistantView  # noqa: E402
+from csa_portal.ai.agents.assistant import AssistantChatRequest, AssistantService, AssistantView  # noqa: E402
 from csa_portal.catalogue import load_catalogue  # noqa: E402
 from csa_portal.evaluation import load_golden_set, markdown_report, score_answer  # noqa: E402
 from csa_portal.facts import Facts  # noqa: E402
 from csa_portal.forecast import ForecastService, load_registry  # noqa: E402
 from csa_portal.hazard_models import DerivedService, load_hazard_models  # noqa: E402
 from csa_portal.hazards import load_hazards  # noqa: E402
-from csa_portal.language_model import Completion, LmStudioModel, ScriptedModel  # noqa: E402
-from csa_portal.language_model import ModelError  # noqa: E402
+from csa_portal.ai.model import Completion, LmStudioModel, ModelError, ScriptedModel  # noqa: E402
 from csa_portal.main import _describe_forecast  # noqa: E402
 from csa_portal.places import load_places  # noqa: E402
 from csa_portal.sections import build_providers  # noqa: E402

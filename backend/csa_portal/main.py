@@ -22,10 +22,10 @@ from titiler.core.errors import DEFAULT_STATUS_CODES, add_exception_handlers  # 
 from titiler.core.factory import TilerFactory  # noqa: E402
 
 from .catalogue import Layer, load_catalogue  # noqa: E402
-from .assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
+from .ai.agents.assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
 from .facts import Facts  # noqa: E402
-from .language_model import LmStudioModel  # noqa: E402
+from .ai.model import LmStudioModel  # noqa: E402
 from .hazards import add_hazard_routes, load_hazards  # noqa: E402
 from .hazard_models import DerivedRegistryError, DerivedService, load_hazard_models  # noqa: E402
 from .forecast import (  # noqa: E402
