@@ -160,3 +160,36 @@ def test_the_assistant_offers_its_four_fact_tools_in_order_with_checked_argument
     risk = next(tool for tool in registry.tools if tool.name == "get_district_risk")
     assert risk.parameters["required"] == ["hazard", "model", "time", "run"]
     assert registry.run(ToolCall("1", "find_place", {"name": "Lahore"})).result == {"places": []}
+
+
+def test_a_traced_run_records_the_agent_its_model_calls_and_its_tools():
+    from csa_portal.ai.tracing import Tracer, traced
+
+    class Sink:
+        traces = []
+
+        def write_trace(self, trace):
+            self.traces.append(trace)
+
+    sink = Sink()
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("a", "lookup", {"place_id": "PK101"}), ToolCall("b", "lookup", {"place_id": "nowhere"})]),
+        Completion(text="District One has 175."),
+    ])
+    agent = agent_for(model)
+    agent.model = traced(model, "qwen")
+    with Tracer(sink).trace("assistant", model="qwen", question="Q"):
+        agent.run(QUESTION)
+
+    spans = sink.traces[0].spans
+    root = spans[0]
+    assert (root.kind, root.name, root.parent_id) == ("agent", "assistant", None)
+    assert root.attributes == {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": "assistant", "csa.tool_calls": 2}
+    assert [(s.kind, s.parent_id) for s in spans[1:]] == [("llm", root.id), ("tool", root.id), ("tool", root.id), ("llm", root.id)]
+    found, missing = spans[2], spans[3]
+    assert found.attributes == {
+        "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": "lookup", "gen_ai.tool.call.id": "a",
+        "csa.tool.argument_names": "place_id", "csa.facts": 1,
+    }
+    assert (found.status, missing.status) == ("ok", "error")
+    assert "PK101" not in str(found.attributes)

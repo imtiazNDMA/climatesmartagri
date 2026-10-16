@@ -21,6 +21,19 @@ def positive_float(value: str, fallback: float) -> float:
     return parsed if 0 < parsed < float("inf") else fallback
 
 
+def positive_int(value: str, fallback: int) -> int:
+    try:
+        parsed = int(value)
+    except ValueError:
+        return fallback
+    return parsed if parsed > 0 else fallback
+
+
+def optional_path(value: str) -> Path | None:
+    """A path, or None for an empty value: an empty CSA_AI_DB turns the AI store off (the browser tests do this)."""
+    return Path(value) if value else None
+
+
 def read_env_file(path: Path) -> dict[str, str]:
     """The NAME=value lines of a .env file. Blank lines and lines starting with # are skipped."""
     values: dict[str, str] = {}
@@ -57,6 +70,14 @@ class Settings:
     lm_studio_model: str = "qwen/qwen3.8-27b"
     lm_studio_api_key: str = ""
     lm_studio_timeout: float = 60
+    # The AI store and tracing. Without a database (the default when built directly, as tests do) answers are
+    # still traced in memory, but nothing is kept.
+    ai_db_path: Path | None = None
+    trace_content: bool = False
+    trace_retention_days: int = 30
+    ai_concurrency: int = 1
+    ai_queue_seconds: float = 5
+    otlp_endpoint: str = ""
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -93,4 +114,10 @@ class Settings:
             lm_studio_model=environ.get("CSA_LM_STUDIO_MODEL", "qwen/qwen3.8-27b"),
             lm_studio_api_key=environ.get("CSA_LM_STUDIO_API_KEY", ""),
             lm_studio_timeout=positive_float(environ.get("CSA_LM_STUDIO_TIMEOUT", "60"), 60),
+            ai_db_path=optional_path(environ.get("CSA_AI_DB", str(BACKEND_DIR / "ai.db"))),
+            trace_content=environ.get("CSA_TRACE_CONTENT", "") == "1",
+            trace_retention_days=positive_int(environ.get("CSA_TRACE_RETENTION_DAYS", "30"), 30),
+            ai_concurrency=positive_int(environ.get("CSA_AI_CONCURRENCY", "1"), 1),
+            ai_queue_seconds=positive_float(environ.get("CSA_AI_QUEUE_SECONDS", "5"), 5),
+            otlp_endpoint=environ.get("CSA_OTLP_ENDPOINT", ""),
         )

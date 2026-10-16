@@ -10,6 +10,7 @@ from typing import Any
 from ..facts import Fact
 from .model import ModelError
 from .tools import ToolRegistry
+from .tracing import span
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -54,6 +55,13 @@ class Agent:
 
     def run(self, messages: list[dict[str, Any]]) -> AgentResult:
         """Answer the conversation in `messages`; the system prompt is added here and `messages` is left as it was."""
+        attributes = {"gen_ai.operation.name": "invoke_agent", "gen_ai.agent.name": self.name}
+        with span("agent", self.name, **attributes) as agent_span:
+            result = self._run(messages)
+            agent_span.set(**{"csa.tool_calls": len(result.steps)})
+            return result
+
+    def _run(self, messages: list[dict[str, Any]]) -> AgentResult:
         conversation: list[dict[str, Any]] = [{"role": "system", "content": self.system_prompt}, *messages]
         if not hasattr(self.model, "complete"):
             # A model that can only chat answers without tools.
@@ -76,7 +84,14 @@ class Agent:
                 ],
             })
             for call in reply.tool_calls:
-                output = self.registry.run(call)
+                with span("tool", call.name, **{
+                    "gen_ai.operation.name": "execute_tool", "gen_ai.tool.name": call.name,
+                    "gen_ai.tool.call.id": call.id, "csa.tool.argument_names": ",".join(sorted(call.arguments)),
+                }) as tool_span:
+                    output = self.registry.run(call)
+                    tool_span.set(**{"csa.facts": len(output.facts)})
+                    if "error" in output.result:
+                        tool_span.fail()
                 facts.extend(output.facts)
                 steps.append(AgentStep(call.name, dict(call.arguments), output.result.get("error"), len(output.facts)))
                 logger.info(

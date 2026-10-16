@@ -22,6 +22,8 @@ export default defineConfig({
         CSA_CATALOGUE_PATH: path.join(fixtures, 'test_catalogue.json'),
         CSA_BOUNDARIES_DIR: path.join(fixtures, 'boundaries'),
         CSA_BASEMAP_STYLE_URL: 'https://basemap.test/style.json',
+        // No AI store for browser tests: answers are traced in memory and nothing is written to backend/ai.db.
+        CSA_AI_DB: '',
       },
     },
     {

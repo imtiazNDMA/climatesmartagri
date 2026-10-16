@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import functools
 import logging
+import sqlite3
 import urllib.parse
 from collections.abc import Callable, Mapping
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated, Any, Literal
 
@@ -26,6 +28,9 @@ from .ai.agents.assistant import AssistantClient, AssistantService, add_assistan
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
 from .facts import Facts  # noqa: E402
 from .ai.model import LmStudioModel  # noqa: E402
+from .ai.otlp import OtlpExporter  # noqa: E402
+from .ai.store import AiStore, StoreError  # noqa: E402
+from .ai.tracing import Tracer  # noqa: E402
 from .hazards import add_hazard_routes, load_hazards  # noqa: E402
 from .hazard_models import DerivedRegistryError, DerivedService, load_hazard_models  # noqa: E402
 from .forecast import (  # noqa: E402
@@ -77,6 +82,29 @@ def _describe_forecast(forecast: ForecastService | None, derived: DerivedService
     return body
 
 
+def _build_tracer(settings: Settings) -> Tracer:
+    """The tracer the settings ask for. A store that cannot be opened leaves the portal answering without one."""
+    exporter = OtlpExporter(settings.otlp_endpoint) if settings.otlp_endpoint else None
+    if settings.ai_db_path is None:
+        return Tracer(None, capture_content=settings.trace_content, exporter=exporter)
+    try:
+        store = AiStore(settings.ai_db_path)
+    except (StoreError, sqlite3.Error, OSError) as err:
+        logger.error("The AI store could not be opened; answering without traces: %s", err)
+        return Tracer(None, capture_content=settings.trace_content, exporter=exporter, unavailable=str(err))
+    cutoff = datetime.now(UTC) - timedelta(days=settings.trace_retention_days)
+    try:
+        removed = store.delete_live_traces_before(cutoff)
+    except sqlite3.Error as err:
+        # A read-only or locked file opens fine; this delete is the first write that finds out.
+        store.close()
+        logger.error("The AI store could not be written; answering without traces: %s", err)
+        return Tracer(None, capture_content=settings.trace_content, exporter=exporter, unavailable=str(err))
+    if removed:
+        logger.info("Deleted %d live traces older than %d days", removed, settings.trace_retention_days)
+    return Tracer(store, capture_content=settings.trace_content, exporter=exporter)
+
+
 def create_app(
     settings: Settings | None = None,
     section_providers: Mapping[str, SectionDataProvider] | None = None,
@@ -85,8 +113,10 @@ def create_app(
     forecast_source: ForecastSource | None = None,
     crop_classifier: CropClassifier | None = None,
     assistant_client: AssistantClient | None = None,
+    tracer: Tracer | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
+    tracer = tracer or _build_tracer(settings)
     catalogue = load_catalogue(settings.catalogue_path)
     boundaries_error: str | None = None
     try:
@@ -206,6 +236,9 @@ def create_app(
             forecast_description=_describe_forecast(forecast, derived),
             hazard_description=hazards.model_dump(mode="json"),
             local_model=urllib.parse.urlparse(settings.lm_studio_url).hostname in {"127.0.0.1", "localhost", "::1"},
+            tracer=tracer,
+            concurrency=settings.ai_concurrency,
+            queue_seconds=settings.ai_queue_seconds,
         ),
     )
 
@@ -217,6 +250,9 @@ def create_app(
             "boundaries_error": boundaries_error,
             "crop_classifier_configured": classifier.configured,
             "assistant_model": settings.lm_studio_model,
+            "tracing": tracer.status,
+            "tracing_error": tracer.unavailable,
+            "tracing_failures": tracer.failures,
             "layers": {
                 layer.id: places.loaded
                 if layer.kind == "boundary"
