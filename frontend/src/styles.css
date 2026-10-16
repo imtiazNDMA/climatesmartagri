@@ -1398,3 +1398,26 @@ h2, h3 { margin: 0; }
 :root[data-theme='dark'] .grid-even-line.under { stroke: #0c1a2e; }
 :root[data-theme='dark'] .rail-soon[aria-pressed='true'] { opacity: 1; }
 :root[data-theme='dark'] .counts-track, :root[data-theme='dark'] .shares-track { background: rgb(255 255 255 / 10%); }
+
+/* AI Ops dashboard (/ops) */
+.ops { min-height: 100vh; background: var(--panel-bg); color: var(--ink); font-family: system-ui, 'Segoe UI', sans-serif; }
+.ops-header { display: flex; align-items: center; gap: 24px; padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.ops-header h1 { font-size: 22px; margin: 0; }
+.ops-header nav { display: flex; gap: 4px; flex-wrap: wrap; }
+.ops-header nav a, .ops-back { color: var(--ink); text-decoration: none; padding: 6px 12px; border-radius: 6px; }
+.ops-header nav a[aria-current='page'] { background: var(--accent); color: #fff; }
+:root[data-theme='dark'] .ops-header nav a[aria-current='page'] { color: #0a1220; }
+.ops-header nav a:focus-visible, .ops-back:focus-visible, .ops button:focus-visible, .ops input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.ops-back { margin-left: auto; color: var(--muted); }
+.ops-main { padding: 24px; display: grid; gap: 20px; max-width: 1400px; margin: 0 auto; }
+.ops-card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+.ops-card h2 { font-size: 18px; margin: 0 0 12px; }
+.ops-gate { display: grid; place-items: center; }
+.ops-token { display: grid; gap: 10px; width: min(360px, 90vw); }
+.ops-token input, .ops input[type='text'], .ops textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font: inherit; }
+.ops button { padding: 8px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; font: inherit; cursor: pointer; }
+:root[data-theme='dark'] .ops button { color: #0a1220; }
+.ops button:disabled { opacity: 0.6; cursor: default; }
+.ops-error { color: var(--warning); font-weight: 650; margin: 0; }
+.ops-empty { color: var(--muted); }
+.ops-empty code { color: var(--ink); background: var(--panel-bg); padding: 2px 6px; border-radius: 4px; }

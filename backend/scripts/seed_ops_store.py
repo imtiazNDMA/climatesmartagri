@@ -105,9 +105,13 @@ def seed(store: AiStore, now: datetime) -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--db", type=Path, required=True, help="a new database file to fill")
+    parser.add_argument("--replace", action="store_true", help="delete the file (and its WAL files) first")
     args = parser.parse_args(argv)
+    if args.replace:
+        for suffix in ("", "-wal", "-shm"):
+            Path(f"{args.db}{suffix}").unlink(missing_ok=True)
     if args.db.exists():
-        parser.error(f"{args.db} exists; give a new file")
+        parser.error(f"{args.db} exists; give a new file or --replace")
     seed(AiStore(args.db), datetime.now(UTC))
     print(f"Seeded {args.db}")
     return 0
