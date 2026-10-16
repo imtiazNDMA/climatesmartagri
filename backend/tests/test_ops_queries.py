@@ -143,3 +143,77 @@ def test_comparing_unknown_runs_or_different_datasets_is_refused(seeded):
         ops.compare(ids["runs"]["a"], "x" * 32)
     with pytest.raises(ValueError, match="different-datasets"):
         ops.compare(ids["runs"]["a"], ids["runs"]["c"])
+
+
+def test_live_metrics_for_the_last_day(seeded):
+    ops, _ = seeded
+
+    live = ops.metrics("24h")["live"]
+
+    assert (live["requests"], live["errors"], live["error_rate"]) == (4, 1, 0.25)
+    assert (live["p50_latency_ms"], live["p95_latency_ms"]) == (9000.0, 30000.0)
+    assert (live["input_tokens"], live["output_tokens"]) == (1800, 180)
+    assert live["by_day"] == [{"day": "2026-10-15", "requests": 1, "errors": 0},
+                              {"day": "2026-10-16", "requests": 3, "errors": 1}]
+    assert live["error_reasons"] == [{"reason": "tool-limit", "count": 1}]
+    assert live["tools"] == [{"tool": "get_section_facts", "calls": 5, "errors": 3},
+                             {"tool": "find_place", "calls": 1, "errors": 0}]
+
+
+def test_live_metrics_for_the_week_count_every_live_trace_and_no_evaluation_traces(seeded):
+    ops, _ = seeded
+
+    metrics = ops.metrics("7d")
+    live = metrics["live"]
+
+    assert metrics["window"] == "7d" and metrics["since"] == "2026-10-09T12:00:00+00:00"
+    assert (live["requests"], live["errors"]) == (6, 2)
+    assert (live["p50_latency_ms"], live["p95_latency_ms"]) == (9000.0, 30000.0)
+    assert (live["input_tokens"], live["output_tokens"]) == (2110, 250)
+    assert live["error_reasons"] == [{"reason": "assistant-unavailable", "count": 1}, {"reason": "tool-limit", "count": 1}]
+    assert [d["day"] for d in live["by_day"]] == ["2026-10-14", "2026-10-15", "2026-10-16"]
+
+
+def test_the_latest_live_run_is_compared_with_the_live_run_before_it(seeded):
+    ops, ids = seeded
+
+    evaluation = ops.metrics("24h")["eval"]
+
+    golden, adversarial = sorted(evaluation["latest"], key=lambda r: r["dataset"], reverse=True)
+    assert (golden["run_id"], golden["pass_rate"], golden["previous_pass_rate"]) == (ids["runs"]["b"], 0.5, 2 / 3)
+    assert (adversarial["run_id"], adversarial["previous_pass_rate"]) == (ids["runs"]["c"], None)
+    assert [r["run_id"] for r in evaluation["history"]] == [ids["runs"][k] for k in ("a", "b", "c", "r")]
+    assert evaluation["history"][1]["judge"]["model"] == "gemma"
+
+
+def test_an_unknown_window_is_refused(seeded):
+    ops, _ = seeded
+
+    with pytest.raises(ValueError):
+        ops.metrics("1y")
+
+
+def test_calibration_is_listed_per_judge_model(seeded):
+    ops, _ = seeded
+
+    assert ops.calibration() == [{
+        "judge_model": "gemma", "labels": 1, "kappa": None, "calibrated": False,
+        "confusion": {"both_faithful": 1, "human_only": 0, "judge_only": 0, "neither": 0},
+    }]
+    assert ops.metrics("24h")["calibration"] == ops.calibration()
+
+
+def test_the_label_queue_lists_unlabelled_answers_and_a_new_label_leaves_it(seeded):
+    ops, ids = seeded
+
+    queue = ops.label_queue()
+    assert [item["case_id"] for item in queue] == ["case-b", "case-c", "case-d"]
+    assert queue[0]["answer"] == "Answer for case-b"
+
+    label_id = ops.add_label(ids["results"]["b"]["case-b"], "officer", False, 2, "Invented a figure.")
+
+    assert len(label_id) == 32
+    assert [item["case_id"] for item in ops.label_queue()] == ["case-c", "case-d"]
+    assert ops.calibration()[0]["labels"] == 2
+    with pytest.raises(ValueError):
+        ops.add_label("x" * 32, "officer", True, None, "")
