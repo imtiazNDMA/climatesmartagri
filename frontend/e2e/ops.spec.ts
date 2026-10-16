@@ -69,4 +69,21 @@ test.describe('with the token', () => {
     await expect(page.getByRole('cell', { name: 'case-b repeat 1: failed' })).toBeVisible()
     await expect(page.getByRole('row', { name: /case-b/ })).toContainText('required_terms: missing: Punjab')
   })
+
+  test('traces filter, page, and open as a span waterfall', async ({ page }) => {
+    await page.goto('/ops#/traces')
+
+    await expect(page.getByRole('heading', { name: '10 traces shown' })).toBeVisible()
+    await page.getByLabel('Source').selectOption('live')
+    await expect(page.getByRole('heading', { name: '6 traces shown' })).toBeVisible()
+    await page.getByLabel('Status').selectOption('error')
+    await expect(page.getByRole('row', { name: /tool-limit/ })).toBeVisible()
+    await page.getByLabel('Status').selectOption('')
+
+    await page.getByRole('link', { name: /^Open trace/ }).first().click()
+    const bars = page.getByTestId('waterfall').locator('[data-span]')
+    await expect(bars).toHaveCount(4)
+    await expect(bars.first()).toHaveAttribute('aria-label', /agent assistant, 7\.99 s/)
+    await expect(page.getByText('Question text not kept for live traces')).toBeVisible()
+  })
 })
