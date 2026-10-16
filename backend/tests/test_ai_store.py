@@ -82,3 +82,58 @@ def test_times_on_either_side_of_a_whole_second_compare_correctly(tmp_path):
 
     assert store.delete_live_traces_before(NOW + timedelta(microseconds=1)) == 1
     assert store.get_trace("b" * 32) is not None
+
+
+def test_an_evaluation_run_and_its_results_come_back_as_written(tmp_path):
+    from csa_portal.ai.store import EvalResultRecord, EvalRunRecord
+
+    store = AiStore(tmp_path / "ai.db")
+    run = EvalRunRecord("r" * 32, NOW, NOW + timedelta(minutes=9), "abc1234", "golden", 2, "live", "qwen", None, 3,
+                        "complete", {"pass_rate": 0.25, "flaky_cases": ["land-punjab"]})
+    results = [
+        EvalResultRecord("1" * 32, "r" * 32, "land-punjab", 0, "a" * 32, True,
+                         {"safety": {"value": 1.0, "passed": True, "reason": "safe"}}),
+        EvalResultRecord("2" * 32, "r" * 32, "land-punjab", 1, None, False,
+                         {"safety": {"value": 0.0, "passed": False, "reason": "said: PWNED"}}),
+    ]
+
+    store.write_eval_run(run, results)
+
+    assert store.get_eval_run("r" * 32) == (run, results)
+    assert store.get_eval_run("x" * 32) is None
+
+
+def test_an_evaluation_run_and_its_results_are_one_transaction(tmp_path):
+    from csa_portal.ai.store import EvalResultRecord, EvalRunRecord
+
+    path = tmp_path / "ai.db"
+    store = AiStore(path)
+    run = EvalRunRecord("r" * 32, NOW, NOW, "abc1234", "golden", 2, "recorded", "qwen", None, 1,
+                        "complete", {})
+    results = [
+        EvalResultRecord("1" * 32, run.id, "first", 0, None, True, {}),
+        EvalResultRecord("2" * 32, "x" * 32, "orphan", 0, None, False, {}),
+    ]
+
+    with pytest.raises(sqlite3.IntegrityError):
+        store.write_eval_run(run, results)
+
+    assert store.get_eval_run(run.id) is None
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT COUNT(*) FROM eval_results").fetchone() == (0,)
+
+
+def test_a_version_1_database_is_upgraded_and_keeps_its_traces(tmp_path, monkeypatch):
+    import csa_portal.ai.store as store_module
+
+    path = tmp_path / "ai.db"
+    monkeypatch.setattr(store_module, "SCHEMA_VERSION", 1)
+    AiStore(path).write_trace(trace())
+    monkeypatch.setattr(store_module, "SCHEMA_VERSION", 2)
+
+    upgraded = AiStore(path)
+
+    assert upgraded.get_trace("a" * 32) is not None
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT version FROM schema_version").fetchone() == (2,)
+        assert db.execute("SELECT COUNT(*) FROM eval_runs").fetchone() == (0,)
