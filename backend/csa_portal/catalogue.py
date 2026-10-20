@@ -26,12 +26,26 @@ class CatalogueError(ValueError):
 class YearRange(BaseModel):
     first: int
     last: int
+    available: list[int] | None = None
 
     @model_validator(mode="after")
     def _ordered(self) -> YearRange:
         if self.first > self.last:
             raise ValueError(f"year range {self.first}-{self.last} is reversed")
+        if self.available is not None:
+            if not self.available:
+                raise ValueError("available years cannot be empty")
+            if self.available != sorted(set(self.available)):
+                raise ValueError("available years must be unique and in ascending order")
+            if self.available[0] != self.first or self.available[-1] != self.last:
+                raise ValueError("available years must start at first and end at last")
+            if any(year < self.first or year > self.last for year in self.available):
+                raise ValueError("available years must fall inside the year range")
         return self
+
+    def observations(self) -> list[int]:
+        """The years callers may select, including every year for legacy continuous ranges."""
+        return self.available or list(range(self.first, self.last + 1))
 
 
 class LegendItem(BaseModel):
@@ -62,6 +76,17 @@ class RampLegend(BaseModel):
 Legend = Annotated[ClassLegend | RampLegend, Field(discriminator="type")]
 
 
+class RasterProduct(BaseModel):
+    """Stable source semantics for a categorical raster product, independent of its files."""
+
+    provider: str
+    collection: str
+    version: str
+    resolution_metres: int = Field(gt=0)
+    area_unit: str
+    nodata_value: str
+
+
 class Section(BaseModel):
     id: Identifier
     title: str
@@ -89,6 +114,7 @@ class Layer(BaseModel):
     max_zoom: int | None = Field(default=None, ge=0, le=24)
     years: YearRange | None = None
     default_opacity: float = Field(default=1.0, ge=0, le=1)
+    product: RasterProduct | None = None
 
 
 class Catalogue(BaseModel):
@@ -98,6 +124,7 @@ class Catalogue(BaseModel):
     @model_validator(mode="after")
     def _consistent(self) -> Catalogue:
         section_ids = [s.id for s in self.sections]
+        sections_by_id = {section.id: section for section in self.sections}
         for section_id in section_ids:
             if section_ids.count(section_id) > 1:
                 raise ValueError(f"duplicate section id '{section_id}'")
@@ -117,6 +144,23 @@ class Catalogue(BaseModel):
                 raise ValueError(f"geojson layer '{layer.id}' has no property")
             if layer.source and layer.kind != "raster":
                 raise ValueError(f"layer '{layer.id}' has a raster source but is not a raster layer")
+            if layer.product and layer.kind != "raster":
+                raise ValueError(f"layer '{layer.id}' has raster product metadata but is not a raster layer")
+            if layer.product and (not layer.years or not isinstance(layer.legend, ClassLegend)):
+                raise ValueError(f"raster product layer '{layer.id}' needs years and a class legend")
+            if layer.product and any(item.value is None for item in layer.legend.items):
+                raise ValueError(f"raster product layer '{layer.id}' has a class without a value")
+            if layer.product:
+                values = [item.value for item in layer.legend.items]
+                if len(values) != len(set(values)):
+                    raise ValueError(f"raster product layer '{layer.id}' has duplicate class values")
+            section = sections_by_id[layer.section_id]
+            if layer.years and section.years:
+                outside = set(layer.years.observations()) - set(section.years.observations())
+                if outside:
+                    raise ValueError(
+                        f"layer '{layer.id}' has years unavailable in section '{section.id}': {sorted(outside)}"
+                    )
         return self
 
 

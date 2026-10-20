@@ -3,6 +3,17 @@ import type { FeatureCollection } from 'geojson'
 export interface YearRange {
   first: number
   last: number
+  /** Exact observations when the series is not assumed to contain every intervening year. */
+  available?: number[] | null
+}
+
+export interface RasterProduct {
+  provider: string
+  collection: string
+  version: string
+  resolution_metres: number
+  area_unit: string
+  nodata_value: string
 }
 
 export interface LegendItem {
@@ -60,6 +71,8 @@ export interface Layer {
   max_zoom?: number | null
   /** Where a raster has data (west, south, east, north); the map asks for no tiles beyond it. */
   bounds?: [number, number, number, number] | null
+  /** Stable source semantics for a categorical product; concrete raster files stay server-side. */
+  product?: RasterProduct | null
 }
 
 export interface ForecastLayer {

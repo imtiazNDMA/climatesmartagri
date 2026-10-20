@@ -10,7 +10,12 @@
         "national",
         "province",
         "district"
-      ]
+      ],
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [2017, 2018, 2019, 2020, 2021, 2022, 2023]
+      }
     },
     {
       "id": "irrigation",
@@ -140,6 +145,42 @@
       "title": "Districts",
       "kind": "boundary",
       "status": "ready"
+    },
+    {
+      "id": "annual-land-cover",
+      "section_id": "land-cover",
+      "title": "Annual land classification",
+      "kind": "raster",
+      "status": "no-data",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {"colour": "#419bdf", "label": "Water", "value": "1"},
+          {"colour": "#397d49", "label": "Trees", "value": "2"},
+          {"colour": "#7a87c6", "label": "Flooded vegetation", "value": "4"},
+          {"colour": "#e49635", "label": "Crops", "value": "5"},
+          {"colour": "#c4281b", "label": "Built area", "value": "7"},
+          {"colour": "#a59b8f", "label": "Bare ground", "value": "8"},
+          {"colour": "#a8ebff", "label": "Snow/ice", "value": "9"},
+          {"colour": "#616161", "label": "Clouds", "value": "10"},
+          {"colour": "#e3e2c3", "label": "Rangeland", "value": "11"}
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [2017, 2018, 2019, 2020, 2021, 2022, 2023]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
     },
     {
       "id": "forest",
