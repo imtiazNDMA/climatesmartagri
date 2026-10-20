@@ -1,6 +1,6 @@
 import { COUNTRY_ID, type Catalogue, type Place } from '../api/types'
 import { parseChoice, serializeChoice } from '../forecast/choice'
-import { timeRange } from './selectors'
+import { nearestObservation, timeObservations } from './selectors'
 import type { ActiveLayer, View } from './viewState'
 
 /** Ids are URL-safe by catalogue rule, so the query is built by hand to stay readable. */
@@ -83,9 +83,16 @@ export function parseView(search: string, catalogue: Catalogue, places: Place[])
   const rawYear = params.get('year')
   if (rawYear) {
     const year = Number(rawYear)
-    const range = timeRange(view, catalogue)
-    if (Number.isInteger(year) && range && year >= range.first && year <= range.last) view.year = year
-    else dropped.push(`year "${rawYear}"`)
+    const observations = timeObservations(view, catalogue)
+    const first = observations[0]
+    const last = observations[observations.length - 1]
+    // A year the observations do not have is moved to the nearest one; one that is
+    // nowhere near them is dropped, because it cannot mean anything here.
+    if (Number.isInteger(year) && observations.length && year >= first && year <= last) {
+      view.year = nearestObservation(observations, year)
+    } else {
+      dropped.push(`year "${rawYear}"`)
+    }
   }
 
   return { view, dropped }

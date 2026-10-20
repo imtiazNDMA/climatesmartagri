@@ -1,34 +1,58 @@
 import { COUNTRY_ID, type Catalogue, type Place, type YearRange } from '../api/types'
 import type { View } from './viewState'
 
-/** The time slider's range: the widest span across the open section and every active layer. */
-export function timeRange(view: View, catalogue: Catalogue): YearRange | null {
-  const ranges: YearRange[] = []
+/** The years a range actually has observations for: the ones it lists, or every year it spans. */
+export function rangeObservations(years: YearRange | null | undefined): number[] {
+  if (!years) return []
+  if (years.available) return [...years.available]
+  return Array.from({ length: years.last - years.first + 1 }, (_, i) => years.first + i)
+}
+
+/** The observation nearest a year; when two are equally near, the earlier one. */
+export function nearestObservation(observations: number[], year: number): number {
+  let best = observations[0]
+  for (const candidate of observations) {
+    if (Math.abs(candidate - year) < Math.abs(best - year)) best = candidate
+  }
+  return best
+}
+
+/** The slider's observations: every year the visible temporal content can show, once each. */
+export function timeObservations(view: View, catalogue: Catalogue): number[] {
+  const seen = new Set<number>()
   const section = catalogue.sections.find((s) => s.id === view.section)
-  if (section?.years) ranges.push(section.years)
+  if (section?.years) for (const year of rangeObservations(section.years)) seen.add(year)
   for (const active of view.layers) {
     const layer = catalogue.layers.find((l) => l.id === active.id)
-    if (layer?.years) ranges.push(layer.years)
+    if (layer?.years) for (const year of rangeObservations(layer.years)) seen.add(year)
   }
-  if (!ranges.length) return null
-  return {
-    first: Math.min(...ranges.map((r) => r.first)),
-    last: Math.max(...ranges.map((r) => r.last)),
+  return [...seen].sort((a, b) => a - b)
+}
+
+/** Where a year sits in the observation list; the last one when no year has been chosen. */
+export function observationIndex(observations: number[], year: number | null): number {
+  if (!observations.length) return -1
+  if (year === null) return observations.length - 1
+  let best = 0
+  for (let i = 1; i < observations.length; i += 1) {
+    if (Math.abs(observations[i] - year) < Math.abs(observations[best] - year)) best = i
   }
+  return best
 }
 
 /** The year a layer or section actually shows: its nearest available year. */
 export function effectiveYear(years: YearRange | null | undefined, year: number | null): number | null {
-  if (!years) return null
-  if (year === null) return years.last
-  return Math.min(years.last, Math.max(years.first, year))
+  const observations = rangeObservations(years)
+  if (!observations.length) return null
+  if (year === null) return observations[observations.length - 1]
+  return nearestObservation(observations, year)
 }
 
-/** The stored year, kept only while something on screen has years, and inside their range. */
+/** The stored year, kept only while something on screen has years, and on one of them. */
 export function tidyYear(view: View, catalogue: Catalogue): number | null {
-  const range = timeRange(view, catalogue)
-  if (!range || view.year === null) return null
-  return Math.min(range.last, Math.max(range.first, view.year))
+  const observations = timeObservations(view, catalogue)
+  if (!observations.length || view.year === null) return null
+  return nearestObservation(observations, view.year)
 }
 
 export function sectionsWithActiveLayers(view: View, catalogue: Catalogue): Set<string> {

@@ -75,16 +75,16 @@ test('the time slider steps through years and the legend shows the year on displ
   await switchOn(page, 'Alpha section', 'Fake yearly')
   const slider = page.getByRole('group', { name: 'Year' })
   const legend = page.getByRole('region', { name: 'Legend' })
-  await expect(slider.getByRole('slider')).toHaveValue('2010')
+  await expect(slider.getByRole('slider')).toHaveAttribute('aria-valuetext', '2010')
   await expect(legend).toContainText('Fake yearly (2010)')
 
   await slider.getByRole('button', { name: 'Previous year' }).click()
-  await expect(slider.getByRole('slider')).toHaveValue('2009')
+  await expect(slider.getByRole('slider')).toHaveAttribute('aria-valuetext', '2009')
   await expect(legend).toContainText('Fake yearly (2009)')
   await expect(page).toHaveURL(/year=2009/)
 
   await slider.getByRole('button', { name: 'Next year' }).click()
-  await expect(slider.getByRole('slider')).toHaveValue('2010')
+  await expect(slider.getByRole('slider')).toHaveAttribute('aria-valuetext', '2010')
   await expect(slider.getByRole('button', { name: 'Next year' })).toBeDisabled()
 })
 
@@ -93,7 +93,7 @@ test('play steps forward and wraps to the first year', async ({ page }) => {
   await switchOn(page, 'Alpha section', 'Fake yearly')
   const slider = page.getByRole('group', { name: 'Year' })
   await slider.getByRole('button', { name: 'Play' }).click()
-  await expect(slider.getByRole('slider')).toHaveValue('2000', { timeout: 3000 })
+  await expect(slider.getByRole('slider')).toHaveAttribute('aria-valuetext', '2000', { timeout: 3000 })
   await slider.getByRole('button', { name: 'Pause' }).click()
 })
 
