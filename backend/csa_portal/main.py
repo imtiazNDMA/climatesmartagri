@@ -17,6 +17,7 @@ use_bundled_proj()  # before anything imports rasterio
 
 import rasterio  # noqa: E402
 import rasterio.errors  # noqa: E402
+import httpx  # noqa: E402
 from fastapi import FastAPI, HTTPException, Query, Request, Response  # noqa: E402
 from rasterio.warp import transform_bounds  # noqa: E402
 from titiler.core.dependencies import parse_color  # noqa: E402
@@ -27,6 +28,13 @@ from .catalogue import Layer, load_catalogue  # noqa: E402
 from .ai.agents.assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
 from .facts import Facts  # noqa: E402
+from .land_cover_mpc import (  # noqa: E402
+    SUPPORTED_YEARS,
+    LandCoverResolver,
+    MpcLandCoverError,
+    MpcLandCoverResolver,
+    pakistan_geometry,
+)
 from .ai.model import LmStudioModel  # noqa: E402
 from .ai.otlp import OtlpExporter  # noqa: E402
 from .ai.store import AiStore, StoreError  # noqa: E402
@@ -55,6 +63,25 @@ logger = logging.getLogger("uvicorn.error")
 
 def _error(status: int, message: str, reason: str) -> HTTPException:
     return HTTPException(status_code=status, detail={"message": message, "reason": reason})
+
+
+# How a failure to resolve an observation reaches the browser.
+_OBSERVATION_FAILURES = {
+    "year-out-of-range": (422, "year-out-of-range"),
+    "no-data": (404, "no-data"),
+    "invalid-source": (502, "invalid-source"),
+    "incomplete-source": (502, "incomplete-source"),
+    "invalid-upstream-response": (502, "invalid-upstream-response"),
+    "upstream-rejected": (502, "upstream-rejected"),
+    "upstream-unavailable": (503, "upstream-unavailable"),
+    "upstream-timeout": (504, "upstream-timeout"),
+    "invalid-boundaries": (500, "invalid-boundaries"),
+}
+
+
+def _observation_error(error: MpcLandCoverError) -> HTTPException:
+    status, reason = _OBSERVATION_FAILURES.get(error.code, (502, "upstream-unavailable"))
+    return _error(status, str(error), reason)
 
 
 @functools.lru_cache(maxsize=64)
@@ -114,6 +141,8 @@ def create_app(
     crop_classifier: CropClassifier | None = None,
     assistant_client: AssistantClient | None = None,
     tracer: Tracer | None = None,
+    land_cover: LandCoverResolver | None = None,
+    land_cover_error: str | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
     tracer = tracer or _build_tracer(settings)
@@ -134,6 +163,20 @@ def create_app(
     sections = {section.id: section for section in catalogue.sections}
     layers = {layer.id: layer for layer in catalogue.layers}
 
+    # --- The annual land-classification observation, served from Microsoft Planetary Computer.
+    wants_observation = any(layer.tile_source == "mpc" for layer in catalogue.layers)
+    if land_cover is None and land_cover_error is None and wants_observation:
+        try:
+            land_cover = MpcLandCoverResolver(
+                httpx.Client(timeout=30.0, follow_redirects=True),
+                pakistan_geometry(settings.boundaries_dir),
+            )
+        except MpcLandCoverError as err:
+            # Without the country's outline the catalogue cannot be asked what covers it;
+            # the portal still starts, and says why the layer has no tiles.
+            land_cover_error = str(err)
+            logger.error("The annual land-classification service could not start: %s", err)
+
     app = FastAPI(title="CSA Portal")
 
     classifier = crop_classifier or CropClassifier(settings.crop_model_dir)
@@ -153,7 +196,11 @@ def create_app(
         body = layer.model_dump()
         body["tile_url"] = None
         body["bounds"] = None
-        if layer.kind == "raster" and layer.source:
+        if layer.tile_source == "mpc":
+            # Its tiles come from the annual observation, so it is ready exactly when that service is.
+            if land_cover is None:
+                body["status"] = "no-data"
+        elif layer.kind == "raster" and layer.source:
             path = raster_file(layer)
             if path is None:
                 body["status"] = "no-data"
@@ -244,7 +291,7 @@ def create_app(
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
-        return {
+        body = {
             "status": "ok",
             "boundaries_loaded": places.loaded,
             "boundaries_error": boundaries_error,
@@ -260,6 +307,13 @@ def create_app(
                 for layer in catalogue.layers
             },
         }
+        if wants_observation:
+            body["land_cover"] = {
+                "status": "ready" if land_cover is not None else "unavailable",
+                "years": list(SUPPORTED_YEARS),
+                "error": land_cover_error,
+            }
+        return body
 
     @app.get("/api/catalogue")
     def get_catalogue() -> dict[str, Any]:
@@ -268,6 +322,38 @@ def create_app(
             "sections": [section.model_dump() for section in catalogue.sections],
             "layers": [served(layer) for layer in catalogue.layers],
             "forecast": _describe_forecast(forecast, derived),
+        }
+
+    @app.get("/api/land-cover/observation")
+    def land_cover_observation(response: Response, year: int | None = None) -> dict[str, Any]:
+        """The tiles for one annual land-classification observation, and where they came from.
+
+        The year is the observation the map shows; without one, the latest published year is served.
+        """
+        if land_cover is None:
+            raise _error(
+                503,
+                "The annual land-classification service is not available",
+                "not-configured",
+            )
+        if year is not None and year not in SUPPORTED_YEARS:
+            raise _error(
+                422,
+                f"Year {year} is outside {SUPPORTED_YEARS[0]}-{SUPPORTED_YEARS[-1]}",
+                "year-out-of-range",
+            )
+        try:
+            resolved = land_cover.resolve(SUPPORTED_YEARS[-1] if year is None else year)
+        except MpcLandCoverError as err:
+            raise _observation_error(err) from err
+        response.headers["Cache-Control"] = "public, max-age=300"
+        return {
+            "year": resolved.year,
+            "collection": resolved.collection,
+            "item_ids": list(resolved.item_ids),
+            "tile_urls": list(resolved.tile_templates),
+            "bounds": list(resolved.bounds),
+            "attribution": resolved.attribution,
         }
 
     @app.get("/api/places")

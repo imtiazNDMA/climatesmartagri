@@ -65,7 +65,8 @@ def test_annual_land_classification_contract_is_authoritative():
         2017, 2023, list(range(2017, 2024)),
     )
     assert layer.years == section.years
-    assert (layer.kind, layer.status, layer.section_id) == ("raster", "no-data", "land-cover")
+    assert (layer.kind, layer.status, layer.section_id) == ("raster", "ready", "land-cover")
+    assert layer.tile_source == "mpc"
     assert {
         item.value: (item.label, item.colour) for item in layer.legend.items
     } == ANNUAL_LAND_CLASSES

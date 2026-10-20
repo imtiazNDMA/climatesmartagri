@@ -8,6 +8,7 @@ import { forecastTileUrl, layerGeojsonUrl, layerTileUrl } from '../api/client'
 import { COUNTRY_ID, type Layer } from '../api/types'
 import type { ForecastTimesState } from '../data/useForecastTimes'
 import type { DistrictRiskState } from '../data/useDistrictRisk'
+import type { LandCoverObservationState } from '../data/useLandCoverObservation'
 import type { PortalData } from '../data/usePortalData'
 import type { StoryCamera } from '../api/types'
 import { runOf } from '../forecast/choice'
@@ -220,8 +221,26 @@ function wireInteractions(map: MapLibreMap, data: PortalData) {
 const PULSE_FILL = 1
 const PULSE_WASH = 0.6
 
-function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry: number) {
+function addDataLayer(
+  map: MapLibreMap,
+  layer: Layer,
+  year: number | null,
+  retry: number,
+  observation: LandCoverObservationState,
+): boolean {
   const id = dataId(layer.id)
+  if (layer.tile_source === 'mpc') {
+    // Its tiles are the annual observation. Until that year's observation has arrived there is
+    // nothing to draw, rather than last year's tiles under this year's label.
+    const data = observation.data
+    if (observation.status !== 'ready' || !data || data.year !== year) return false
+    map.addSource(id, {
+      type: 'raster', tiles: data.tile_urls, tileSize: 256,
+      maxzoom: layer.max_zoom ?? 22, bounds: data.bounds ?? undefined,
+    })
+    map.addLayer({ id, type: 'raster', source: id })
+    return true
+  }
   if (layer.kind === 'geojson') {
     map.addSource(id, { type: 'geojson', data: `${window.location.origin}${layerGeojsonUrl(layer.id, retry)}` })
     map.addLayer({
@@ -256,7 +275,7 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
         paint: { 'line-color': colour, 'line-width': 3, 'line-opacity': 1 },
       })
     }
-    return
+    return true
   }
   const tiles = [`${window.location.origin}${layerTileUrl(layer, year, retry)}`]
   if (layer.kind === 'vector') {
@@ -271,6 +290,7 @@ function addDataLayer(map: MapLibreMap, layer: Layer, year: number | null, retry
     })
     map.addLayer({ id, type: 'raster', source: id })
   }
+  return true
 }
 
 function removeDataLayer(map: MapLibreMap, layerId: string) {
@@ -292,6 +312,7 @@ export function MapView({
   basemap,
   forecastTimes,
   districtRisk,
+  landCover,
   storyCamera,
 }: {
   data: PortalData
@@ -299,6 +320,7 @@ export function MapView({
   basemap: BasemapId
   forecastTimes: ForecastTimesState
   districtRisk: DistrictRiskState
+  landCover: LandCoverObservationState
   storyCamera: StoryCamera | null
 }) {
   const container = useRef<HTMLDivElement>(null)
@@ -477,10 +499,15 @@ export function MapView({
       const layer = data.catalogue.layers.find((l) => l.id === active.id)
       if (!layer) continue
       if (!built.current.has(layer.id)) {
-        addDataLayer(map, layer, effectiveYear(layer.years, year), retryCounts[layer.id] ?? 0)
+        const added = addDataLayer(
+          map, layer, effectiveYear(layer.years, year), retryCounts[layer.id] ?? 0, landCover,
+        )
+        // A layer whose observation has not arrived is left out until it has.
+        if (!added) continue
         built.current.set(layer.id, wanted.get(layer.id)!)
       }
       const id = dataId(layer.id)
+      if (!map.getLayer(id)) continue
       map.moveLayer(id, anchor)
       map.setLayoutProperty(id, 'visibility', active.hidden ? 'none' : 'visible')
       map.setPaintProperty(id, layer.kind === 'raster' ? 'raster-opacity' : 'fill-opacity', active.opacity)
@@ -491,7 +518,7 @@ export function MapView({
         map.setLayoutProperty(part, 'visibility', active.hidden ? 'none' : 'visible')
       }
     }
-  }, [ready, layers, year, retryCounts, data])
+  }, [ready, layers, year, retryCounts, data, landCover])
 
   // Keep the forecast in step with the chosen layer, model, level and time, blending from one time to the next.
   useEffect(() => {

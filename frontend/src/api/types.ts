@@ -73,6 +73,18 @@ export interface Layer {
   bounds?: [number, number, number, number] | null
   /** Stable source semantics for a categorical product; concrete raster files stay server-side. */
   product?: RasterProduct | null
+  /** Where the tiles come from: left out, a converted file; "mpc", the annual observation. */
+  tile_source?: 'mpc' | null
+}
+
+/** One annual land-classification observation: the tiles for a year and where they came from. */
+export interface LandCoverObservation {
+  year: number
+  collection: string
+  item_ids: string[]
+  tile_urls: string[]
+  bounds: [number, number, number, number]
+  attribution: string
 }
 
 export interface ForecastLayer {

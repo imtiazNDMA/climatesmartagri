@@ -20,6 +20,7 @@ import { useBackendWatch } from './data/useBackendWatch'
 import { useForecastTimes } from './data/useForecastTimes'
 import { useDistrictRisk } from './data/useDistrictRisk'
 import { useLayerProbes } from './data/useLayerProbes'
+import { useLandCoverObservation } from './data/useLandCoverObservation'
 import { useHazardProducts } from './data/useHazardProducts'
 import { usePortalData, type PortalData } from './data/usePortalData'
 import { useSectionData } from './data/useSectionData'
@@ -62,6 +63,7 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
   )
   const forecastTimes = useForecastTimes()
   const districtRisk = useDistrictRisk(section?.kind === 'hazards', hazardProducts, forecastTimes)
+  const landCover = useLandCoverObservation(data.catalogue)
   const place = data.places.find((p) => p.id === (placeId ?? COUNTRY_ID))
   const showCharts = full && section !== null && section.kind !== 'crop-classification'
   return (
@@ -87,6 +89,7 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
             basemap={basemap}
             forecastTimes={forecastTimes}
             districtRisk={districtRisk}
+            landCover={landCover}
             storyCamera={storyCamera}
           />
           {/* In full view the charts take the map's place; the map stays loaded underneath. */}

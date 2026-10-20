@@ -151,7 +151,8 @@
       "section_id": "land-cover",
       "title": "Annual land classification",
       "kind": "raster",
-      "status": "no-data",
+      "status": "ready",
+      "tile_source": "mpc",
       "default_opacity": 0.85,
       "legend": {
         "type": "classes",

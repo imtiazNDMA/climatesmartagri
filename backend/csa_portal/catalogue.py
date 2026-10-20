@@ -115,6 +115,9 @@ class Layer(BaseModel):
     years: YearRange | None = None
     default_opacity: float = Field(default=1.0, ge=0, le=1)
     product: RasterProduct | None = None
+    # Where the tiles come from: left out, they are a converted file served by TiTiler;
+    # "mpc", they are the annual observation the portal asks Microsoft Planetary Computer for.
+    tile_source: Literal["mpc"] | None = None
 
 
 class Catalogue(BaseModel):

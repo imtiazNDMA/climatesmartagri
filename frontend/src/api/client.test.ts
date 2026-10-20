@@ -10,7 +10,9 @@ import {
   fetchHazardProducts,
   fetchBoundaries,
   fetchCatalogue,
+  fetchLandCoverObservation,
   fetchSectionData,
+  landCoverObservationUrl,
   layerGeojsonUrl,
   layerTileUrl,
   probeLayer,
@@ -159,6 +161,46 @@ describe('client', () => {
     expect(await probeTile('forest', null, 0)).toBe(false)
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('failed') }))
     expect(await probeTile('forest', null, 0)).toBe(false)
+  })
+})
+
+describe('the annual land-classification observation', () => {
+  it('asks for the chosen year, and for the latest when none is given', () => {
+    expect(landCoverObservationUrl(2019, 0)).toBe('/api/land-cover/observation?year=2019')
+    expect(landCoverObservationUrl(null, 0)).toBe('/api/land-cover/observation')
+    expect(landCoverObservationUrl(2019, 2)).toBe('/api/land-cover/observation?year=2019&r=2')
+  })
+
+  it('returns the observation the server resolved', async () => {
+    const body = {
+      year: 2019,
+      collection: 'io-lulc-annual-v02',
+      item_ids: ['42Q-2019'],
+      tile_urls: ['https://planetarycomputer.microsoft.com/tiles/{z}/{x}/{y}'],
+      bounds: [60, 23, 79, 37],
+      attribution: 'Esri',
+    }
+    const fetchMock = respond(200, body)
+    vi.stubGlobal('fetch', fetchMock)
+    const observation = await fetchLandCoverObservation(2019, 0)
+    expect(observation.year).toBe(2019)
+    expect(observation.tile_urls).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledWith('/api/land-cover/observation?year=2019')
+  })
+
+  it('reports a year the server does not have', async () => {
+    vi.stubGlobal('fetch', respond(422, { detail: { message: 'Year 2024 is outside 2017-2023', reason: 'year-out-of-range' } }))
+    const error = await fetchLandCoverObservation(2024, 0).catch((e) => e)
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.reason).toBe('year-out-of-range')
+  })
+
+  it('probes the observation rather than a tile for a layer served from it', async () => {
+    const ok = respond(200, { year: 2019 })
+    vi.stubGlobal('fetch', ok)
+    const layer = { id: 'annual-land-cover', kind: 'raster' as const, tile_url: null, tile_source: 'mpc' as const }
+    expect(await probeLayer(layer, 2019, 0)).toBe(true)
+    expect(ok.mock.calls[0][0]).toBe('/api/land-cover/observation?year=2019')
   })
 })
 
