@@ -62,7 +62,7 @@ A change to the view (open a section, pick a place, turn on a layer) that the as
 _Avoid_: command, tool call
 
 **Advisory**:
-Written advice for one place and forecast period that joins district risk with crop stage. An AI drafts it; an officer approves it before it is shared.
+Written advice for one place and forecast period that joins district risk with crop stage. For now it remains an internal AI draft and cannot be exported or shared. If external distribution is added later, an officer must approve it first.
 _Avoid_: bulletin, warning, alert
 
 **Crop health screening**:

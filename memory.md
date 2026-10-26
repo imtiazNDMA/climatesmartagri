@@ -170,7 +170,8 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Deferred from the shell review:** search says "No places match" when boundaries are missing; lenient number parsing in the URL; the URL is rewritten on every change; some validation errors use a different shape; "Check again" gives no feedback when the backend is still down.
 - **`main` has never been pushed.** Everything merges into `feat/portal-data`, the default branch; the user has not said whether it should ever reach `main`.
 - **This repo is public, and this file names the PMD server's address and port** (*Weather forecast*). The user was told on 2026-10-15 and has not decided whether to remove it.
-- **AI decisions waiting on the user:** #12 how officers sign in (local accounts or NDMA single sign-on), #21 which documents the assistant may answer from, #15 which agronomist reviews management guidance.
+- **AI decisions waiting on the user:** #21 which documents the assistant may answer from, #15 which agronomist reviews management guidance.
+- **Deferred:** officer sign-in (#12), advisory approval workflow, export and sharing. Advisories may remain clearly marked internal drafts, with no external distribution. Revisit ADR 0002 only if publishing or sharing enters scope.
 - **The `/api/sections/{id}/data` route still has its own copy of the place fallback**; moving it onto the facts module is a small follow-up.
 - **GitHub labels:** the triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) and `ai` exist on `imtiazNDMA/climatesmartagri`.
 
