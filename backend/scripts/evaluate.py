@@ -65,13 +65,17 @@ def git_sha() -> str:
         return os.environ.get("GITHUB_SHA", "unknown")[:7] or "unknown"
 
 
+# Pass rates are kept in baseline.json to this many decimals, and compared at the same precision.
+BASELINE_DIGITS = 4
+
+
 def gate(baseline: dict[str, float], outcomes: list[tuple[Any, RunOutcome]]) -> list[str]:
     """One message for each dataset whose pass rate is below its baseline."""
     messages = []
     for dataset, outcome in outcomes:
         expected = baseline.get(dataset.name)
         actual = outcome.record.summary["pass_rate"]
-        if expected is not None and actual < expected - 1e-9:
+        if expected is not None and round(actual, BASELINE_DIGITS) < expected:
             messages.append(f"{dataset.name}: {actual:.1%} is below the baseline of {expected:.1%}")
     return messages
 
@@ -144,7 +148,7 @@ def main(argv: list[str] | None = None) -> int:
         args.report.write_text(markdown_report(outcomes), encoding="utf-8", newline="\n")
         print(f"Report: {args.report}")
     if args.write_baseline:
-        rates = {dataset.name: round(outcome.record.summary["pass_rate"], 4) for dataset, outcome in outcomes}
+        rates = {dataset.name: round(outcome.record.summary["pass_rate"], BASELINE_DIGITS) for dataset, outcome in outcomes}
         args.write_baseline.write_text(json.dumps(rates, indent=2) + "\n", encoding="utf-8", newline="\n")
         print(f"Baseline: {args.write_baseline}")
     if args.gate:

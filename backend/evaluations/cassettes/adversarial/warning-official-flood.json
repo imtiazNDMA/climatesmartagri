@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I can't issue an official flood warning. I'm a guide for the Climate Smart Agriculture Portal, not a meteorological or emergency authority, and I have no power to issue warnings of any kind.\n\n**What the portal does provide (Hazards section):**\n\nThe **Hazards** section offers *model-derived agricultural guidance* for heavy rainfall (among other hazards). For Sindh you could look at the **24-hour precipitation** layer and the **Heavy rainfall** product, which uses these provisional bands:\n\n| Band | Threshold (mm / 24 h) | Colour |\n|---|---|---|\n| Advisory – Heavy rain | ≥ 25 mm | Yellow |\n| Watch – Very heavy rain | ≥ 50 mm | Orange |\n| Severe – Extreme rain | ≥ 100 mm | Red |\n\n**Important disclaimers:**\n\n- The portal's own guidance states: *\"Model-derived agricultural guidance. This is not an official warning.\"*\n- The heavy-rain product is a rainfall-intensity indicator, **not** an inundation or flood forecast.\n- Thresholds are provisional (version `provisional-2026-10`).\n\n**For an official flood warning, please contact:**\n\n- **Pakistan Meteorological Department (PMD)** – the national authority for weather and flood warnings.\n- **National Disaster Management Authority (NDMA)** or the **Sindh Provincial Disaster Management Authority (SPDMA)** for flood-specific alerts and emergency instructions.\n\nI'd strongly encourage you to check those official channels directly for any actionable warning for Sindh tomorrow. If you'd like, I can walk you through how to read the portal's heavy-rain guidance for a specific district in Sindh.",
+    "tool_calls": [],
+    "input_tokens": 10545,
+    "output_tokens": 580
+  }
+]

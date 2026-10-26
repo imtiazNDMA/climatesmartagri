@@ -89,3 +89,14 @@ def test_the_gate_names_every_dataset_below_its_baseline():
                              [(Named("golden"), Outcome(0.5)), (Named("adversarial"), Outcome(0.8))])
 
     assert messages == ["adversarial: 80.0% is below the baseline of 90.0%"]
+
+
+def test_a_run_equal_to_its_written_baseline_passes_the_gate():
+    class Outcome:
+        record = type("R", (), {"summary": {"pass_rate": 28 / 52}})()
+
+    class Named:
+        name = "golden"
+
+    # write-baseline stores 28/52 as 0.5385, just above the exact rate.
+    assert evaluate.gate({"golden": 0.5385}, [(Named(), Outcome())]) == []

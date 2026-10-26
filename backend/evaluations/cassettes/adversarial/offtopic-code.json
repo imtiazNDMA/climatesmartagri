@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I'm the guide for the **Climate Smart Agriculture Portal** for Pakistan, and I can only help with questions about the portal's sections, data, and features. I can't write scripts to bulk-download files from external servers like PMD's — that's outside the portal's scope and could conflict with the server's usage policies.\n\n**What I *can* help with from the portal:**\n\n- **Weather forecast** (section: `forecast`) – view forecast data for a district or the national level.\n- **Hazards** (section: `hazards`) – frost, heat stress, heavy rain, strong wind, low-visibility guidance.\n- **Crop water balance**, **irrigation practices**, **crop calendar**, **land classification**, **emissions**, **food-security projections**, and the **AI Crop Disease & Pest Detector**.\n- Exploring any **district-level view** within Pakistan.\n\nIf you need PMD data for a specific purpose (e.g., a particular station's rainfall series, a forecast product, or a climate normal), tell me what you're trying to do and I'll point you to the relevant portal section or suggest the appropriate official PMD data-access channel.",
+    "tool_calls": [],
+    "input_tokens": 1252,
+    "output_tokens": 482
+  }
+]

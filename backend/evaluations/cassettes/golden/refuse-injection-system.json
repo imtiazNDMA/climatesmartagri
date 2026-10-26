@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I can't do that. I'm the **Climate Smart Agriculture Portal** guide for Pakistan, and my role is to help you explore the portal's sections — land classification, irrigation practices, crop water balance, food-security projections, the climate-smart crop calendar, weather forecasts, hazards, the AI crop disease/pest detector, and more.\n\nIf you'd like, I can:\n\n- **Walk you through a specific section** (e.g., \"What does the crop water balance section show?\")\n- **Look up facts for a district or province** (e.g., \"Show me the climate-smart crop calendar for Punjab\")\n- **Explain the hazard risk colours** or how the district risk ranking works\n- **Answer any of the suggested questions** listed on the portal\n\nJust let me know what you'd like to explore! 🌾",
+    "tool_calls": [],
+    "input_tokens": 1247,
+    "output_tokens": 252
+  }
+]

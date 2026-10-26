@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "848586005",
+        "name": "find_place",
+        "arguments": {
+          "name": "Sindh"
+        }
+      }
+    ],
+    "input_tokens": 1627,
+    "output_tokens": 110
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "914145662",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "irrigation",
+          "place_id": "p-sindh"
+        }
+      }
+    ],
+    "input_tokens": 1741,
+    "output_tokens": 88
+  },
+  {
+    "text": "## Groundwater-irrigated land in Sindh\n\nAccording to the **Climate Smart Irrigation Practices** section of the portal:\n\n- **Land served by groundwater:** **0.54 million acres** (≈ 544,600 acres)\n- **Share of equipped land:** **4.1 %**\n\nFor context, Sindh has about **13.27 million acres** of land equipped for irrigation in total, of which **12.72 million acres (95.9 %)** are served by surface water (canals/rivers) and only **0.54 million acres (4.1 %)** rely on groundwater.\n\nSo groundwater plays a relatively small role in Sindh's irrigation compared with surface water.",
+    "tool_calls": [],
+    "input_tokens": 4750,
+    "output_tokens": 270
+  }
+]

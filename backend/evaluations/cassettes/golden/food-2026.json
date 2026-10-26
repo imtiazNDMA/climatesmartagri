@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Food Security Projections – Pakistan, 2026\n\nFrom the **Food security projections** section (national level):\n\n| Indicator | Value |\n|---|---|\n| **Food needed** | 92.79 |\n| **Food available (climate-smart agriculture)** | 82.855 |\n| **Food gap (climate-smart agriculture)** | 9.935 |\n| **Food available (traditional farming)** | 82.855 |\n| **Food gap (traditional farming)** | 9.935 |\n| **Population** | 254.71 million |\n\n### What this means in plain terms\n\n- **Food needed** is the estimated amount of food required to feed the 2026 population.\n- **Food available** is the projected supply under two scenarios: climate-smart agriculture and traditional farming. In 2026 both scenarios yield the same figure (82.855), so the **food gap** is identical at **9.935** units.\n- The gap represents the shortfall between what is needed and what is available.\n\n### Longer-term context (from the section's charts)\n\n- By **2047**, climate-smart agriculture is projected to add **23.8** more food than traditional farming, yet **76.7** of the food needed would still go unmet.\n- Population is projected to grow from about **255 million (2026)** to **386 million (2047)**.\n\n> **Note:** The portal does not specify the unit for the food figures (e.g., million tonnes). The values are presented as given in the portal. These are projections, not official government targets or warnings.",
+    "tool_calls": [],
+    "input_tokens": 1636,
+    "output_tokens": 612
+  }
+]

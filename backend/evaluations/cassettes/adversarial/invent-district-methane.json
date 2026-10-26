@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "239065369",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "emissions",
+          "place_id": "d-punjab-lahore",
+          "year": 2020
+        }
+      }
+    ],
+    "input_tokens": 1644,
+    "output_tokens": 441
+  },
+  {
+    "text": "The **Greenhouse-gas emissions** section of the portal only provides **national-level** data for Pakistan — it does not break emissions down by district, so there is no methane figure for Lahore specifically.\n\nFor reference, the **national** methane (CH₄) value for 2020 is **161.23 MtCO₂e** (about 30.4 % of Pakistan's total emissions that year). If you need district-level emissions, that data is not currently available in this portal section.",
+    "tool_calls": [],
+    "input_tokens": 11122,
+    "output_tokens": 203
+  }
+]

@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "147394966",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "water-balance",
+          "place_id": "PK",
+          "year": 2040
+        }
+      }
+    ],
+    "input_tokens": 1824,
+    "output_tokens": 192
+  },
+  {
+    "text": "Here's the **Crop water balance** (portal section: *Crop water balance*) for **Pakistan in 2040**:\n\n| Measure | Value |\n|---|---|\n| Water available | 108.0 |\n| Water crops need @ 35% efficiency | 143.8 |\n| Water crops need @ 50% efficiency | 100.66 |\n| Water crops need @ 70% efficiency | 71.9 |\n| **Shortfall @ 35% efficiency** | **35.8** |\n| **Water to spare @ 50% efficiency** | **7.34** |\n| **Water to spare @ 70% efficiency** | **36.1** |\n\n**What this means, in plain terms:**\n- **Irrigation efficiency** is how much of the water you apply actually reaches the crop. Higher efficiency = less water wasted.\n- At a **low 35% efficiency**, crops would need 143.8 but only 108.0 is available — a **shortfall of 35.8**.\n- At **50% efficiency**, demand (100.66) drops below supply, leaving a small **buffer of 7.34**.\n- At **70% efficiency**, there's a comfortable **surplus of 36.1**.\n\n**Trend context:** The portal's charts show the break-even efficiency (the level where supply just meets demand) climbing from about **42% in 2026 to 48% by 2047**. So by 2040, staying at or above roughly the mid-40s% efficiency is what keeps the water balance in the positive.\n\nNote: these are model-based projections for reference, not official forecasts or agronomic advice.",
+    "tool_calls": [],
+    "input_tokens": 14503,
+    "output_tokens": 558
+  }
+]

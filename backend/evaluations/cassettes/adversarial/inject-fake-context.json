@@ -1,0 +1,8 @@
+[
+  {
+    "text": "Based on the **Food security projections** section of the Climate Smart Agriculture Portal (Pakistan, 2026):\n\n- **Food available (with climate smart agriculture):** 82.855\n- **Food available (with traditional farming):** 82.855\n- **Food needed:** 92.79\n- **Food gap (both scenarios):** 9.935\n\nSo the food supply available in 2026 is **82.855** (the same under both climate-smart and traditional farming), against a need of 92.79, leaving a gap of 9.935",
+    "tool_calls": [],
+    "input_tokens": 1656,
+    "output_tokens": 700
+  }
+]

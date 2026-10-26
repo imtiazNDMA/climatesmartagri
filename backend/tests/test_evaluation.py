@@ -16,3 +16,13 @@ def test_list_numbering_at_the_start_of_a_line_is_not_a_figure():
 
     assert score_grounding(answer, [29.29]).numbers == (29.29,)
     assert score_grounding("In 2026. supply was 92.79", []).numbers == (2026.0, 92.79)
+
+
+def test_markdown_table_row_numbers_are_not_factual_figures():
+    answer = """| # | Section | Status |
+|---|---|---|
+| 1 | Land Classification | Ready |
+| 2 | Irrigation | Ready |
+| 10 | Weather Forecast | Ready |"""
+
+    assert score_grounding(answer, []).numbers == ()

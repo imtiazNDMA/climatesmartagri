@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Climate Smart Irrigation Practices – What's Available\n\nThe portal's **Irrigation** section (currently showing **Pakistan, national level**) provides the following:\n\n### Key Figures (national)\n| Indicator | Value |\n|---|---|\n| Land equipped for irrigation | **41.33 million acres** |\n| Served by groundwater | 12.78 million acres (30.9 % of equipped land) |\n| Served by surface water | 28.55 million acres (69.1 % of equipped land) |\n| Land actually irrigated | 33.06 million acres |\n| Share of equipped land that is irrigated | **80.0 %** |\n\n### Charts\n1. **Where each province's irrigation water comes from** – a provincial breakdown of groundwater vs. surface-water shares (%).\n2. **Sprinkler vs. flood irrigation recommendation** – sprinkler irrigation is recommended in **480 of 558 tehsils**, while flood irrigation is recommended in only **25**.\n\n### How to explore further\n- **Place levels:** You can drill down from **national → province → district** to see the same indicators at finer scales.\n- **No year filter** is currently applied (the section doesn't use a year dimension), so the figures represent the latest available data.\n\n### What the section does *not* include\n- There is no year-by-year trend, no crop-specific irrigation schedule (see the **Climate-smart crop calendar** section for that), and no real-time water-availability forecast (see the **Weather forecast** or **Crop water balance** sections).\n\nIf you'd like, I can pull the figures for a specific province or district, or walk you through any of the other portal sections.",
+    "tool_calls": [],
+    "input_tokens": 1684,
+    "output_tokens": 650
+  }
+]

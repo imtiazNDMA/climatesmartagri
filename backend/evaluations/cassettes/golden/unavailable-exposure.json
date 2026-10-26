@@ -1,0 +1,23 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "170667631",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "exposure",
+          "place_id": "PK"
+        }
+      }
+    ],
+    "input_tokens": 10542,
+    "output_tokens": 448
+  },
+  {
+    "text": "The portal does not currently provide a figure for how many people are exposed to frost.\n\nThe **Exposure and vulnerability** section (which would show \"population and cropland at risk\") is marked **coming-soon** and has no figures yet.\n\nWhat the portal *does* offer on frost is in the **Hazards** section:\n- **Frost risk** guidance based on accumulated cold (frost-degree-hours, °C·h) over the last 24 hours.\n- Bands: Light frost (≥3 °C·h), Moderate frost (≥12 °C·h), Severe frost (≥24 °C·h).\n\nThis is model-derived agricultural guidance, not an official warning, and it describes frost *severity*, not the number of people exposed. For population exposure counts, you'll need to wait for the Exposure and vulnerability section to be populated.",
+    "tool_calls": [],
+    "input_tokens": 10615,
+    "output_tokens": 268
+  }
+]

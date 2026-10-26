@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "629788584",
+        "name": "find_place",
+        "arguments": {
+          "name": "Punjab"
+        }
+      }
+    ],
+    "input_tokens": 1681,
+    "output_tokens": 133
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "374461485",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "p-punjab"
+        }
+      }
+    ],
+    "input_tokens": 1798,
+    "output_tokens": 80
+  },
+  {
+    "text": "According to the **Land Classification** section of the portal, cropland makes up **67.4% of Punjab's total land area**. It breaks down into two types:\n\n- **Irrigated cropland:** 57.9% of all land (about 29.3 million acres)\n- **Rainfed cropland:** 9.5% of all land (about 4.8 million acres)\n\nFor context, the rest of Punjab's land is classified as \"Others\" (21.5%), shrub land (8.3%), and forest (6.7%).\n\nNote: The portal reports these as shares of total land area; \"cropland\" here includes both irrigated and rainfed agricultural land.",
+    "tool_calls": [],
+    "input_tokens": 7438,
+    "output_tokens": 265
+  }
+]

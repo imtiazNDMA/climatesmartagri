@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## 2047 Food Security Outlook – Pakistan (National)\n\n**Portal section:** *Food security projections* (national level, year 2047)\n\n### Key figures\n\n| Indicator | Value |\n|---|---|\n| Food **needed** | **168.7** (index units) |\n| Food available – **climate-smart agriculture** | **92.0** |\n| Food gap – climate-smart | **76.7** |\n| Food available – **traditional farming** | **68.2** |\n| Food gap – traditional | **100.5** |\n| Population | **386.1 million** |\n\n### What this means in plain terms\n\n1. **Demand is rising sharply.** Pakistan's population is projected to grow from about 255 million (baseline) to roughly **386 million by 2047**, pushing the amount of food the country must produce or import up to an index of **168.7**.\n\n2. **Even with climate-smart practices, a large gap remains.** Climate-smart agriculture (e.g., drought-tolerant varieties, efficient irrigation, soil-health practices) would supply about **92.0** of the 168.7 needed, leaving a **gap of ≈ 76.7**.\n\n3. **Traditional farming falls further short.** Under conventional methods the available food drops to **68.2**, widening the gap to **≈ 100.5**.\n\n4. **The climate-smart advantage is real but not enough on its own.** The portal's chart summary notes that climate-smart agriculture adds roughly **23.8 units** of food over traditional farming by 2047 – a meaningful gain, yet it still leaves **about 45 % of the food needed unmet** (76.7 / 168.7).\n\n### Bottom line\n\nThe 2047 projection signals that **no single production strategy closes the food gap by 2047**.",
+    "tool_calls": [],
+    "input_tokens": 1641,
+    "output_tokens": 700
+  }
+]
