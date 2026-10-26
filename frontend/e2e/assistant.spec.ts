@@ -118,3 +118,18 @@ test('the guide animates out before restoring the launcher', async ({ page }) =>
   await expect(guide).toHaveCount(0, { timeout: 1000 })
   await expect(page.getByRole('button', { name: 'AI portal guide' })).toBeVisible()
 })
+
+test('the launcher animation loads its player from the portal, not a CDN', async ({ page }) => {
+  const external: string[] = []
+  page.on('request', (request) => {
+    if (/unpkg\.com|jsdelivr\.net/.test(request.url())) external.push(request.url())
+  })
+  const wasm = page.waitForResponse((response) => /dotlottie-player.*\.wasm/.test(response.url()))
+  await openPortal(page)
+
+  const response = await wasm
+  expect(new URL(response.url()).host).toBe(new URL(page.url()).host)
+  expect(response.status()).toBe(200)
+  await page.waitForTimeout(500)
+  expect(external).toEqual([])
+})

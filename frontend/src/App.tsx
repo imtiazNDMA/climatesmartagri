@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import { DotLottieReact } from './components/lottie'
 import { AboutDialog } from './components/AboutDialog'
 import { AssistantPanel } from './components/AssistantPanel'
 import { ActiveLayers } from './components/ActiveLayers'

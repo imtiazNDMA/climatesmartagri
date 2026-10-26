@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowLeft, ArrowRight, Bot, ChevronRight, Compass, MessageCircle, Send, Sparkles, X } from 'lucide-react'
-import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import { DotLottieReact } from './lottie'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { askAssistant, fetchAssistantOverview, fetchAssistantTour } from '../api/client'
