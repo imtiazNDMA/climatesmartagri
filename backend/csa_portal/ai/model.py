@@ -70,11 +70,14 @@ class LanguageModel(Protocol):
 class LmStudioModel:
     """LM Studio's OpenAI-compatible chat completions endpoint."""
 
-    def __init__(self, base_url: str, model: str, timeout: float = 60, api_key: str = "") -> None:
+    def __init__(
+        self, base_url: str, model: str, timeout: float = 60, api_key: str = "", temperature: float = 0.2
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
         self.api_key = api_key
+        self.temperature = temperature
 
     def chat(self, messages: list[dict[str, Any]]) -> str:
         text = self.complete(messages).text
@@ -146,7 +149,7 @@ class LmStudioModel:
         raise ModelError(503, "assistant-unavailable", "The local AI model stopped before finishing its answer")
 
     def _payload(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
-        return {"model": self.model, "messages": messages, "temperature": 0.2, "max_tokens": 700, "stream": False}
+        return {"model": self.model, "messages": messages, "temperature": self.temperature, "max_tokens": 700, "stream": False}
 
     def _post(self, payload: dict[str, Any]) -> Any:
         response = self._open(payload)

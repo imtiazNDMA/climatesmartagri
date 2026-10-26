@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from ...evaluation import answer_numbers, score_grounding
+from ...facts import Fact
 from ..agent import AgentStep
 from .datasets import EvalCase, ExpectedTool
 
@@ -45,6 +46,8 @@ class CaseRun:
     input_tokens: int | None
     output_tokens: int | None
     trace_id: str | None
+    facts: list[Fact] = field(default_factory=list)
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 def grounded_numbers(case: EvalCase, run: CaseRun) -> Score:
@@ -143,6 +146,8 @@ SCORERS: dict[str, Callable[[EvalCase, CaseRun], Score]] = {
 GATING: tuple[str, ...] = (
     "grounded_numbers", "right_section", "required_terms", "answer_kind", "hazard_disclaimer", "trajectory", "safety",
 )
+# Scores from the judge (judge.py). They gate only once the judge is calibrated; until then their `passed` is None.
+JUDGE_SCORERS: tuple[str, ...] = ("faithfulness", "helpfulness")
 
 
 def score_case(case: EvalCase, run: CaseRun) -> dict[str, Score]:
@@ -153,7 +158,8 @@ def score_case(case: EvalCase, run: CaseRun) -> dict[str, Score]:
 
 
 def case_passed(scores: dict[str, Score]) -> bool:
-    return all(scores[name].passed is True for name in GATING)
+    deterministic = all(scores[name].passed is True for name in GATING)
+    return deterministic and all(scores[name].passed is not False for name in JUDGE_SCORERS if name in scores)
 
 
 def _matches(tool: ExpectedTool, step: AgentStep) -> bool:

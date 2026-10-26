@@ -25,6 +25,8 @@ use_bundled_proj()
 
 from csa_portal.ai.agents.assistant import AssistantService  # noqa: E402
 from csa_portal.ai.evals.cassettes import CassetteModel, RecordingModel, cassette_path, load_cassette, save_cassette  # noqa: E402
+from csa_portal.ai.evals.calibration import calibration  # noqa: E402
+from csa_portal.ai.evals.judge import Judge  # noqa: E402
 from csa_portal.ai.evals.datasets import DATASETS_DIR, load_dataset  # noqa: E402
 from csa_portal.ai.evals.report import markdown_report  # noqa: E402
 from csa_portal.ai.evals.runner import RunOutcome, run_dataset  # noqa: E402
@@ -80,6 +82,11 @@ def gate(baseline: dict[str, float], outcomes: list[tuple[Any, RunOutcome]]) -> 
     return messages
 
 
+def judge_client(settings: Settings, name: str) -> LmStudioModel:
+    """The judge's model on its LM Studio server, at temperature 0."""
+    return LmStudioModel(settings.judge_url, name, settings.lm_studio_timeout, settings.lm_studio_api_key, temperature=0)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--dataset", action="append", dest="datasets", help="golden, adversarial, ... (repeatable)")
@@ -93,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--store", action=argparse.BooleanOptionalAction, help="keep the run in the AI store")
     parser.add_argument("--db", type=Path, help="the AI store (default: CSA_AI_DB)")
     parser.add_argument("--cassettes", type=Path, help="cassette directory (default: backend/evaluations/cassettes)")
+    parser.add_argument("--judge", action="store_true", help="grade answers with the judge model")
+    parser.add_argument("--judge-model", help="the judge's model id (default: CSA_JUDGE_MODEL)")
     args = parser.parse_args(argv)
     if args.record and args.mode != "live":
         parser.error("--record needs --mode live")
@@ -121,6 +130,17 @@ def main(argv: list[str] | None = None) -> int:
     service = build_service(settings, model, Tracer(store))
     repeats = args.repeats or (3 if args.mode == "live" else 1)
 
+    judge, judge_gates = None, False
+    if args.judge:
+        name = args.judge_model or settings.judge_model
+        if not name:
+            parser.error("--judge needs --judge-model or CSA_JUDGE_MODEL")
+        judge = Judge(judge_client(settings, name), name)
+        state = calibration(store.calibration_pairs(name) if store is not None else [])
+        judge_gates = state.calibrated
+        kappa = "n/a" if state.kappa is None else f"{state.kappa:.2f}"
+        print(f"Judge {name}: {state.labels} labels, {'calibrated' if judge_gates else 'uncalibrated'} (kappa {kappa})")
+
     outcomes = []
     for dataset in datasets:
         def before(case, repeat, name=dataset.name):
@@ -136,7 +156,7 @@ def main(argv: list[str] | None = None) -> int:
 
         outcome = run_dataset(
             service, dataset, mode=args.mode, model=model_name, repeats=repeats, git_sha=git_sha(),
-            before_case=before, after_case=after, store=store,
+            before_case=before, after_case=after, store=store, judge=judge, judge_gates=judge_gates,
         )
         outcomes.append((dataset, outcome))
         summary = outcome.record.summary

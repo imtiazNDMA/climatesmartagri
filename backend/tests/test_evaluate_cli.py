@@ -100,3 +100,43 @@ def test_a_run_equal_to_its_written_baseline_passes_the_gate():
 
     # write-baseline stores 28/52 as 0.5385, just above the exact rate.
     assert evaluate.gate({"golden": 0.5385}, [(Named(), Outcome())]) == []
+
+
+def test_judge_settings_come_from_the_environment_and_default_to_the_assistants_server():
+    from csa_portal.settings import Settings
+
+    assert (Settings._from({}).judge_url, Settings._from({}).judge_model) == ("http://127.0.0.1:1234", "")
+    assert Settings._from({"CSA_LM_STUDIO_URL": "http://gpu:1234"}).judge_url == "http://gpu:1234"
+    configured = Settings._from({"CSA_JUDGE_URL": "http://judge:1234", "CSA_JUDGE_MODEL": "google/gemma-4-26b-a4b"})
+    assert (configured.judge_url, configured.judge_model) == ("http://judge:1234", "google/gemma-4-26b-a4b")
+
+
+def test_judging_needs_a_judge_model(tiny):
+    with pytest.raises(SystemExit):
+        evaluate.main(["--dataset", "tiny", "--cassettes", str(tiny / "cassettes"), "--judge"])
+
+
+def test_a_judged_recorded_run_records_the_judge_and_says_it_is_uncalibrated(tiny, tmp_path, monkeypatch, capsys):
+    from csa_portal.ai.evals.judge import JudgeVerdict
+    from csa_portal.ai.model import ScriptedModel
+
+    verdicts = ScriptedModel([Completion(data=JudgeVerdict(faithful=True, helpfulness=5, reason="Good."))])
+    monkeypatch.setattr(evaluate, "judge_client", lambda settings, name: verdicts)
+    report = tmp_path / "report.md"
+
+    code = evaluate.main(["--dataset", "tiny", "--case", "hello", "--cassettes", str(tiny / "cassettes"),
+                          "--judge", "--judge-model", "gemma", "--report", str(report)])
+
+    assert code == 0
+    assert "Judge gemma: 0 labels, uncalibrated" in capsys.readouterr().out
+    assert "- Judge `gemma` (uncalibrated): faithful 100.0%" in report.read_text(encoding="utf-8")
+
+
+def test_an_empty_judge_url_falls_back_to_the_assistants_server():
+    """Copying .env.example leaves CSA_JUDGE_URL= empty; that means unset, not an empty address."""
+    from csa_portal.settings import Settings
+
+    settings = Settings._from({"CSA_JUDGE_URL": "", "CSA_LM_STUDIO_URL": "http://gpu:1234"})
+
+    assert settings.judge_url == "http://gpu:1234"
+    assert Settings._from({"CSA_JUDGE_URL": "", "CSA_LM_STUDIO_URL": ""}).judge_url == "http://127.0.0.1:1234"
