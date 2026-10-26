@@ -381,6 +381,18 @@ export interface SectionData {
   figures: Figure[]
   charts: ChartSpec[]
   notes?: string[]
+  /** What changed against earlier observations, in sentences worked out by fixed rules. */
+  insights?: Insight[]
+}
+
+export interface Insight {
+  comparison: 'previous' | 'baseline'
+  from_year: number
+  to_year: number
+  rule: string
+  class?: string
+  text: string
+  values: { label: string; value: number; unit: string }[]
 }
 
 export interface Boundaries {
