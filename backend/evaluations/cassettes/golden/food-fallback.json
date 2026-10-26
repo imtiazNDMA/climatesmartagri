@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "371210607",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "food-security",
+          "place_id": "p-punjab",
+          "year": 2032
+        }
+      }
+    ],
+    "input_tokens": 1645,
+    "output_tokens": 286
+  },
+  {
+    "text": "The **Food security projections** section of the portal only provides **national-level** data for Pakistan — it does not break figures down by province, so there is no Punjab-specific food outlook in this section.\n\nHere is what the portal shows for **Pakistan in 2032** (the year currently selected):\n\n- **Food needed:** 110.07\n- **Food available with climate-smart agriculture:** 85.37 → **gap of 24.70**\n- **Food available with traditional farming:** 74.10 → **gap of 35.97**\n- **Population:** 286.84 million\n\n**Key takeaways from the section's charts:**\n- Climate-smart agriculture adds about **23.8 units** of food over traditional farming by 2047, but a large share of the food needed still goes unmet.\n- Population is projected to grow from **255 million (2026)** to **386 million (2047)**, which drives the rising food demand.\n\n**Note:** The units for the food figures are not specified in the portal context. If you need Punjab-specific food data, this section does not currently provide it — you may want to check other sections (e.g., Crop water balance or Climate-smart crop calendar) for province-level detail.",
+    "tool_calls": [],
+    "input_tokens": 12229,
+    "output_tokens": 422
+  }
+]

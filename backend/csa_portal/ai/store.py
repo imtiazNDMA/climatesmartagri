@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 3
 
 # Migration N takes the database from version N-1 to N. Never change one that has shipped; add the next.
 MIGRATIONS: dict[int, str] = {
@@ -45,6 +45,45 @@ MIGRATIONS: dict[int, str] = {
         );
         CREATE INDEX spans_trace_id ON spans (trace_id);
     """,
+    2: """
+        CREATE TABLE eval_runs (
+            id TEXT PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            finished_at TEXT NOT NULL,
+            git_sha TEXT NOT NULL,
+            dataset TEXT NOT NULL,
+            dataset_version INTEGER NOT NULL,
+            mode TEXT NOT NULL,
+            model TEXT NOT NULL,
+            judge_model TEXT,
+            repeats INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            summary TEXT NOT NULL
+        );
+        CREATE INDEX eval_runs_started_at ON eval_runs (started_at);
+        CREATE TABLE eval_results (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES eval_runs (id),
+            case_id TEXT NOT NULL,
+            repeat INTEGER NOT NULL,
+            trace_id TEXT,
+            passed INTEGER NOT NULL,
+            scores TEXT NOT NULL
+        );
+        CREATE INDEX eval_results_run_id ON eval_results (run_id);
+    """,
+    3: """
+        CREATE TABLE labels (
+            id TEXT PRIMARY KEY,
+            result_id TEXT NOT NULL REFERENCES eval_results (id),
+            labeller TEXT NOT NULL,
+            faithful INTEGER NOT NULL,
+            helpful INTEGER,
+            note TEXT NOT NULL,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX labels_result_id ON labels (result_id);
+    """,
 }
 
 _TRACE_COLUMNS = (
@@ -52,6 +91,10 @@ _TRACE_COLUMNS = (
     "question_hash, question_text, answer_text, eval_run_id"
 )
 _SPAN_COLUMNS = "id, trace_id, parent_id, kind, name, started_at, duration_ms, status, attributes"
+_RUN_COLUMNS = (
+    "id, started_at, finished_at, git_sha, dataset, dataset_version, mode, model, judge_model, repeats, status, summary"
+)
+_RESULT_COLUMNS = "id, run_id, case_id, repeat, trace_id, passed, scores"
 
 
 class StoreError(Exception):
@@ -90,6 +133,55 @@ class TraceRecord:
     spans: list[SpanRecord] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class EvalRunRecord:
+    id: str
+    started_at: datetime
+    finished_at: datetime
+    git_sha: str
+    dataset: str
+    dataset_version: int
+    mode: str
+    model: str
+    judge_model: str | None
+    repeats: int
+    status: str
+    summary: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class EvalResultRecord:
+    id: str
+    run_id: str
+    case_id: str
+    repeat: int
+    trace_id: str | None
+    passed: bool
+    scores: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class LabelRecord:
+    """A person's judgement of one evaluated answer, which the judge is calibrated against."""
+
+    id: str
+    result_id: str
+    labeller: str
+    faithful: bool
+    helpful: int | None
+    note: str
+    created_at: datetime
+
+
+@dataclass(frozen=True)
+class UnlabelledResult:
+    result_id: str
+    run_id: str
+    case_id: str
+    question: str
+    answer: str
+
+
 class AiStore:
     """One SQLite connection in WAL mode; writes are serialised by a lock, one transaction per trace."""
 
@@ -99,6 +191,7 @@ class AiStore:
         self._lock = threading.Lock()
         self._db = sqlite3.connect(path, check_same_thread=False)
         try:
+            self._db.execute("PRAGMA foreign_keys=ON")
             self._db.execute("PRAGMA journal_mode=WAL")
             self._migrate()
         except BaseException:
@@ -168,6 +261,107 @@ class AiStore:
             return self._db.execute(
                 "DELETE FROM traces WHERE source = 'live' AND started_at < ?", (_stamp(cutoff),)
             ).rowcount
+
+    def write_eval_run(self, run: EvalRunRecord, results: list[EvalResultRecord]) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                f"INSERT INTO eval_runs ({_RUN_COLUMNS}) VALUES ({', '.join('?' * 12)})",
+                (
+                    run.id, _stamp(run.started_at), _stamp(run.finished_at), run.git_sha, run.dataset,
+                    run.dataset_version, run.mode, run.model, run.judge_model, run.repeats, run.status,
+                    json.dumps(run.summary, ensure_ascii=False),
+                ),
+            )
+            self._db.executemany(
+                f"INSERT INTO eval_results ({_RESULT_COLUMNS}) VALUES ({', '.join('?' * 7)})",
+                [
+                    (
+                        result.id, result.run_id, result.case_id, result.repeat, result.trace_id, int(result.passed),
+                        json.dumps(result.scores, ensure_ascii=False),
+                    )
+                    for result in results
+                ],
+            )
+
+    def get_eval_run(self, run_id: str) -> tuple[EvalRunRecord, list[EvalResultRecord]] | None:
+        with self._lock:
+            row = self._db.execute(f"SELECT {_RUN_COLUMNS} FROM eval_runs WHERE id = ?", (run_id,)).fetchone()
+            if row is None:
+                return None
+            results = self._db.execute(
+                f"SELECT {_RESULT_COLUMNS} FROM eval_results WHERE run_id = ? ORDER BY rowid", (run_id,)
+            ).fetchall()
+        run = EvalRunRecord(
+            row[0], _time(row[1]), _time(row[2]), row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10],
+            json.loads(row[11]),
+        )
+        return run, [
+            EvalResultRecord(result[0], result[1], result[2], result[3], result[4], bool(result[5]), json.loads(result[6]))
+            for result in results
+        ]
+
+    def write_label(self, label: LabelRecord) -> None:
+        if label.helpful is not None and not 1 <= label.helpful <= 5:
+            raise ValueError("helpful must be from 1 to 5, or left out")
+        with self._lock, self._db:
+            if self._db.execute("SELECT 1 FROM eval_results WHERE id = ?", (label.result_id,)).fetchone() is None:
+                raise ValueError(f"unknown result {label.result_id}")
+            self._db.execute(
+                "INSERT INTO labels (id, result_id, labeller, faithful, helpful, note, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (label.id, label.result_id, label.labeller, int(label.faithful), label.helpful, label.note,
+                 _stamp(label.created_at)),
+            )
+
+    def labels(self, result_id: str) -> list[LabelRecord]:
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT id, result_id, labeller, faithful, helpful, note, created_at FROM labels "
+                "WHERE result_id = ? ORDER BY rowid", (result_id,),
+            ).fetchall()
+        return [LabelRecord(r[0], r[1], r[2], bool(r[3]), r[4], r[5], _time(r[6])) for r in rows]
+
+    def unlabelled_results(self, limit: int = 20, judge_model: str | None = None) -> list[UnlabelledResult]:
+        """Answers waiting for a person's label, newest run first: only from runs a judge graded (a label pairs with
+        a verdict), each distinct answer to a case once, and none whose text was already labelled for that case, so
+        twenty labels are twenty different answers rather than one answer's repeats."""
+        judged = "u.judge_model = ?" if judge_model else "u.judge_model IS NOT NULL"
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT r.id, r.run_id, r.case_id, t.question_text, t.answer_text FROM eval_results r "
+                "JOIN eval_runs u ON u.id = r.run_id JOIN traces t ON t.id = r.trace_id "
+                f"WHERE t.answer_text IS NOT NULL AND {judged} AND NOT EXISTS ("
+                "  SELECT 1 FROM labels l JOIN eval_results r2 ON r2.id = l.result_id JOIN traces t2 ON t2.id = r2.trace_id"
+                "  WHERE r2.case_id = r.case_id AND t2.answer_text = t.answer_text"
+                ") ORDER BY u.started_at DESC, r.rowid",
+                (judge_model,) if judge_model else (),
+            ).fetchall()
+        seen: set[tuple[str, str]] = set()
+        pending = []
+        for row in rows:
+            if (row[2], row[4]) in seen:
+                continue
+            seen.add((row[2], row[4]))
+            pending.append(UnlabelledResult(*row))
+        return pending[:limit] if limit > 0 else []
+
+    def calibration_pairs(self, judge_model: str) -> list[tuple[bool, bool]]:
+        """(person said faithful, judge said faithful) for every label on an answer this judge graded."""
+        with self._lock:
+            rows = self._db.execute(
+                "SELECT l.faithful, r.scores FROM labels l JOIN eval_results r ON r.id = l.result_id "
+                "JOIN eval_runs u ON u.id = r.run_id WHERE u.judge_model = ? ORDER BY l.rowid", (judge_model,),
+            ).fetchall()
+        pairs = []
+        for faithful, scores in rows:
+            value = json.loads(scores).get("faithfulness", {}).get("value")
+            if value is not None:
+                pairs.append((bool(faithful), value >= 0.5))
+        return pairs
+
+    def read(self, sql: str, params: tuple = ()) -> list[tuple]:
+        """One read query under the store's lock, for read models (ops.py) that need their own SQL."""
+        with self._lock:
+            return self._db.execute(sql, params).fetchall()
 
     def close(self) -> None:
         self._db.close()

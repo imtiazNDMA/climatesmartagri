@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Punjab in the **Climate Smart Irrigation Practices** section\n\nThe portal shows Punjab at the **province level** with the following reference figures:\n\n| Indicator | Value |\n|---|---|\n| Land equipped for irrigation | **22.57 million acres** |\n| Served by groundwater | 10.61 million acres (47 % of equipped land) |\n| Served by surface water | 11.96 million acres (53 % of equipped land) |\n| Land actually irrigated | 22.57 million acres |\n| Share of equipped land irrigated | 100 % |\n\n### Charts included\n\n1. **\"Where each district's irrigation water comes from in Punjab\"** – a district-level breakdown (in %) of groundwater vs. surface-water sources.\n2. **\"Sprinkler irrigation is recommended in 136 of 139 tehsils in Punjab\"** – a tehsil-level count showing where sprinkler irrigation is suggested as a climate-smart practice.\n\n### What this means in plain terms\n\n- **Equipped land** is the area that has the physical infrastructure (canals, tubewells, etc.) to deliver water.\n- **Groundwater** here typically means tube-well or bore-well supply; **surface water** means canals, rivers, or reservoirs.\n- The 100 % \"actually irrigated\" figure indicates that, in this dataset, all equipped land in Punjab is reported as receiving irrigation in the reference period.\n- The sprinkler-irrigation chart highlights that the portal recommends shifting from flood/furrow methods to sprinkler systems in the vast majority of tehsils as a water-saving, climate-smart option.\n\nYou can drill down to individual **districts** within Punjab (the section supports national → province → district levels) to see the same indicators at finer resolution.",
+    "tool_calls": [],
+    "input_tokens": 1700,
+    "output_tokens": 642
+  }
+]

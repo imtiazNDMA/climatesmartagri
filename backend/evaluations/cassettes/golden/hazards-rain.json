@@ -1,0 +1,8 @@
+[
+  {
+    "text": "No — heavy rainfall in the portal's **Hazards** section is not a flooding forecast.\n\nThe portal's **Heavy rainfall** product (layer: 24-hour precipitation, mm/24h) is described as:\n\n> \"Rainfall intensity that may cause waterlogging or contribute to flash-flood conditions; **not an inundation forecast**.\"\n\nIn plain terms:\n- It measures **how much rain falls** over 24 hours, not whether water is actually standing on the ground.\n- Heavy rain *can* lead to waterlogging or flash-flood conditions, but flooding also depends on soil saturation, drainage, topography, river levels, and prior rainfall — none of which this layer shows.\n- The severity bands (Heavy rain ≥ 25 mm, Very heavy rain ≥ 50 mm, Extreme rain ≥ 100 mm) are **agricultural guidance thresholds**, not flood warnings.\n\n**Disclaimer:** This is model-derived agricultural guidance and is **not an official warning**. For flood information, consult official meteorological and disaster-management authorities.",
+    "tool_calls": [],
+    "input_tokens": 10540,
+    "output_tokens": 284
+  }
+]

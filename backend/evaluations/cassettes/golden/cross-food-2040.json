@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "245885826",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "food-security",
+          "place_id": "PK",
+          "year": 2040
+        }
+      }
+    ],
+    "input_tokens": 1637,
+    "output_tokens": 157
+  },
+  {
+    "text": "## Food Security Outlook for Pakistan – 2040\n\n*(Portal section: **Food security projections**, national level)*\n\n| Indicator | Value |\n|---|---|\n| **Population** | 336.08 million |\n| **Food needed** | 138.22 |\n| **Food available – climate-smart agriculture** | 88.85 |\n| **Food gap – climate-smart agriculture** | **49.37** |\n| **Food available – traditional farming** | 70.91 |\n| **Food gap – traditional farming** | **67.31** |\n\n### What this means\n\n- **Demand is rising sharply.** Food needed grows from 92.79 in 2026 to 138.22 by 2040, driven largely by population growth (255 → 336 million).\n- **A large shortfall persists under both scenarios.** Even with climate-smart agriculture, roughly **36 %** of the food needed in 2040 (49.37 out of 138.22) would go unmet. Under traditional farming the gap widens to about **49 %** (67.31 out of 138.22).\n- **Climate-smart practices help but don't close the gap.** They add roughly **17.9 units** of food availability over traditional farming in 2040 (88.85 vs 70.91), narrowing the gap by about 18 units.\n- **The trend is worsening over time.** The portal's 2047 projection shows the gap reaching 76.7 units even with climate-smart agriculture, indicating the challenge intensifies through the 2040s.\n\n> **Note:** These are model-based projections, not official government forecasts. Units are as reported by the portal (no explicit unit label is provided for the food figures). For policy or planning decisions, consult official national statistics and agricultural authorities.",
+    "tool_calls": [],
+    "input_tokens": 12240,
+    "output_tokens": 587
+  }
+]

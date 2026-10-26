@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Land Classification (current section)\n\nThis section breaks down Pakistan's total land area by cover type. At the national level it reports:\n\n| Category | Area (million acres) | Share of all land |\n|---|---|---|\n| Total land area | 242.0 | 100 % |\n| Forest | 15.2 | 6.3 % |\n| Shrub land | 16.0 | 6.6 % |\n| Irrigated cropland | 48.1 | 19.9 % |\n| Rainfed cropland | 18.6 | 7.7 % |\n| Others | 123.4 | 51.0 % |\n\n**Charts included**\n\n- *How Pakistan's land is classified* – a percentage breakdown of the categories above.\n- *Balochistan and Khyber Pakhtunkhwa farm mostly on rain* – compares irrigated vs. rainfed cropland by province.\n- *Khyber Pakhtunkhwa and Jammu and Kashmir hold 58 % of Pakistan's forest* – forest area by province.\n\n**How to explore further**\n\nThe section supports three place levels – **national → province → district** – so you can drill down to any district",
+    "tool_calls": [],
+    "input_tokens": 1856,
+    "output_tokens": 700
+  }
+]

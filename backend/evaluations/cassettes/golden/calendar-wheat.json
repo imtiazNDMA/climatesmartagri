@@ -1,0 +1,22 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "516684093",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "p-punjab"
+        }
+      }
+    ],
+    "input_tokens": 1495,
+    "output_tokens": 108
+  },
+  {
+    "text": "In the **Climate-smart crop calendar** section (Punjab view), the wheat row is split into three parts you read together:\n\n1. **Wheat, traditional** — `Oct–Dec sowing → Mar–Apr harvest`\n   This is the conventional window: sowing could start as late as December, with harvest in March–April.\n\n2. **Wheat, adjusted** — `Oct–Nov sowing → Mar–Apr harvest`\n   This is the climate-adjusted recommendation: pull sowing earlier so it finishes by November. The harvest window stays the same (Mar–Apr).\n\n3. **Wheat, why** — the reason for the change:\n   *Rising temperatures and terminal heat during grain filling can reduce yield; timely sowing helps the crop mature before severe spring heat.*\n\n**How to read it in plain terms:**\n- The arrow (`→`) means \"sowing period leads to harvest period.\"\n- The shift from **Oct–Dec** to **Oct–Nov** means the *latest* sowing date moves up by about a month — you should not wait until December to sow.\n- The \"why\" line explains the climate driver: by sowing earlier, the grain-filling stage finishes before the hottest spring weeks, protecting yield.\n\nSo the row's message is: **sow wheat by November (not December) so it escapes terminal heat at grain filling.**\n\nNote: this is portal reference guidance for planning, not an official advisory or agronomic prescription — confirm timing against local conditions and extension advice.",
+    "tool_calls": [],
+    "input_tokens": 3496,
+    "output_tokens": 437
+  }
+]

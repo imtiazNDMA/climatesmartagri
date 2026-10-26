@@ -55,6 +55,17 @@ Run the complete suite, including Playwright:
 
 This runs the backend tests (pytest), the frontend logic tests (Vitest) and the browser tests (Playwright). The first time, install the test browser with `npm --prefix frontend exec playwright install chromium`.
 
+## Evaluating the assistant
+
+The assistant is scored on two datasets in `backend/evaluations/`: `golden` (questions about each section, including ones about a different section, place or year than the one on screen) and `adversarial` (prompt injection, requests for official warnings, invented figures, off-topic requests).
+
+- `npm run eval:live` asks the configured LM Studio model every case three times, writes `docs/evaluations/assistant-live-baseline.md`, and keeps the run in the AI store (`CSA_AI_DB`).
+- `npm run eval:recorded` replays the recorded model turns (`backend/evaluations/cassettes/`) through the real tools and scorers, and fails when a dataset's pass rate falls below `backend/evaluations/baseline.json`. `npm run check` and CI run it.
+
+CI has no model, so it only replays recorded turns: it catches changes to tools, facts, the agent loop and the scorers, not changes in how the model answers. After changing a prompt or a model, run `uv run python backend/scripts/evaluate.py --mode live --record`, then `uv run python backend/scripts/evaluate.py --write-baseline backend/evaluations/baseline.json`, and commit the new cassettes and baseline with the change.
+
+After changing a case's view or expected tools, run `uv run python backend/scripts/fill_eval_facts.py` to refresh the numbers its answer may quote.
+
 ## Production build
 
     npm run build

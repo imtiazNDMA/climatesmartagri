@@ -60,3 +60,8 @@ data/archives/
 
 # Cached source items for the annual land-classification statistics (large; refetched by backend/scripts/prepare_land_cover_stats.py)
 backend/cache/
+
+# Service-account keys and credentials: never commit them (this repo is public).
+.service_account.txt
+csa_earthengine_key.json
+*service_account*.json

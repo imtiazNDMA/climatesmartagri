@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Greenhouse-gas emissions – Pakistan, 2025\n\nThe **Greenhouse-gas emissions** section (national level) shows the following for 2025:\n\n| Gas | Amount |\n|---|---|\n| **Total emissions** | **572.45 MtCO₂e** |\n| Carbon dioxide (CO₂) | 281.61 MtCO₂e |\n| Methane (CH₄) | 181.5 MtCO₂e |\n| Nitrous oxide (N₂O) | 109.34 MtCO₂e |\n\n### Key charts in this view\n\n- **Growth trend:** Pakistan's total yearly emissions grew **3.2×** between 1994 and 2025.\n- **Fastest-growing gas:** Nitrous oxide (N₂O) increased the most, reaching **9.9×** its 1994 level.\n- **2025 share:** CO₂ accounted for **49 %** of total emissions.\n\n### Quick notes\n\n- **MtCO₂e** (megatonnes of carbon-dioxide equivalent) is a common unit that lets different greenhouse gases be compared on a single scale by converting each to the warming effect of an equivalent amount of CO₂.\n- The section covers data from **1994 to 2025** at the **national** level; district-level breakdowns are not available in this section.\n\nIf you'd like to explore a different year, a different section (e.g., crop water balance, hazards, or the climate-smart crop calendar), just let me know.",
+    "tool_calls": [],
+    "input_tokens": 1627,
+    "output_tokens": 598
+  }
+]

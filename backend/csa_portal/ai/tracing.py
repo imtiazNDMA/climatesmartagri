@@ -103,8 +103,10 @@ class ActiveTrace:
             duration_ms=(time.perf_counter() - self._started) * 1000, status=self.status,
             error_reason=self.error_reason, input_tokens=tokens[0], output_tokens=tokens[1],
             question_hash=hashlib.sha256(self.question.encode("utf-8")).hexdigest(),
-            question_text=self.question if capture_content else None,
-            answer_text=self.answer if capture_content else None,
+            # Evaluation questions come from the datasets, and their answers are what people label, so they are
+            # always kept; live traces keep text only when content capture is on.
+            question_text=self.question if capture_content or self.source == "eval" else None,
+            answer_text=self.answer if capture_content or self.source == "eval" else None,
             eval_run_id=self.eval_run_id, spans=[s.record() for s in self.spans],
         )
 

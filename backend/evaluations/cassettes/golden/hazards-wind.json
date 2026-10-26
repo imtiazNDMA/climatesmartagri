@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The **Strong wind and lodging** guidance (in the **Hazards** section) covers wind gusts that may:\n\n- **Lodge tall crops** (bend or knock them over)\n- **Damage orchards**\n- **Disrupt field operations**\n\nIt is based on the **wind gust** forecast layer, measured in **m/s**, with three severity bands (higher gusts = more severe):\n\n| Severity | Label | Threshold |\n|---|---|---|\n| Advisory | Strong gusts | ≥ 10 m/s |\n| Watch | Damaging gusts | ≥ 15 m/s |\n| Severe | Severe gusts | ≥ 20 m/s |\n\n**Note:** This is model-derived agricultural guidance, not an official warning.",
+    "tool_calls": [],
+    "input_tokens": 10541,
+    "output_tokens": 204
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## AI Crop Disease and Pest Detector\n\nThe crop detector (portal section **\"AI Crop Disease and Pest Detector\"**) can identify the following from **Rice** and **Maize** leaf images:\n\n- **Common pests**\n- **Common diseases**\n- **Healthy crops** (i.e., confirming the absence of a detected pest or disease)\n\nIn short, you upload a leaf image of rice or maize, and the tool classifies it into one of those categories. It is a national-level tool (no district or year selection applies).\n\n> **Note:** This is an AI classification aid, not a professional agronomic diagnosis. For treatment decisions, consult a local agronomist or extension officer.",
+    "tool_calls": [],
+    "input_tokens": 1322,
+    "output_tokens": 237
+  }
+]

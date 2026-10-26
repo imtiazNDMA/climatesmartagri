@@ -1,0 +1,8 @@
+[
+  {
+    "text": "In the **Crop water balance** section (current view), for **Pakistan in 2047** you can inspect:\n\n**Figures**\n| Metric | Value |\n|---|---|\n| Water available | 107.9 |\n| Water crops need at 35 % efficiency | 146.6 |\n| Water crops need at 50 % efficiency | 102.62 |\n| Water crops need at 70 % efficiency | 73.3 |\n| Shortfall at 35 % efficiency | 38.7 |\n| Water to spare at 50 % efficiency | 5.28 |\n| Water to spare at 70 % efficiency | 34.6 |\n\n**Charts**\n- *Higher efficiency protects the water buffer*\n- *Water stays enough to 2047 only if irrigation efficiency reaches 48 %*\n- *The efficiency that breaks even climbs from 42 % in 2026 to 48 % in 2047*\n\n**Scope of this section**\n- Place level: national (Pakistan)\n- Year range: 2026 – 2047 (you can switch years within that range)\n\nSo in 2047 you're looking at how much water is available versus how much crops need at different irrigation-efficiency levels, and whether there's a shortfall or a surplus. The charts show how the break-even efficiency threshold shifts over time.\n\n> Note: The \"Exposure and vulnerability\" section (district risk ranking) is still marked **coming-soon**, so district-level detail isn't available yet.\n\nWould you like me to pull facts for a different year, a different",
+    "tool_calls": [],
+    "input_tokens": 1685,
+    "output_tokens": 700
+  }
+]

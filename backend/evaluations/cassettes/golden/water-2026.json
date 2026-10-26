@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Crop Water Balance – Pakistan, 2026\n\nThe **Crop water balance** section (national level) compares the water available to the water crops need at different irrigation-efficiency levels. For **2026** the portal shows:\n\n| Indicator | Value |\n|---|---|\n| Water available | 109.0 |\n| Water crops need @ 35 % efficiency | 132.0 |\n| Water crops need @ 50 % efficiency | 92.4 |\n| Water crops need @ 70 % efficiency | 66.0 |\n| **Shortfall @ 35 % efficiency** | **23.0** |\n| Water to spare @ 50 % efficiency | 16.6 |\n| Water to spare @ 70 % efficiency | 43.0 |\n\n### What this means in plain terms\n\n- **At 35 % irrigation efficiency** (i.e., only 35 % of applied water is actually used by the crop), Pakistan would face a **shortfall of 23.0 units** – the water available (109) is not enough to meet crop demand (132).\n- **At 50 % efficiency**, demand drops to 92.4, leaving a **buffer of 16.6 units**.\n- **At 70 % efficiency**, demand falls further to 66.0, giving a **buffer of 43.0 units**.\n\n### Key takeaways from the section's charts\n\n1. **Higher efficiency protects the water buffer** – moving from 35 % to 70 % efficiency turns a shortfall into a comfortable surplus.\n2. **Water stays sufficient through 2047 only if irrigation efficiency reaches about 48 %.**\n3. **The break-even efficiency rises over time**, from **42 % in 2026** to **48 % in 204",
+    "tool_calls": [],
+    "input_tokens": 1685,
+    "output_tokens": 700
+  }
+]

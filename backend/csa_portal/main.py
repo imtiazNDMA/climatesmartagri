@@ -36,6 +36,7 @@ from .land_cover_mpc import (  # noqa: E402
     pakistan_geometry,
 )
 from .ai.model import LmStudioModel  # noqa: E402
+from .ai.ops_api import add_ops_routes  # noqa: E402
 from .ai.otlp import OtlpExporter  # noqa: E402
 from .ai.store import AiStore, StoreError  # noqa: E402
 from .ai.tracing import Tracer  # noqa: E402
@@ -288,6 +289,9 @@ def create_app(
             queue_seconds=settings.ai_queue_seconds,
         ),
     )
+
+    if settings.ops_token:
+        add_ops_routes(app, settings.ops_token, tracer.sink if isinstance(tracer.sink, AiStore) else None)
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:

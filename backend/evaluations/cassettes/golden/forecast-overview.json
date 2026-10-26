@@ -1,0 +1,8 @@
+[
+  {
+    "text": "In the **Weather forecast** section (currently at national level for Pakistan), you can inspect model forecast layers grouped into six themes. Each layer is available from one or more of the configured models (CMA‑GFS, CMA‑GOWFS, PMD‑ICON, PMD‑WRF, ECMWF‑IFS, FENGQING, PANGU, FENGSHUN).\n\n**Precipitation** – rainfall amounts over 3‑, 6‑, 12‑, 24‑hour and 7‑day windows, total rain since the run began, and separate snowfall/sleet layers plus precipitation type (WMO code).\n\n**Wind and dynamics** – wind speed at several atmospheric levels, geopotential height (a measure of pressure‑surface height used to read air flow), vertical velocity (upward/downward air motion), maximum 10 m wind, and wind gusts.\n\n**Temperature and stability** – temperature at multiple levels, max/min 2 m (near‑surface) temperature, dew point, CAPE (energy available to fuel thunderstorms), 24‑hour temperature change, atmospheric thickness, CIN (inhibition of convection), and theta‑se (a stability index).\n\n**Moisture and cloud** – relative humidity (and its max/min), specific humidity, total/high/low cloud cover, visibility, precipitable water (moisture in the air column), and integrated vapour transport.\n\n**Pressure** – mean sea‑level pressure and surface pressure.\n\n**Climate outlook (FENGSHUN)** – temperature anomalies and precipitation anomalies (deviations from normal, in °C and in mm/day or % of normal).\n\n**Hazard models** – frost severity in degree‑hours (how far and how long temperatures stay below freezing).\n\nA few plain‑language notes:\n- **Levels** like 925, 850, 700, 500, 200 are pressure surfaces (",
+    "tool_calls": [],
+    "input_tokens": 9542,
+    "output_tokens": 700
+  }
+]

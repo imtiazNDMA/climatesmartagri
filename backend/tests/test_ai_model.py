@@ -45,3 +45,37 @@ def test_lm_studio_token_counts_come_from_the_response_usage():
 
     assert (with_usage.input_tokens, with_usage.output_tokens) == (312, 41)
     assert (without_usage.input_tokens, without_usage.output_tokens) == (None, None)
+
+
+def test_lm_studio_sends_the_temperature_it_was_given():
+    import json
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+
+    from csa_portal.ai.model import LmStudioModel
+
+    seen = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_POST(self):
+            seen.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+            body = json.dumps({"choices": [{"message": {"content": "Answer"}}]}).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}"
+        LmStudioModel(url, "judge", timeout=2, temperature=0).complete([{"role": "user", "content": "Q"}])
+        LmStudioModel(url, "assistant", timeout=2).complete([{"role": "user", "content": "Q"}])
+    finally:
+        server.shutdown()
+
+    assert [body["temperature"] for body in seen] == [0, 0.2]

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "In the **Hazards** section, every hazard product (frost, heat stress, heavy rain, strong wind, low visibility) uses the same three severity colours:\n\n| Severity | Colour | Hex | Meaning |\n|---|---|---|---|\n| Advisory | Yellow | `#facc15` | Threshold just crossed — monitor conditions |\n| Watch | Orange | `#f97316` | Higher threshold — increased risk to crops/operations |\n| Severe | Red | `#dc2626` | Highest threshold — significant risk |\n\n**How it works:** Each hazard has a numeric threshold per band (e.g., for heavy rain: 25 mm = yellow, 50 mm = orange, 100 mm = red). The map colours a district by which band its forecast value falls into. For **low visibility** the direction is reversed — *lower* values are worse (5 km = yellow, 2 km = orange, 1 km = red).\n\n**Plain terms:** \"Advisory\" means be aware, \"watch\" means take precautions, and \"severe\" means the hazard is strong enough to likely cause crop damage, lodging, waterlogging, or disruption.\n\n> ⚠️ **Disclaimer:** These are model-derived agricultural guidance colours, **not an official warning**. Thresholds are provisional (version `provisional-2026-10`).\n\nIf you'd like, I can pull the specific district risk ranking or a particular hazard's forecast values for a location.",
+    "tool_calls": [],
+    "input_tokens": 10540,
+    "output_tokens": 426
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Crop Water Balance – what it means in this portal\n\nIn the **Crop water balance** section (national view, Pakistan, 2030), \"water balance\" is a simple **supply-versus-demand** comparison:\n\n| Side | What it represents |\n|---|---|\n| **Water available** (110.3) | The total water the country can draw on for crops in that year. |\n| **Water crops need** | The amount crops would require, calculated at a given **irrigation efficiency** (35 %, 50 %, or 70 %). Lower efficiency means more water is lost to evaporation, seepage, etc., so the crop \"needs\" more. |\n\nThe portal then shows the **gap** between the two:\n\n- **Shortfall** (e.g., 27.7 at 35 % efficiency) – water available is *less* than the crop requirement, so there isn't enough.\n- **Water to spare** (e.g., 13.7 at 50 %, 41.3 at 70 %) – water available *exceeds* the requirement, leaving a buffer.\n\n### Why efficiency matters\nThe three efficiency scenarios illustrate a key idea: the same physical water supply can look like a shortage or a surplus depending on how efficiently it is delivered to the crop. The charts in this section make that explicit:\n\n- *\"Higher efficiency protects the water buffer.\"*\n- *\"Water stays enough to 2047 only if irrigation efficiency reaches 48 %.\"*\n- *\"The efficiency that breaks even climbs from 42 % in 2026 to 48 % in 2047.\"*\n\nIn plain terms, the break-even efficiency is the minimum delivery efficiency at which available water just meets crop demand. As demand grows (or supply tightens) over time, that threshold rises.\n\n### Scope & limits\n- This is a **national-level, single-year snapshot** (2030 shown",
+    "tool_calls": [],
+    "input_tokens": 1679,
+    "output_tokens": 700
+  }
+]
