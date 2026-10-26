@@ -28,7 +28,7 @@ trace; every change to a prompt, tool or model can be compared run-against-run o
 | Build or adopt observability | Own span schema in SQLite, OpenTelemetry GenAI attribute names, optional OTLP export | Local-first (ADR 0001), no extra service, Langfuse/Phoenix can be plugged in later through OTLP |
 | Agent runtime | Thin in-house runtime; multi-step workflows are plain Python functions | Only the advisory needs several steps; a graph engine is a framework to maintain |
 | Judge model | A second local model, of a different family from the assistant's | Fully offline. Its weakness is answered by calibration against human labels |
-| Dashboard | `/ops` route in the existing React app, API under `/api/ops`, admin token from `.env` | Traces hold readers' questions; officer sign-in (#12) can replace the token later |
+| Dashboard | `/ops` route in the existing React app, API under `/api/ops`, admin token from `.env` | Traces hold readers' questions; officer sign-in is deferred while advisories remain internal and nothing is published or shared |
 
 ## Architecture
 
@@ -220,6 +220,7 @@ knowledge base, #10 Urdu) is an agent on this runtime and ships with its own dat
 
 - A graph or state-machine engine for agents.
 - Hosted models for answering or judging (ADR 0001 still allows a hosted answering model per deployment later).
-- User accounts; the token is replaced by officer sign-in when #12 is decided.
+- User accounts and officer sign-in. The Ops token remains the interim access control.
+- Advisory approval, export and sharing. Internal drafts may be generated, but no external distribution is planned; revisit ADR 0002 only if that changes.
 - Live evaluation in GitHub CI.
 - Alerting (email or chat) on regressions.
