@@ -14,6 +14,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from . import land_classification
+from .land_cover_stats import AnnualLandCoverStats, LandCoverStatsError
 from .places import COUNTRY_ID, Place
 
 logger = logging.getLogger("uvicorn.error")
@@ -821,6 +823,14 @@ def build_providers(
             loaded[section_id] = data
         except (KeyError, TypeError, IndexError, ZeroDivisionError, AttributeError) as err:
             logger.error("%s does not have the expected contents: %r", filename, err)
+
+    # The annual statistics, when they are published, replace the single static land-cover file.
+    annual = data_dir / "land_cover_annual.json"
+    if annual.is_file():
+        try:
+            sections["land-cover"] = land_classification.provider_for(AnnualLandCoverStats.load(annual))
+        except LandCoverStatsError as err:
+            logger.error("%s cannot be used: %s", annual.name, err)
 
     if practice is not None:
         try:

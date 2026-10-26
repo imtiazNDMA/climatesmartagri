@@ -92,6 +92,13 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
           {note}
         </p>
       ))}
+      {(data.insights ?? []).length > 0 && (
+        <ul className="insights" aria-label="What changed">
+          {(data.insights ?? []).map((insight) => (
+            <li key={`${insight.comparison}-${insight.rule}-${insight.class ?? ''}`}>{insight.text}</li>
+          ))}
+        </ul>
+      )}
       {data.figures.length === 0 && (data.notes ?? []).length === 0 && (
         <p className="empty">No figures for this selection.</p>
       )}

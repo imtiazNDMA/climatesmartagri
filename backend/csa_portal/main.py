@@ -446,6 +446,7 @@ def create_app(
             "figures": body.get("figures", []),
             "charts": body.get("charts", []),
             "notes": body.get("notes", []),
+            "insights": body.get("insights", []),
         }
 
     return app
