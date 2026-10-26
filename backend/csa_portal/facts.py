@@ -65,6 +65,8 @@ class SectionFacts:
     facts: list[Fact]
     notes: list[str] = field(default_factory=list)
     charts: list[ChartSummary] = field(default_factory=list)
+    # Sentences about what changed, worked out by fixed rules; every number in them is also a fact.
+    insights: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -195,11 +197,18 @@ class Facts:
                 share_of = figure.get("share_of", "")
                 label = f"{figure['label']}, share {share_of}" if share_of else f"{figure['label']}, share"
                 facts.append(Fact(label, figure["share"], "%", place.name, when, source))
+        for insight in data.get("insights", []):
+            between = f"{insight['from_year']} to {insight['to_year']}"
+            for value in insight.get("values", []):
+                facts.append(Fact(value["label"], value["value"], value["unit"], place.name, between, source))
         charts = data.get("charts", [])
         for chart in charts:
             facts += _chart_facts(chart, place.name, when, f"{source} / {chart['title']}")
         summaries = [ChartSummary(chart["title"], chart.get("unit", ""), chart.get("headline")) for chart in charts]
-        return SectionFacts(place, year, facts, list(data.get("notes", [])), summaries)
+        return SectionFacts(
+            place, year, facts, list(data.get("notes", [])), summaries,
+            [insight["text"] for insight in data.get("insights", [])],
+        )
 
 
 def _risk_facts(risk: DistrictRisk, hazard: str, model: str, time: str, run: str, level: int) -> RiskFacts:

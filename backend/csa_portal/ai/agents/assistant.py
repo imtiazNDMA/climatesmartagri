@@ -349,6 +349,7 @@ class AssistantService:
                             {"label": f.label, "value": f.value, "unit": f.unit} for f in answer.facts if f.chart is None
                         ],
                         "notes": answer.notes,
+                        "insights": answer.insights,
                         "charts": [
                             {key: value for key, value in (("title", c.title), ("headline", c.headline), ("unit", c.unit))
                              if value is not None}
@@ -374,6 +375,7 @@ def _section_tool_result(answer: SectionFacts) -> dict[str, Any]:
         "place": answer.place.as_dict(), "year": answer.year,
         "facts": [_fact_json(fact) for fact in answer.facts],
         "notes": answer.notes,
+        "insights": answer.insights,
         "charts": [
             {"title": chart.title, "headline": chart.headline, "unit": chart.unit} for chart in answer.charts
         ],
