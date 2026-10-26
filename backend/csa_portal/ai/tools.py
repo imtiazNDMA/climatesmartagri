@@ -27,6 +27,8 @@ class ToolOutput:
 
     result: dict[str, Any]
     facts: list[Fact] = field(default_factory=list)
+    # Portal view changes the tool is asking the frontend to apply, e.g. open a section or show a forecast layer.
+    portal_actions: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

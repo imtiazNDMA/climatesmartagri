@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createViewStore, pickView } from './viewState'
+import type { PortalAction } from '../api/types'
+import { applyPortalActions, createViewStore, pickView } from './viewState'
 
 let store: ReturnType<typeof createViewStore>
 const ids = () => store.getState().layers.map((l) => l.id)
@@ -208,5 +209,50 @@ describe('full view', () => {
   it('cannot be opened without a section', () => {
     store.getState().setFull(true)
     expect(store.getState().full).toBe(false)
+  })
+})
+
+describe('applyPortalActions', () => {
+  it('opens a section, selects a place and sets a year', () => {
+    const actions: PortalAction[] = [
+      { type: 'open-section', section_id: 'alpha-section' },
+      { type: 'select-place', place_id: 'PK101' },
+      { type: 'set-year', year: 2005 },
+    ]
+    applyPortalActions(actions, store)
+    expect(store.getState()).toMatchObject({ section: 'alpha-section', place: 'PK101', year: 2005 })
+  })
+
+  it('does not toggle a section closed when it is already open', () => {
+    store.getState().openSection('alpha-section')
+    applyPortalActions([{ type: 'open-section', section_id: 'alpha-section' }], store)
+    expect(store.getState().section).toBe('alpha-section')
+  })
+
+  it('turns a layer on, unhides it, and leaves a visible one alone', () => {
+    applyPortalActions([{ type: 'toggle-layer', layer_id: 'fake-shapes', default_opacity: 0.7 }], store)
+    expect(store.getState().layers).toEqual([{ id: 'fake-shapes', opacity: 0.7, hidden: false }])
+    store.getState().toggleHidden('fake-shapes')
+    applyPortalActions([{ type: 'toggle-layer', layer_id: 'fake-shapes', default_opacity: 0.7 }], store)
+    expect(store.getState().layers[0].hidden).toBe(false)
+    applyPortalActions([{ type: 'toggle-layer', layer_id: 'fake-shapes', default_opacity: 0.7 }], store)
+    expect(store.getState().layers).toHaveLength(1)
+  })
+
+  it('sets the forecast on the map', () => {
+    applyPortalActions([{
+      type: 'set-forecast',
+      forecast: { layer: 'rain-24h', model: 'cma-gfs', level: 0, time: null },
+    }], store)
+    expect(store.getState().forecast).toEqual({ layer: 'rain-24h', model: 'cma-gfs', level: 0, time: null })
+  })
+
+  it('applies a batch of actions in order', () => {
+    applyPortalActions([
+      { type: 'open-section', section_id: 'forecast' },
+      { type: 'set-forecast', forecast: { layer: 'rain-24h', model: 'cma-gfs', level: 0, time: null } },
+    ], store)
+    expect(store.getState().section).toBe('forecast')
+    expect(store.getState().forecast?.layer).toBe('rain-24h')
   })
 })

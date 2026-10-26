@@ -189,6 +189,17 @@ export interface AssistantTour {
   steps: AssistantTourStep[]
 }
 
+/** A view change the assistant asked the portal to apply. Only known types are ever sent. */
+export type PortalAction =
+  | { type: 'open-section'; section_id: string }
+  | { type: 'select-place'; place_id: string }
+  | { type: 'set-year'; year: number }
+  | { type: 'toggle-layer'; layer_id: string; default_opacity: number }
+  | {
+      type: 'set-forecast'
+      forecast: { layer: string; model: string; level: number; time: string | null }
+    }
+
 export interface AssistantChatMessage {
   role: 'user' | 'assistant'
   content: string
@@ -204,6 +215,8 @@ export interface AssistantChatResponse {
   grounded: boolean
   unchecked_numbers: number[]
   tool_calls: number
+  /** View changes the model requested; the panel applies the ones it recognises. */
+  portal_actions?: PortalAction[]
 }
 
 export interface Place {

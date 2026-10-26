@@ -36,6 +36,8 @@ class AgentResult:
     answer: str
     facts: list[Fact] = field(default_factory=list)
     steps: list[AgentStep] = field(default_factory=list)
+    # Portal view changes gathered from tool calls during this run, for the frontend to apply.
+    portal_actions: list[dict[str, Any]] = field(default_factory=list)
     # Totals over the run's model replies, or None when no reply reported any.
     input_tokens: int | None = None
     output_tokens: int | None = None
@@ -71,6 +73,7 @@ class Agent:
             return AgentResult(self.model.chat(conversation))
         facts: list[Fact] = []
         steps: list[AgentStep] = []
+        portal_actions: list[dict[str, Any]] = []
         replies: list[Any] = []
         last = self.policy.max_rounds - 1
         for round_number in range(self.policy.max_rounds):
@@ -78,7 +81,7 @@ class Agent:
             replies.append(reply)
             if reply.text:
                 return AgentResult(
-                    reply.text, facts, steps,
+                    reply.text, facts, steps, portal_actions,
                     _total(r.input_tokens for r in replies), _total(r.output_tokens for r in replies),
                 )
             if not reply.tool_calls:
@@ -101,6 +104,7 @@ class Agent:
                     if "error" in output.result:
                         tool_span.fail()
                 facts.extend(output.facts)
+                portal_actions.extend(output.portal_actions)
                 steps.append(AgentStep(call.name, dict(call.arguments), output.result.get("error"), len(output.facts)))
                 logger.info(
                     "%s fact tool %s argument_names=%s returned=%d facts",

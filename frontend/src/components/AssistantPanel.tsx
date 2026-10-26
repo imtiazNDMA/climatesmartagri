@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { ArrowLeft, ArrowRight, Bot, Compass, MessageCircle, Send, Sparkles, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Bot, ChevronRight, Compass, MessageCircle, Send, Sparkles, X } from 'lucide-react'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { askAssistant, fetchAssistantOverview, fetchAssistantTour } from '../api/client'
 import type {
   AssistantChatMessage,
@@ -9,10 +12,12 @@ import type {
   StoryCamera,
 } from '../api/types'
 import type { DistrictRiskState } from '../data/useDistrictRisk'
-import { useView, viewStore } from '../state/viewState'
+import { applyPortalActions, useView, viewStore } from '../state/viewState'
+import { useAssistantDrag, type AssistantPosition } from './useAssistantDrag'
 
 type Mode = 'overview' | 'chat' | 'tour'
 type ChatEntry = AssistantChatMessage & { sources?: string[]; grounded?: boolean; uncheckedNumbers?: number[] }
+const TOUR_STEP_MS = 7000
 
 function applyTourStep(
   step: AssistantTourStep,
@@ -27,14 +32,20 @@ function applyTourStep(
 
 export function AssistantPanel({
   open,
+  closing,
   onClose,
   onStoryCamera,
   districtRisk,
+  position,
+  onPositionChange,
 }: {
   open: boolean
+  closing: boolean
   onClose: () => void
   onStoryCamera: (camera: StoryCamera) => void
   districtRisk: DistrictRiskState
+  position: AssistantPosition | null
+  onPositionChange: (position: AssistantPosition) => void
 }) {
   const section = useView((state) => state.section)
   const place = useView((state) => state.place)
@@ -45,6 +56,7 @@ export function AssistantPanel({
   const [overview, setOverview] = useState<AssistantOverview | null>(null)
   const [tour, setTour] = useState<AssistantTour | null>(null)
   const [tourIndex, setTourIndex] = useState(0)
+  const [tourTimer, setTourTimer] = useState(0)
   const [messages, setMessages] = useState<ChatEntry[]>([])
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
@@ -52,6 +64,8 @@ export function AssistantPanel({
   const inputRef = useRef<HTMLInputElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
   const requestRef = useRef<AbortController | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const panelDrag = useAssistantDrag(panelRef, position, onPositionChange)
 
   useEffect(() => {
     if (!open || overview) return
@@ -76,19 +90,29 @@ export function AssistantPanel({
     if (open) closeRef.current?.focus()
     else requestRef.current?.abort()
   }, [open])
-
-  if (!open) return null
+  useEffect(() => {
+    if (!open || mode !== 'tour' || !tour || tourIndex >= tour.steps.length - 1) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const timeout = window.setTimeout(() => {
+      const next = tourIndex + 1
+      setTourIndex(next)
+      applyTourStep(tour.steps[next], viewStore.getState().section, onStoryCamera)
+    }, TOUR_STEP_MS)
+    return () => window.clearTimeout(timeout)
+  }, [open, mode, tour, tourIndex, tourTimer, onStoryCamera])
 
   const currentStep = tour?.steps[tourIndex]
   const startTour = () => {
     setMode('tour')
     setTourIndex(0)
+    setTourTimer((timer) => timer + 1)
     if (tour?.steps[0]) applyTourStep(tour.steps[0], section, onStoryCamera)
   }
   const moveTour = (next: number) => {
     if (!tour) return
     const index = Math.max(0, Math.min(tour.steps.length - 1, next))
     setTourIndex(index)
+    setTourTimer((timer) => timer + 1)
     applyTourStep(tour.steps[index], viewStore.getState().section, onStoryCamera)
   }
   const submit = async (event: FormEvent) => {
@@ -117,6 +141,7 @@ export function AssistantPanel({
           districts: districtRisk.data.districts,
         } : null,
       }, controller.signal)
+      if (reply.portal_actions?.length) applyPortalActions(reply.portal_actions)
       setMessages((current) => [...current, {
         role: 'assistant', content: reply.answer, sources: reply.source_names,
         grounded: reply.grounded, uncheckedNumbers: reply.unchecked_numbers,
@@ -134,15 +159,29 @@ export function AssistantPanel({
 
   return (
     <aside
-      className={`assistant-panel${mode === 'tour' ? ' story-mode' : ''}`}
+      ref={panelRef}
+      className={`assistant-panel${mode === 'tour' ? ' story-mode' : ''}${position ? ' assistant-positioned' : ''}${closing ? ' assistant-closing' : ''}`}
       role="dialog"
       aria-label="Portal AI assistant"
+      style={position ? { left: position.x, top: position.y, right: 'auto', bottom: 'auto' } : undefined}
       onKeyDown={(event) => { if (event.key === 'Escape') onClose() }}
     >
-      <header className="assistant-header">
-        <span><Bot size={22} aria-hidden /></span>
-        <div><strong>Portal guide</strong><small>{overview ? `${overview.local_model ? 'Local ' : ''}${overview.model}` : 'Qwen'}</small></div>
-        <button ref={closeRef} type="button" aria-label="Close assistant" onClick={onClose}><X size={18} /></button>
+      <header
+        className="assistant-header"
+        aria-label="Drag portal guide"
+        {...panelDrag}
+      >
+        <span className="assistant-header-icon" aria-hidden="true">
+          <DotLottieReact src="/chatbot_header.json" autoplay loop />
+        </span>
+        <div><strong>Portal guide</strong><small><i />{overview?.local_model === false ? 'AI assistant' : 'Local AI'}</small></div>
+        <button
+          ref={closeRef}
+          type="button"
+          aria-label="Close assistant"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onClose}
+        ><X size={18} /></button>
       </header>
 
       <nav className="assistant-tabs" aria-label="Assistant modes">
@@ -156,16 +195,22 @@ export function AssistantPanel({
         {mode === 'overview' && (
           overview ? (
             <div className="assistant-overview">
-              <p>{overview.summary}</p>
-              <h3>Explore the portal</h3>
+              <div className="assistant-overview-intro">
+                <h3>Explore the portal</h3>
+                <p>Choose a topic to open its map and information.</p>
+              </div>
               <div className="assistant-section-list">
                 {overview.sections.filter((item) => item.status !== 'coming-soon').map((item) => (
-                  <button type="button" key={item.id} onClick={() => viewStore.getState().openSection(item.id)}>
-                    <strong>{item.title}</strong><span>{item.summary || 'Open this section to explore its maps and information.'}</span>
+                  <button type="button" key={item.id} onClick={() => { viewStore.getState().openSection(item.id); onClose() }}>
+                    <span><strong>{item.title}</strong>{item.summary && <small>{item.summary}</small>}</span>
+                    <ChevronRight size={17} aria-hidden />
                   </button>
                 ))}
               </div>
-              <button type="button" className="assistant-primary" onClick={startTour}><Compass size={16} />Start guided tour</button>
+              <footer className="assistant-overview-footer">
+                <button type="button" className="assistant-primary" onClick={startTour}><Compass size={16} />Start guided tour</button>
+                <button type="button" className="assistant-secondary" onClick={() => setMode('chat')}>Ask about this view</button>
+              </footer>
             </div>
           ) : <p className="assistant-wait">Loading the portal overview…</p>
         )}
@@ -173,11 +218,16 @@ export function AssistantPanel({
         {mode === 'tour' && (
           currentStep ? (
             <div className="assistant-tour">
-              <span>Story {tourIndex + 1} of {tour?.steps.length}</span>
+              <div className="assistant-tour-meta">
+                <span>Story {tourIndex + 1} of {tour?.steps.length}</span>
+                <small>{tour && tourIndex < tour.steps.length - 1 ? 'Auto-advancing' : 'Tour complete'}</small>
+              </div>
               <h3>{currentStep.title}</h3>
               <p>{currentStep.body}</p>
-              <div className="assistant-tour-progress" aria-hidden>
-                {tour?.steps.map((step, index) => <i key={step.id} className={index === tourIndex ? 'on' : ''} />)}
+              <div className="assistant-tour-progress" aria-label={`Tour step ${tourIndex + 1} of ${tour?.steps.length}`}>
+                {tour?.steps.map((step, index) => (
+                  <i key={step.id} className={index < tourIndex ? 'done' : index === tourIndex ? 'on' : ''} />
+                ))}
               </div>
               <div className="assistant-tour-actions">
                 <button type="button" disabled={tourIndex === 0} onClick={() => moveTour(tourIndex - 1)}><ArrowLeft size={16} />Back</button>
@@ -206,7 +256,16 @@ export function AssistantPanel({
               {messages.map((message, index) => (
                 <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
                   <span>{message.role === 'user' ? 'You' : 'Guide'}</span>
-                  <p>{message.content}</p>
+                  {message.role === 'assistant' ? (
+                    <div className="assistant-message-content">
+                      <Markdown
+                        remarkPlugins={[remarkGfm]}
+                        allowedElements={['p', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'blockquote', 'br']}
+                      >
+                        {message.content}
+                      </Markdown>
+                    </div>
+                  ) : <p>{message.content}</p>}
                   {message.sources && message.sources.length > 0 && (
                     <small>Sources: {message.sources.join(' · ')}</small>
                   )}
@@ -231,7 +290,6 @@ export function AssistantPanel({
               />
               <button type="submit" aria-label="Send question" disabled={!question.trim() || busy}><Send size={17} /></button>
             </form>
-            <small className="assistant-disclaimer">Answers come from a local AI model and may be inaccurate. Verify important decisions.</small>
           </div>
         )}
       </div>
