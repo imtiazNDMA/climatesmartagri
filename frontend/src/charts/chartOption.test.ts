@@ -70,7 +70,32 @@ describe('chartOption for charts over time', () => {
 
   it('stacks areas for a stacked-area chart', () => {
     const o = option(stacked)
-    expect(o.series.every((s: Loose) => s.stack === 'total' && s.areaStyle)).toBe(true)
+    expect(o.series.slice(0, 2).every((s: Loose) => s.stack === 'total' && s.areaStyle)).toBe(true)
+    expect(o.series[2].name).toBe('Total emissions')
+    expect(o.series[2].data).toEqual([4, 4, 4])
+    expect(o.series[2].lineStyle.width).toBeGreaterThan(o.series[0].lineStyle.width)
+  })
+
+  it('shows total, values and shares in a stacked-area tooltip', () => {
+    const tooltip = option(stacked).tooltip.formatter([
+      { axisValue: '2002', marker: '●', seriesName: 'A', value: 3 },
+      { axisValue: '2002', marker: '●', seriesName: 'B', value: 1 },
+      { axisValue: '2002', marker: '', seriesName: 'Total emissions', value: 4 },
+    ])
+    expect(tooltip).toContain('Total&nbsp;&nbsp;4 Mt')
+    expect(tooltip).toContain('3 · 75%')
+    expect(tooltip).toContain('1 · 25%')
+  })
+
+  it('gives the emissions chart an editorial axis and extra label room', () => {
+    const emissions = option({ ...stacked, id: 'emissions-by-gas', end_labels: true }, null, true)
+    expect(emissions.yAxis.name).toBe('')
+    expect(emissions.yAxis.splitNumber).toBe(4)
+    expect(emissions.xAxis.axisLabel.interval(0, '2000')).toBe(true)
+    expect(emissions.xAxis.axisLabel.interval(0, '2002')).toBe(false)
+    expect(emissions.grid.right).toBe(250)
+    expect(emissions.series[0].areaStyle.color).toBeTruthy()
+    expect(emissions.series[0].endLabel.backgroundColor).not.toBe('transparent')
   })
 
   it('shows a legend only when there is more than one series', () => {
@@ -166,6 +191,12 @@ describe('storytelling styles', () => {
     const small = option(story)
     expect(small.series.every((s: Loose) => !s.endLabel?.show)).toBe(true)
     expect(small.legend.show).toBe(true)
+  })
+
+  it('adds values and shares to stacked-area end labels', () => {
+    const large = option({ ...stacked, end_labels: true }, null, true)
+    expect(large.series[0].endLabel.formatter).toBe('A  3 · 75%')
+    expect(large.series[1].endLabel.formatter).toBe('B  1 · 25%')
   })
 
   it('keeps the legend in the large view when the chart has no end labels', () => {
