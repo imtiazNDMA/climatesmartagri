@@ -8,7 +8,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Protocol
 from urllib.parse import parse_qsl, urlsplit
 
 import httpx
@@ -71,6 +71,12 @@ class ResolvedLandCover:
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+class LandCoverResolver(Protocol):
+    """What the portal needs from an annual land-classification source."""
+
+    def resolve(self, year: int) -> ResolvedLandCover: ...
 
 
 class MpcLandCoverResolver:
