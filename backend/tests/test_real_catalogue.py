@@ -173,7 +173,7 @@ def test_real_headlines_read_as_findings():
         for section in ("emissions", "water-balance", "food-security", "irrigation")
         for chart in client.get(f"/api/sections/{section}/data").json()["charts"]
     }
-    assert titles["emissions-by-gas"] == "Pakistan's yearly emissions grew 3.2 times between 1994 and 2025"
+    assert titles["emissions-by-gas"] == "Pakistan's annual emissions more than tripled since 1994"
     assert titles["emissions-growth"] == "Nitrous oxide grew fastest: 9.9 times its 1994 level"
     assert titles["water-buffer"] == "Higher efficiency protects the water buffer"
     assert titles["water-explorer"] == "Water stays enough to 2047 only if irrigation efficiency reaches 48%"

@@ -23,8 +23,7 @@ registerEChartsModules([
  * One chart: a headline that states the finding, then the plot.
  * Hover for values, click a legend entry to hide a series, click a year to select it.
  * `large` is the full view, where lines are labelled at their ends.
- * The chart draws itself in again every few seconds, unless the pointer is on it or the reader
- * has asked their device for less motion.
+ * Most charts draw themselves in again periodically. The editorial emissions chart animates once.
  */
 export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: number | null; large?: boolean }) {
   const plot = useRef<HTMLDivElement>(null)
@@ -32,6 +31,7 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
   const latest = useRef(spec)
   const draw = useRef(() => {})
   const dark = useDarkTheme()
+  const isEmissionsTrend = spec.id === 'emissions-by-gas'
 
   useEffect(() => {
     latest.current = spec
@@ -68,7 +68,7 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
 
   useEffect(() => {
     const element = plot.current
-    if (!element || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!element || spec.id === 'emissions-by-gas' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
     let reading = false
     const enter = () => { reading = true }
     const leave = () => { reading = false }
@@ -82,15 +82,36 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
       element.removeEventListener('pointerenter', enter)
       element.removeEventListener('pointerleave', leave)
     }
-  }, [])
+  }, [spec.id])
+
+  const firstTotal = spec.series.reduce((sum, series) => sum + (series.values[0] ?? 0), 0)
+  const lastIndex = spec.categories.length - 1
+  const lastTotal = spec.series.reduce((sum, series) => sum + (series.values[lastIndex] ?? 0), 0)
+  const growth = firstTotal ? lastTotal / firstTotal : 0
+  const growthPercent = firstTotal ? Math.round((lastTotal / firstTotal - 1) * 100) : 0
 
   return (
-    <figure className={large ? 'chart chart-large' : 'chart'} aria-label={spec.title}>
+    <figure className={`${large ? 'chart chart-large' : 'chart'}${isEmissionsTrend ? ' chart-editorial' : ''}`} aria-label={spec.title}>
       <figcaption>
+        {isEmissionsTrend && <span className="chart-eyebrow">Emissions trend · 1994–2025</span>}
         <h4>{spec.title}</h4>
+        {isEmissionsTrend && <p className="chart-subtitle">Total greenhouse gas emissions by gas, 1994–2025 · MtCO₂e</p>}
         {/* Bars without an axis still need their unit said once. */}
         {spec.hide_axis && spec.unit && <p className="chart-unit">Bar length: {spec.unit}</p>}
       </figcaption>
+      {isEmissionsTrend && (
+        <div className="chart-editorial-summary" aria-label={`${growth.toFixed(1)} times growth from ${formatNumber(firstTotal)} to ${formatNumber(lastTotal)} megatonnes carbon dioxide equivalent`}>
+          <div className="chart-editorial-metric">
+            <strong>{growth.toFixed(1)}×</strong>
+            <span>growth over 31 years</span>
+          </div>
+          <div className="chart-editorial-range" aria-hidden="true">
+            <span><small>1994</small><b>{formatNumber(firstTotal)}</b></span>
+            <i><em>+{growthPercent}%</em></i>
+            <span><small>2025</small><b>{formatNumber(lastTotal)} MtCO₂e</b></span>
+          </div>
+        </div>
+      )}
       <div
         ref={plot}
         className="chart-plot"

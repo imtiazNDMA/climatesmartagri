@@ -292,7 +292,7 @@ def test_emissions_story(providers):
     assert list(charts) == ["emissions-by-gas", "emissions-growth", "emissions-share"]
 
     by_gas = charts["emissions-by-gas"]
-    assert by_gas["title"] == "Pakistan's yearly emissions grew 1.1 times between 1994 and 1996"
+    assert by_gas["title"] == "Pakistan's annual emissions more than tripled since 1994"
     assert by_gas["kind"] == "stacked-area"
     assert by_gas["end_labels"] is True
     assert [(s["name"], s["slot"]) for s in by_gas["series"]] == [
