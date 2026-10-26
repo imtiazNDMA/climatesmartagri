@@ -58,7 +58,7 @@ _Avoid_: context, data point
 Said of an AI answer whose every number can be traced to a fact.
 
 **View action**:
-A change to the view (open a section, pick a place, turn on a layer) that the assistant proposes and the reader applies.
+A change to the view (open a section, pick a place, set the year, turn on a layer, show a forecast) that the assistant asks for when the reader wants to see something. The portal checks it against the catalogue and applies it at once through the view store, so the URL follows as for any other change.
 _Avoid_: command, tool call
 
 **Advisory**:

@@ -1,4 +1,4 @@
-import { Bot, Info } from 'lucide-react'
+import { Info } from 'lucide-react'
 import { useMemo } from 'react'
 import type { Catalogue } from '../api/types'
 import { sectionsWithActiveLayers } from '../state/selectors'
@@ -8,10 +8,9 @@ import { sectionIcon } from './sectionIcons'
 type IconRailProps = {
   catalogue: Catalogue
   onAbout: () => void
-  onAssistant: () => void
 }
 
-export function IconRail({ catalogue, onAbout, onAssistant }: IconRailProps) {
+export function IconRail({ catalogue, onAbout }: IconRailProps) {
   const open = useView((s) => s.section)
   const layers = useView((s) => s.layers)
   const forecastOn = useView((s) => s.forecast !== null)
@@ -43,9 +42,6 @@ export function IconRail({ catalogue, onAbout, onAssistant }: IconRailProps) {
         })}
       </div>
       <div className="rail-footer">
-        <button type="button" className="rail-button" aria-label="AI portal guide" title="AI portal guide" onClick={onAssistant}>
-          <Bot size={22} aria-hidden />
-        </button>
         <button type="button" className="rail-button" aria-label="About" title="About" onClick={onAbout}>
           <Info size={22} aria-hidden />
         </button>

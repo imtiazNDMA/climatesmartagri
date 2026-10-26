@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { DotLottieReact } from './components/lottie'
 import { AboutDialog } from './components/AboutDialog'
 import { AssistantPanel } from './components/AssistantPanel'
 import { ActiveLayers } from './components/ActiveLayers'
@@ -15,6 +16,7 @@ import { PlaceSearch } from './components/PlaceSearch'
 import { SectionPanel } from './components/SectionPanel'
 import { TimeSlider } from './components/TimeSlider'
 import { TitleBar } from './components/TitleBar'
+import { useAssistantDrag, type AssistantPosition } from './components/useAssistantDrag'
 import Switch from './components/ui/sky-toggle'
 import { useBackendWatch } from './data/useBackendWatch'
 import { useForecastTimes } from './data/useForecastTimes'
@@ -35,6 +37,29 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
   useBackendWatch(data.catalogue, onLayersChanged)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
+  const [assistantMounted, setAssistantMounted] = useState(false)
+  const [assistantClosing, setAssistantClosing] = useState(false)
+  const [assistantPosition, setAssistantPosition] = useState<AssistantPosition | null>(null)
+  const launcherRef = useRef<HTMLButtonElement>(null)
+  const launcherDrag = useAssistantDrag(launcherRef, assistantPosition, setAssistantPosition)
+  const openAssistant = () => {
+    setAssistantClosing(false)
+    setAssistantMounted(true)
+    setAssistantOpen(true)
+  }
+  const closeAssistant = () => {
+    setAssistantOpen(false)
+    setAssistantClosing(true)
+  }
+  useEffect(() => {
+    if (!assistantClosing) return
+    const duration = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 160
+    const timeout = window.setTimeout(() => {
+      setAssistantMounted(false)
+      setAssistantClosing(false)
+    }, duration)
+    return () => window.clearTimeout(timeout)
+  }, [assistantClosing])
   const [storyCamera, setStoryCamera] = useState<StoryCamera | null>(null)
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('csa-theme')
@@ -71,7 +96,6 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
         <IconRail
           catalogue={data.catalogue}
           onAbout={() => setAboutOpen(true)}
-          onAssistant={() => setAssistantOpen(true)}
         />
         <SectionPanel
           data={data}
@@ -113,13 +137,42 @@ function Portal({ data, onLayersChanged }: { data: PortalData; onLayersChanged: 
           <Notices />
         </main>
       </div>
+      {!assistantMounted && (
+        <button
+          ref={launcherRef}
+          type="button"
+          className="assistant-launcher"
+          aria-label="AI portal guide"
+          title="AI portal guide"
+          style={assistantPosition ? { left: assistantPosition.x, top: assistantPosition.y, right: 'auto', bottom: 'auto' } : undefined}
+          {...launcherDrag}
+          onClick={openAssistant}
+        >
+          <span className="assistant-launcher-icon" aria-hidden="true">
+            <DotLottieReact
+              src="/chatbot_header.json"
+              autoplay
+              loop
+            />
+          </span>
+          <span className="assistant-launcher-copy">
+            <strong>Portal guide</strong>
+            <small>Ask about this map</small>
+          </span>
+        </button>
+      )}
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
-      <AssistantPanel
-        open={assistantOpen}
-        onClose={() => setAssistantOpen(false)}
-        onStoryCamera={(camera) => setStoryCamera({ ...camera })}
-        districtRisk={districtRisk}
-      />
+      {assistantMounted && (
+        <AssistantPanel
+          open={assistantOpen}
+          closing={assistantClosing}
+          onClose={closeAssistant}
+          onStoryCamera={(camera) => setStoryCamera({ ...camera })}
+          districtRisk={districtRisk}
+          position={assistantPosition}
+          onPositionChange={setAssistantPosition}
+        />
+      )}
     </div>
   )
 }

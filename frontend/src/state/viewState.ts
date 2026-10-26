@@ -1,6 +1,6 @@
 import { useStore } from 'zustand'
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import { COUNTRY_ID } from '../api/types'
+import { COUNTRY_ID, type PortalAction } from '../api/types'
 import type { ForecastChoice } from '../forecast/choice'
 
 export interface ActiveLayer {
@@ -107,5 +107,36 @@ export function pickView(state: View): View {
   return {
     section: state.section, full: state.full, layers: state.layers, place: state.place, year: state.year,
     forecast: state.forecast,
+  }
+}
+
+/**
+ * Apply the view changes the assistant requested. Only recognised action types are
+ * applied; open-section is guarded so it cannot toggle a section closed, and
+ * toggle-layer is ensure-on so it never hides a layer that is already visible.
+ */
+export function applyPortalActions(actions: PortalAction[], store: StoreApi<ViewStore> = viewStore): void {
+  for (const action of actions) {
+    const state = store.getState()
+    switch (action.type) {
+      case 'open-section':
+        if (state.section !== action.section_id) state.openSection(action.section_id)
+        break
+      case 'select-place':
+        state.selectPlace(action.place_id)
+        break
+      case 'set-year':
+        state.setYear(action.year)
+        break
+      case 'toggle-layer': {
+        const existing = state.layers.find((layer) => layer.id === action.layer_id)
+        if (!existing) state.toggleLayer(action.layer_id, action.default_opacity)
+        else if (existing.hidden) state.toggleHidden(action.layer_id)
+        break
+      }
+      case 'set-forecast':
+        state.setForecast({ ...action.forecast })
+        break
+    }
   }
 }

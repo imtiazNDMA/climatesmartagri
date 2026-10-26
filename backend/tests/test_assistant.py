@@ -121,7 +121,7 @@ def test_assistant_uses_fact_tools_and_returns_only_the_fact_sources(settings):
     assert body["sources"][0].startswith("fact:")
     assert body["source_names"] == ["Alpha section / District One / 2005"]
     assert [tool.name for tool in model.tools[0]] == [
-        "find_place", "get_section_facts", "get_district_risk", "get_crop_calendar",
+        "find_place", "get_section_facts", "get_district_risk", "get_crop_calendar", "set_portal_view",
     ]
     fact_payload = json.loads(model.sent[2][-1]["content"])
     assert fact_payload["facts"][0] == {
@@ -169,6 +169,129 @@ def test_hazard_thresholds_in_the_current_view_are_grounding_facts(settings):
     from csa_portal.assistant import AssistantChatRequest, AssistantView
     facts = service._view_facts(AssistantView(section_id="hazards"))
     assert facts[0].value == 3
+
+
+def _portal_view_service(settings, model, *, forecast_description=None, catalogue=None):
+    from csa_portal.assistant import AssistantService
+    from csa_portal.catalogue import load_catalogue
+    from csa_portal.facts import Facts
+    from csa_portal.places import load_places
+
+    catalogue = catalogue or load_catalogue(settings.catalogue_path)
+    places = load_places(settings.boundaries_dir)
+    return AssistantService(catalogue, places, Facts(catalogue, places, {}), model, "test",
+                            forecast_description=forecast_description)
+
+
+FAKE_FORECAST = {
+    "configured": True,
+    "models": [{"id": "cma-gfs", "label": "CMA GFS"}],
+    "layers": [
+        {
+            "id": "rain-24h", "title": "24-hour precipitation", "group": "precipitation", "unit": "mm",
+            "levels": {"cma-gfs": [0]},
+        },
+        {
+            "id": "clear-air-turbulence", "title": "Clear-air turbulence", "group": "dynamics", "unit": "",
+            "levels": {"cma-gfs": []},
+        },
+    ],
+}
+
+
+def test_set_portal_view_opens_a_section_and_reports_the_actions(settings):
+    service = _portal_view_service(settings, ScriptedModel([]))
+    call = ToolCall("v", "set_portal_view", {"section_id": "alpha-section", "place_id": "PK101", "year": 2005})
+    output = service._agent.registry.run(call)
+    assert output.result == {"applied": ["open-section", "select-place", "set-year"]}
+    assert output.portal_actions == [
+        {"type": "open-section", "section_id": "alpha-section"},
+        {"type": "select-place", "place_id": "PK101"},
+        {"type": "set-year", "year": 2005},
+    ]
+    assert output.facts == []
+
+
+def test_set_portal_view_rejects_unknown_and_coming_soon_targets(settings):
+    service = _portal_view_service(settings, ScriptedModel([]))
+    unknown = service._agent.registry.run(ToolCall("a", "set_portal_view", {"section_id": "not-real"}))
+    assert unknown.result == {"error": "Unknown section 'not-real'"}
+    assert unknown.portal_actions == []
+    soon = service._agent.registry.run(ToolCall("b", "set_portal_view", {"section_id": "later-section"}))
+    assert soon.result["error"].startswith("Section 'Later section' is coming soon")
+    bad_place = service._agent.registry.run(ToolCall("c", "set_portal_view", {"place_id": "PK999"}))
+    assert bad_place.result == {"error": "Unknown place 'PK999'"}
+
+
+def test_set_portal_view_turns_on_a_map_layer_with_ensure_on_semantics(settings):
+    service = _portal_view_service(settings, ScriptedModel([]))
+    output = service._agent.registry.run(ToolCall("l", "set_portal_view", {"layer_id": "fake-shapes"}))
+    assert output.result == {"applied": ["toggle-layer"]}
+    assert output.portal_actions == [
+        {"type": "toggle-layer", "layer_id": "fake-shapes", "default_opacity": 0.7},
+    ]
+    boundary = service._agent.registry.run(ToolCall("b", "set_portal_view", {"layer_id": "districts"}))
+    assert boundary.result["error"].endswith("is a boundary and is always shown")
+    no_data = service._agent.registry.run(ToolCall("n", "set_portal_view", {"layer_id": "fake-empty"}))
+    assert no_data.result["error"].endswith("has no data")
+
+
+def test_set_portal_view_shows_a_forecast_layer_and_opens_the_forecast_section(settings):
+    from csa_portal.catalogue import load_catalogue
+
+    catalogue = load_catalogue(settings.catalogue_path)
+    catalogue.sections.append(catalogue.sections[0].model_copy(update={
+        "id": "forecast", "title": "Weather forecast", "kind": "forecast", "status": "ready",
+    }))
+    service = _portal_view_service(settings, ScriptedModel([]), forecast_description=FAKE_FORECAST,
+                                   catalogue=catalogue)
+    output = service._agent.registry.run(ToolCall("f", "set_portal_view", {"forecast_layer": "rain-24h"}))
+    assert output.result == {"applied": ["open-section", "set-forecast"]}
+    assert output.portal_actions == [
+        {"type": "open-section", "section_id": "forecast"},
+        {"type": "set-forecast", "forecast": {"layer": "rain-24h", "model": "cma-gfs", "level": 0, "time": None}},
+    ]
+
+
+def test_set_portal_view_forecast_errors_without_data_or_a_model(settings):
+    service = _portal_view_service(settings, ScriptedModel([]), forecast_description=FAKE_FORECAST)
+    empty = service._agent.registry.run(ToolCall("a", "set_portal_view", {"forecast_layer": "clear-air-turbulence"}))
+    assert empty.result["error"].endswith("has no current data")
+    bad_model = service._agent.registry.run(ToolCall("b", "set_portal_view", {
+        "forecast_layer": "rain-24h", "forecast_model": "nope",
+    }))
+    assert bad_model.result["error"] == "Model 'nope' has no '24-hour precipitation' data"
+    bad_level = service._agent.registry.run(ToolCall("c", "set_portal_view", {
+        "forecast_layer": "rain-24h", "forecast_level": 500,
+    }))
+    assert bad_level.result["error"] == "Model 'cma-gfs' has no '24-hour precipitation' at level 500"
+    missing = _portal_view_service(settings, ScriptedModel([]))
+    none = missing._agent.registry.run(ToolCall("d", "set_portal_view", {"forecast_layer": "rain-24h"}))
+    assert none.result["error"] == "The weather forecast is not available on this portal"
+
+
+def test_set_portal_view_requires_at_least_one_change(settings):
+    service = _portal_view_service(settings, ScriptedModel([]))
+    output = service._agent.registry.run(ToolCall("e", "set_portal_view", {}))
+    assert output.result == {"error": "No view change was requested"}
+    assert output.portal_actions == []
+
+
+def test_chat_applies_portal_actions_end_to_end(settings):
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("v", "set_portal_view", {"section_id": "alpha-section", "layer_id": "fake-yearly"})]),
+        Completion(text="Opened Alpha section with the yearly layer on."),
+    ])
+    client = TestClient(create_app(settings, assistant_client=model))
+    response = client.post("/api/assistant/chat", json={"question": "Open the yearly map", "view": {}})
+    body = response.json()
+    assert response.status_code == 200
+    assert body["portal_actions"] == [
+        {"type": "open-section", "section_id": "alpha-section"},
+        {"type": "toggle-layer", "layer_id": "fake-yearly", "default_opacity": 0.8},
+    ]
+    assert body["answer"] == "Opened Alpha section with the yearly layer on."
+    assert body["tool_calls"] == 1
 
 
 def test_district_risk_on_the_map_tells_the_model_its_time_and_run(settings):
