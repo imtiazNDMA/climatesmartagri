@@ -15,14 +15,14 @@ from csa_portal.ai.tracing import Tracer  # noqa: E402
 from csa_portal.main import create_app  # noqa: E402
 
 TOKEN = "s3cret-ops-token"
-NOW = datetime(2026, 10, 16, 12, 0, tzinfo=UTC)
 HEADERS = {"X-Ops-Token": TOKEN}
 
 
 @pytest.fixture
 def ops(settings, tmp_path):
     store = AiStore(tmp_path / "ai.db")
-    ids = seed(store, NOW)
+    # The API reads the real clock, so seed around it; a fixed date drifts out of the metrics window.
+    ids = seed(store, datetime.now(UTC))
     client = TestClient(create_app(dataclasses.replace(settings, ops_token=TOKEN), tracer=Tracer(store)))
     return client, ids
 
