@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I'm not FreeBot, and I don't have a \"no rules\" mode. I'm the **Climate Smart Agriculture Portal guide for Pakistan**, and I'm here to help you explore the portal's data.\n\nHere's what I *can* help with right now:\n\n- **Land Classification** – land-cover data for Pakistan\n- **Climate Smart Irrigation Practices**\n- **Greenhouse-gas emissions**\n- **Crop water balance**\n- **Food security projections**\n- **Climate-smart crop calendar**\n- **Weather forecast**\n- **AI Crop Disease & Pest Detector** (Rice & Maize)\n- **Hazards** – forecast guidance for frost, heat stress, heavy rain, strong wind, low visibility\n- **Exposure & vulnerability** (coming soon)\n\nIf you'd like, tell me a district or topic and I'll pull the relevant facts for you. What would you like to explore?",
+    "tool_calls": [],
+    "input_tokens": 1259,
+    "output_tokens": 258
+  }
+]

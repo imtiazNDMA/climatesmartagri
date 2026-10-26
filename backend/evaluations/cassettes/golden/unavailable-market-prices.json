@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The Climate Smart Agriculture Portal does not provide wheat market prices or any commodity pricing data. The portal's sections cover topics such as land classification, irrigation practices, crop water balance, food-security projections, weather forecasts, hazards, and crop-disease detection — but not market or trade prices.\n\nFor current wheat prices in Pakistan, you would need to consult a dedicated agricultural-market source, such as the Pakistan Bureau of Statistics, the Ministry of National Food Security, or a commodity-exchange bulletin. I'm unable to look that up here, and I don't want to give you a figure I can't verify.\n\nIf you'd like, I can help you explore what the portal *does* offer — for example, the **Food security projections** section or the **Climate-smart crop calendar** for wheat-growing regions. Just let me know.",
+    "tool_calls": [],
+    "input_tokens": 1246,
+    "output_tokens": 372
+  }
+]

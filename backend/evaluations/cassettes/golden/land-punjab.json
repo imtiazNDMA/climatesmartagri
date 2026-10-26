@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Punjab – Land Classification\n\nThe **Land Classification** section (portal section: *land-cover*) breaks Punjab's total land area into broad cover types. Here is what the portal shows for the province:\n\n| Category | Area (million acres) | Share of all land |\n|---|---|---|\n| **Total land area** | **50.61** | 100 % |\n| Irrigated cropland | 29.29 | 57.9 % |\n| Rainfed cropland | 4.79 | 9.5 % |\n| Shrub land | 4.20 | 8.3 % |\n| Forest | 3.41 | 6.7 % |\n| Others (built-up, water, bare, etc.) | 10.87 | 21.5 % |\n\n### What the numbers mean in plain terms\n\n- **Irrigated cropland (≈ 58 %)** is the dominant land use – fields that depend on canal, tube-well, or other supplemental water rather than rainfall alone.\n- **Rainfed cropland (≈ 9.5 %)** is cropland that relies mainly on seasonal rain. The portal highlights that in **Khushab district** about **55 % of its cropland is rainfed**, well above the provincial average, making it more exposed to rainfall variability.\n- **Forest (≈ 6.7 %)** and **shrub land (≈ 8.3 %)** together account for roughly 15 % of the province. The portal notes that **Rawalpindi and Sargodha districts hold about 19 % of Punjab's total forest area**.\n- **\"Others\" (≈ 21.5 %)** is a residual category that typically includes urban/built-up areas, water bodies, bare or rocky ground, and other non-crop, non-vegetated surfaces.\n\n### How to explore further\n\n- The section supports **national, province, and district** views, so",
+    "tool_calls": [],
+    "input_tokens": 1825,
+    "output_tokens": 700
+  }
+]

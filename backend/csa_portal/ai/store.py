@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # Migration N takes the database from version N-1 to N. Never change one that has shipped; add the next.
 MIGRATIONS: dict[int, str] = {
@@ -45,6 +45,33 @@ MIGRATIONS: dict[int, str] = {
         );
         CREATE INDEX spans_trace_id ON spans (trace_id);
     """,
+    2: """
+        CREATE TABLE eval_runs (
+            id TEXT PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            finished_at TEXT NOT NULL,
+            git_sha TEXT NOT NULL,
+            dataset TEXT NOT NULL,
+            dataset_version INTEGER NOT NULL,
+            mode TEXT NOT NULL,
+            model TEXT NOT NULL,
+            judge_model TEXT,
+            repeats INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            summary TEXT NOT NULL
+        );
+        CREATE INDEX eval_runs_started_at ON eval_runs (started_at);
+        CREATE TABLE eval_results (
+            id TEXT PRIMARY KEY,
+            run_id TEXT NOT NULL REFERENCES eval_runs (id),
+            case_id TEXT NOT NULL,
+            repeat INTEGER NOT NULL,
+            trace_id TEXT,
+            passed INTEGER NOT NULL,
+            scores TEXT NOT NULL
+        );
+        CREATE INDEX eval_results_run_id ON eval_results (run_id);
+    """,
 }
 
 _TRACE_COLUMNS = (
@@ -52,6 +79,10 @@ _TRACE_COLUMNS = (
     "question_hash, question_text, answer_text, eval_run_id"
 )
 _SPAN_COLUMNS = "id, trace_id, parent_id, kind, name, started_at, duration_ms, status, attributes"
+_RUN_COLUMNS = (
+    "id, started_at, finished_at, git_sha, dataset, dataset_version, mode, model, judge_model, repeats, status, summary"
+)
+_RESULT_COLUMNS = "id, run_id, case_id, repeat, trace_id, passed, scores"
 
 
 class StoreError(Exception):
@@ -90,6 +121,33 @@ class TraceRecord:
     spans: list[SpanRecord] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class EvalRunRecord:
+    id: str
+    started_at: datetime
+    finished_at: datetime
+    git_sha: str
+    dataset: str
+    dataset_version: int
+    mode: str
+    model: str
+    judge_model: str | None
+    repeats: int
+    status: str
+    summary: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class EvalResultRecord:
+    id: str
+    run_id: str
+    case_id: str
+    repeat: int
+    trace_id: str | None
+    passed: bool
+    scores: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+
 class AiStore:
     """One SQLite connection in WAL mode; writes are serialised by a lock, one transaction per trace."""
 
@@ -99,6 +157,7 @@ class AiStore:
         self._lock = threading.Lock()
         self._db = sqlite3.connect(path, check_same_thread=False)
         try:
+            self._db.execute("PRAGMA foreign_keys=ON")
             self._db.execute("PRAGMA journal_mode=WAL")
             self._migrate()
         except BaseException:
@@ -168,6 +227,44 @@ class AiStore:
             return self._db.execute(
                 "DELETE FROM traces WHERE source = 'live' AND started_at < ?", (_stamp(cutoff),)
             ).rowcount
+
+    def write_eval_run(self, run: EvalRunRecord, results: list[EvalResultRecord]) -> None:
+        with self._lock, self._db:
+            self._db.execute(
+                f"INSERT INTO eval_runs ({_RUN_COLUMNS}) VALUES ({', '.join('?' * 12)})",
+                (
+                    run.id, _stamp(run.started_at), _stamp(run.finished_at), run.git_sha, run.dataset,
+                    run.dataset_version, run.mode, run.model, run.judge_model, run.repeats, run.status,
+                    json.dumps(run.summary, ensure_ascii=False),
+                ),
+            )
+            self._db.executemany(
+                f"INSERT INTO eval_results ({_RESULT_COLUMNS}) VALUES ({', '.join('?' * 7)})",
+                [
+                    (
+                        result.id, result.run_id, result.case_id, result.repeat, result.trace_id, int(result.passed),
+                        json.dumps(result.scores, ensure_ascii=False),
+                    )
+                    for result in results
+                ],
+            )
+
+    def get_eval_run(self, run_id: str) -> tuple[EvalRunRecord, list[EvalResultRecord]] | None:
+        with self._lock:
+            row = self._db.execute(f"SELECT {_RUN_COLUMNS} FROM eval_runs WHERE id = ?", (run_id,)).fetchone()
+            if row is None:
+                return None
+            results = self._db.execute(
+                f"SELECT {_RESULT_COLUMNS} FROM eval_results WHERE run_id = ? ORDER BY rowid", (run_id,)
+            ).fetchall()
+        run = EvalRunRecord(
+            row[0], _time(row[1]), _time(row[2]), row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10],
+            json.loads(row[11]),
+        )
+        return run, [
+            EvalResultRecord(result[0], result[1], result[2], result[3], result[4], bool(result[5]), json.loads(result[6]))
+            for result in results
+        ]
 
     def close(self) -> None:
         self._db.close()

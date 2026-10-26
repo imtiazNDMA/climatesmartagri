@@ -1,0 +1,22 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "712288931",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "p-punjab"
+        }
+      }
+    ],
+    "input_tokens": 1494,
+    "output_tokens": 167
+  },
+  {
+    "text": "Punjab's **Climate-smart crop calendar** (portal section: *Climate-smart crop calendar*) shows the following:\n\n**Headline:** Of 6 crops with a calendar, 4 should be sown earlier than before, and 4 calendars have been adjusted for climate.\n\n**Crop-by-crop (traditional → adjusted):**\n\n- **Wheat** — Oct–Dec → **Oct–Nov** sowing, Mar–Apr harvest. *Why:* rising temperatures and terminal heat during grain filling can cut yield; earlier sowing helps the crop mature before severe spring heat.\n- **Rice** — May–Jul → **May–Jun**, Sep–Oct harvest. *Why:* earlier establishment reduces late-season heat exposure and improves sync with water availability.\n- **Cotton** — Apr–Jun → **Apr–May**, Aug–Oct/Nov harvest. *Why:* heat and water stress during flowering/boll development affect yield; timely sowing reduces heat exposure.\n- **Maize – Spring** — Jan–Feb → **Jan–Feb** (unchanged), May–Jun harvest. *Why:* higher spring temperatures can hit grain filling; timely sowing avoids the hottest period.\n- **Maize – Kharif** — Jun–Jul → **Jun–early Jul**, Sep–Oct harvest. *Why:* heat and rainfall variability during reproductive stages need better sync with available moisture.\n- **Sugarcane** — Feb–Mar / Sep–Oct → **unchanged**. *Why:* calendar stays similar, but higher temperatures and water demand require efficient irrigation and heat management.\n\n**In plain terms:** the calendar compares each crop's traditional planting/harvest window with a climate-adjusted one. The main message is that several crops (wheat, rice, cotton, Kharif maize) benefit from sowing a bit earlier to dodge peak heat and line up with water availability.\n\nNote: this is reference guidance from the portal, not an official advisory.",
+    "tool_calls": [],
+    "input_tokens": 3495,
+    "output_tokens": 438
+  }
+]

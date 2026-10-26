@@ -36,6 +36,9 @@ class AgentResult:
     answer: str
     facts: list[Fact] = field(default_factory=list)
     steps: list[AgentStep] = field(default_factory=list)
+    # Totals over the run's model replies, or None when no reply reported any.
+    input_tokens: int | None = None
+    output_tokens: int | None = None
 
 
 class Agent:
@@ -68,11 +71,16 @@ class Agent:
             return AgentResult(self.model.chat(conversation))
         facts: list[Fact] = []
         steps: list[AgentStep] = []
+        replies: list[Any] = []
         last = self.policy.max_rounds - 1
         for round_number in range(self.policy.max_rounds):
             reply = self.model.complete(conversation, tools=self.registry.tools if round_number < last else None)
+            replies.append(reply)
             if reply.text:
-                return AgentResult(reply.text, facts, steps)
+                return AgentResult(
+                    reply.text, facts, steps,
+                    _total(r.input_tokens for r in replies), _total(r.output_tokens for r in replies),
+                )
             if not reply.tool_calls:
                 raise ModelError(502, "bad-model-response", "The AI model returned neither an answer nor a tool call")
             if round_number == last:
@@ -102,3 +110,8 @@ class Agent:
                     {"role": "tool", "tool_call_id": call.id, "content": json.dumps(output.result, ensure_ascii=True)}
                 )
         raise ModelError(502, "tool-limit", f"The AI model did not answer within {self.policy.max_rounds} tool rounds")
+
+
+def _total(counts: Any) -> int | None:
+    known = [count for count in counts if isinstance(count, int)]
+    return sum(known) if known else None

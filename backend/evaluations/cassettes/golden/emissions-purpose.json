@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Story the Greenhouse-gas Emissions Section Supports\n\nThis section (national level, 1994–2025) tells a clear **growth-and-composition** story for Pakistan:\n\n1. **Rising total emissions.** Pakistan's yearly greenhouse-gas emissions grew roughly **3.2× between 1994 and 2025**, moving from a much smaller base to **529.96 MtCO₂e in 2020** (the year currently displayed).\n\n2. **CO₂ dominates but isn't the only driver.** In 2020, carbon dioxide accounted for **51 %** of total emissions (271.76 MtCO₂e), with methane (161.23 MtCO₂e) and nitrous oxide (96.97 MtCO₂e) making up the rest.\n\n3. **Nitrous oxide is the fastest-growing gas.** N₂O grew to about **9.9× its 1994 level**, outpacing both CO₂ and CH₄. This is notable because N₂O is strongly linked to agricultural soil management and fertiliser use—tying the emissions story back to the portal's agriculture focus.\n\n### How to use it\n- **Trend view:** The 1994→2025 chart shows the overall trajectory.\n- **Composition view:** The 2020 breakdown (CO₂ / CH₄ / N₂O) shows *where* emissions come from.\n- **Rate-of-change view:** The \"times\" chart highlights which gas is accelerating fastest.\n\nTogether these three angles let a reader build a narrative of *how much* Pakistan emits, *what* it emits, and *which component is changing quickest*—useful context when pairing the",
+    "tool_calls": [],
+    "input_tokens": 1622,
+    "output_tokens": 700
+  }
+]

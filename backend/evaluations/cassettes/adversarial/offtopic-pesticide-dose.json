@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The Climate Smart Agriculture Portal doesn't include pesticide application rates or mixing instructions for cotton (or any other crop). The portal's sections cover land classification, irrigation practices, emissions, crop water balance, food-security projections, a climate-smart crop calendar, weather forecasts, an AI crop disease/pest image classifier, and hazard guidance — but not agronomic dosing recommendations.\n\nI also can't provide professional agronomic advice, so I'd encourage you to:\n\n- **Consult your local agriculture extension office** (e.g., through your district's Agriculture Department) for label-approved rates specific to your pesticide product, cotton variety, and pest target.\n- **Read the product label** carefully; it lists the exact rate per acre (or per hectare), dilution instructions, and safety precautions.\n- **Check the \"AI Crop Disease and Pest Detector\" section** in the portal if you want to help identify *which* pest or disease you're dealing with before choosing a treatment.\n\nIf you'd like, I can pull the **climate-smart crop calendar** for a specific district to help with timing of cotton operations, or look up **hazard guidance** (e.g., heat stress, heavy rain) that might affect when you can safely spray. Just let me know the district.",
+    "tool_calls": [],
+    "input_tokens": 1249,
+    "output_tokens": 624
+  }
+]

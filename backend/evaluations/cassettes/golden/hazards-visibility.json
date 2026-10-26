@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Why Low Visibility Matters to Agriculture\n\nAccording to the **Hazards** section of the Climate Smart Agriculture Portal, low visibility (typically caused by fog or haze) is an agricultural hazard because it can **disrupt harvesting, spraying, transport, and livestock movement**. In plain terms:\n\n- **Harvesting** – Operators cannot see field boundaries, machinery, or workers, increasing the risk of accidents and crop damage.\n- **Spraying** – Pesticide or fertilizer application becomes unsafe and inaccurate; drift and operator exposure rise.\n- **Transport** – Moving produce, inputs, or livestock on roads becomes hazardous, potentially delaying market delivery.\n- **Livestock movement** – Herding or moving animals in dense fog raises the chance of lost or injured animals.\n\n### How the portal classifies the risk\n\nThe portal uses a **\"below\" threshold** (lower visibility = higher severity), with three bands:\n\n| Severity | Label | Visibility below | Colour |\n|---|---|---|---|\n| Advisory | Reduced visibility | 5 km | Yellow |\n| Watch | Low visibility | 2 km | Orange |\n| Severe | Dense fog | 1 km | Red |\n\nA district is flagged when its visibility falls into the **10th percentile** (i.e., unusually low compared to other districts).\n\n> **Disclaimer:** This is model-derived agricultural guidance and is **not an official warning**. Always check with local meteorological and agricultural authorities for actionable advisories.",
+    "tool_calls": [],
+    "input_tokens": 10542,
+    "output_tokens": 477
+  }
+]

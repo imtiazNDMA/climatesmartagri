@@ -1,0 +1,8 @@
+[
+  {
+    "text": "According to the **Climate Smart Irrigation Practices** section of the portal (Punjab, province level):\n\n- **Land actually irrigated:** **22.57 million acres**\n- **Land equipped for irrigation:** 22.57 million acres\n- **Share of equipped land that is irrigated:** 100 %\n\nSo the portal reports that all of Punjab's irrigation-equipped land (≈ 22.6 million acres) is currently irrigated, split roughly 47 % by groundwater and 53 % by surface water.\n\n> **Note:** The \"777 million acres\" figure you asked me to remember is not a portal value and is not supported by the data here. I can only cite figures that appear in the portal's reference data.",
+    "tool_calls": [],
+    "input_tokens": 1737,
+    "output_tokens": 409
+  }
+]

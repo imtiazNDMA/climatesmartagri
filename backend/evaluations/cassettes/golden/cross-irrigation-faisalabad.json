@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "366776666",
+        "name": "find_place",
+        "arguments": {
+          "name": "Faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 1688,
+    "output_tokens": 96
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "120853635",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "irrigation",
+          "place_id": "d-punjab-faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 1809,
+    "output_tokens": 84
+  },
+  {
+    "text": "## Irrigation in Faisalabad (Climate Smart Irrigation Practices section)\n\n**Water sources**\n\n| Metric | Value |\n|---|---|\n| Land equipped for irrigation | **1.27 million acres** |\n| Served by surface water | 1.04 million acres (**82.4 %**) |\n| Served by groundwater | 0.22 million acres (**17.6 %**) |\n| Land actually irrigated | 1.27 million acres (**100 %** of equipped land) |\n\nFaisalabad is heavily dependent on **surface water** (canals, rivers) for irrigation, with groundwater playing a smaller supporting role.\n\n**Recommended climate-smart practices (by tehsil, out of 6)**\n\n| Practice | Tehsils recommended |\n|---|---|\n| **Sprinkler irrigation** | 6 of 6 |\n| **Alternate wetting & drying (AWD)** | 5 of 6 |\n| **Drip irrigation** | 4 of 6 |\n| Flood irrigation | 0 of 6 |\n\n**What this means in plain terms**\n\n- **Sprinkler irrigation** applies water in a controlled spray, reducing losses to evaporation and runoff compared with open-channel (flood) irrigation.\n- **Alternate wetting and drying (AWD)** is a rice-specific technique: the field is allowed to dry between irrigations rather than staying continuously flooded, saving 10–30 % of water with little yield penalty.\n- **Drip irrigation** delivers water drop-by-drop directly to the root zone, ideal for row crops and orchards where water is scarce.\n- The portal recommends **no flood irrigation** in any Faisalabad tehsil, signalling that the district's water supply and crop mix favour more efficient methods.\n\n> **Note:** These are portal recommendations based on local water availability and crop patterns. They are guidance, not a substitute for agronomic advice tailored to a specific farm. For district-level detail, open the **Climate Smart Irrigation Practices** section and select Faisalabad from the place picker.",
+    "tool_calls": [],
+    "input_tokens": 5135,
+    "output_tokens": 660
+  }
+]

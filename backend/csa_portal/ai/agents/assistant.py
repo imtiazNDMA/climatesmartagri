@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
+from dataclasses import dataclass
 from typing import Any, Literal, Protocol
 
 from fastapi import FastAPI, HTTPException
@@ -13,7 +14,7 @@ from ...catalogue import Catalogue
 from ...evaluation import score_grounding
 from ...facts import Fact, Facts, FactsError, SectionFacts
 from ...places import COUNTRY_ID, PlaceIndex
-from ..agent import Agent, AgentPolicy
+from ..agent import Agent, AgentPolicy, AgentStep
 from ..model import Completion, LmStudioModel, ModelError, Tool, ToolCall
 from ..tools import ToolArguments, ToolOutput, ToolRegistry
 from ..tracing import Tracer, traced
@@ -147,6 +148,16 @@ def assistant_tools(facts: Facts) -> ToolRegistry:
     return registry
 
 
+@dataclass(frozen=True)
+class AnswerDetail:
+    """An answer with what produced it: the response body, the agent's tool calls and its token totals."""
+
+    body: dict[str, Any]
+    steps: list[AgentStep]
+    input_tokens: int | None
+    output_tokens: int | None
+
+
 class AssistantService:
     def __init__(
         self,
@@ -241,10 +252,25 @@ class AssistantService:
 
     def answer(self, request: AssistantChatRequest) -> dict[str, Any]:
         """Answer one question; every answer, and every failure to answer, leaves a trace."""
-        with self.tracer.trace("assistant", model=self.model, question=request.question) as trace:
+        return self.answer_in_detail(request).body
+
+    def answer_in_detail(
+        self, request: AssistantChatRequest, *, source: str = "live", eval_run_id: str | None = None
+    ) -> AnswerDetail:
+        with self.tracer.trace(
+            "assistant", model=self.model, question=request.question, source=source, eval_run_id=eval_run_id
+        ) as trace:
             return self._answer(request, trace)
 
-    def _answer(self, request: AssistantChatRequest, trace: Any) -> dict[str, Any]:
+    def view_context(self, view: AssistantView) -> tuple[dict[str, Any], list[Fact]]:
+        """What the model is shown for a view, and the view's facts (for evaluation)."""
+        return self._context(view)[0], self._view_facts(view)
+
+    @property
+    def tools(self) -> ToolRegistry:
+        return self._agent.registry
+
+    def _answer(self, request: AssistantChatRequest, trace: Any) -> AnswerDetail:
         context, _ = self._context(request.view)
         context_facts = self._view_facts(request.view)
         messages: list[dict[str, Any]] = []
@@ -274,7 +300,7 @@ class AssistantService:
         grounding = score_grounding(answer, _grounding_values(used_facts))
         cited = [fact for fact in used_facts if _answer_mentions_value(answer, fact)]
         trace.answered(answer)
-        return {
+        body = {
             "answer": answer,
             "sources": list(dict.fromkeys(fact.source_id for fact in cited)),
             # What the panel shows readers; the ids above are for tracing and evaluation.
@@ -285,6 +311,7 @@ class AssistantService:
             "tool_calls": tool_calls,
             "trace_id": trace.id,
         }
+        return AnswerDetail(body, result.steps, result.input_tokens, result.output_tokens)
 
     def _view_facts(self, view: AssistantView) -> list[Fact]:
         if not view.section_id:

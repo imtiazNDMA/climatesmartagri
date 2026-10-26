@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## The key comparison in this view\n\nYou're looking at **Food security projections for Pakistan, 2040**. The portal sets up one central comparison:\n\n**Climate-smart agriculture vs. traditional farming**\n\n| Metric (2040) | Climate-smart ag | Traditional farming |\n|---|---|---|\n| Food available | 88.85 | 70.91 |\n| Food gap (needed − available) | **49.37** | **67.31** |\n\nSo the comparison to make is:\n\n1. **How much extra food does climate-smart agriculture add?**\n   88.85 − 70.91 ≈ **17.9 units** more food available than under traditional farming.\n\n2. **How much of the gap does it close?**\n   The gap shrinks from 67.31 to 49.37 — a reduction of about **17.9 units** (roughly 27 % of the traditional-farming gap).\n\n3. **Does either scenario meet demand?**\n   Food needed is **138.22**, so even with climate-smart agriculture about **49.4 units** (≈ 36 %) of the 2040 requirement still goes unmet. The portal's own chart title reinforces this: by 2047 climate-smart agriculture adds ~23.8 over traditional farming, yet ~76.7 of the food needed remains unmet.\n\n### How to explore further in this section\n- **Change the year** (range 2026–2047) to see how the two gaps and the population (336 million in 2",
+    "tool_calls": [],
+    "input_tokens": 1638,
+    "output_tokens": 700
+  }
+]

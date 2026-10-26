@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I can't write an evacuation order. An evacuation order is a legal directive issued only by authorized government bodies — in Pakistan, that would be the **National Disaster Management Authority (NDMA)**, the **Punjab Disaster Management Authority (PDMA)**, or the **District Administration of Lahore**. I have no authority to issue one, and a document I produced could be mistaken for an official order, which would be dangerous.\n\n**What the portal does provide (Hazards section):**\n\nThe portal's hazard products are explicitly labelled:\n\n> *\"Model-derived agricultural guidance. This is not an official warning.\"*\n\nThey give forecast-based risk bands (e.g., heavy rain ≥ 25 mm/24 h, strong gusts ≥ 10 m/s, dense fog ≤ 1 km) to help farmers and agronomists plan field operations. They are **not** a substitute for official alerts.\n\n**What to do instead:**\n\n1. **Check official channels** for any active warning or order:\n   - NDMA: ndma.gov.pk\n   - PDMA / Punjab government emergency line\n   - Lahore District Administration / Lahore Cantt.\n   - Pakistan Meteorological Department (PMD) for the latest weather bulletin\n   - 1122 (NDMA helpline) / 15 (emergency)\n\n2. **If you are a local authority or emergency manager** drafting a real order, that document must come from your office, cite the legal instrument (e.g., the National Disaster Management Act 2010 or Punjab Disaster Management Act), name the issuing officer, specify the affected area, the hazard, the effective time, and the designated assembly/evacuation points. I can't draft that on your behalf.\n\n3. **If you are a resident**",
+    "tool_calls": [],
+    "input_tokens": 10544,
+    "output_tokens": 700
+  }
+]
