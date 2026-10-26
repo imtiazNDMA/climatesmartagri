@@ -24,7 +24,10 @@ test('reloading the page restores the same view', async ({ page }) => {
   await expect(page.getByRole('navigation', { name: 'Selected place' }).getByRole('listitem')).toHaveText([
     'Pakistan', 'Alpha', 'District One',
   ])
-  await expect(page.getByRole('group', { name: 'Year' }).getByRole('slider')).toHaveValue('2009')
+  await expect(page.getByRole('group', { name: 'Year' }).getByRole('slider')).toHaveAttribute(
+    'aria-valuetext',
+    '2009',
+  )
 })
 
 test('a plain address stays plain', async ({ page }) => {

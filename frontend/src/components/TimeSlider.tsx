@@ -1,54 +1,105 @@
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Catalogue } from '../api/types'
-import { timeRange } from '../state/selectors'
+import { observationIndex, timeObservations } from '../state/selectors'
 import { emptyView, useView, viewStore } from '../state/viewState'
 
-const STEP_MS = 1000
+/** How long one observation stays on screen before the next one takes its place. */
+const STEP_MS = 1500
 
 export function TimeSlider({ catalogue }: { catalogue: Catalogue }) {
   const section = useView((s) => s.section)
   const layers = useView((s) => s.layers)
   const year = useView((s) => s.year)
   const [playing, setPlaying] = useState(false)
-  const range = useMemo(() => timeRange({ ...emptyView, section, layers }, catalogue), [section, layers, catalogue])
-
-  const first = range?.first ?? 0
-  const last = range?.last ?? 0
-  const current = Math.min(last, Math.max(first, year ?? last))
-
-  useEffect(() => {
-    if (!range) setPlaying(false)
-  }, [range])
+  const [reducedMotion, setReducedMotion] = useState(false)
+  // The control moves through the observations the visible content actually has, so it never
+  // asks for a year that was never published.
+  const observations = useMemo(
+    () => timeObservations({ ...emptyView, section, layers }, catalogue),
+    [section, layers, catalogue],
+  )
 
   useEffect(() => {
-    if (!playing) return
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    if (!media) return
+    setReducedMotion(media.matches)
+    const listener = (event: MediaQueryListEvent) => setReducedMotion(event.matches)
+    media.addEventListener('change', listener)
+    return () => media.removeEventListener('change', listener)
+  }, [])
+
+  const index = observationIndex(observations, year)
+  const current = index >= 0 ? observations[index] : null
+
+  useEffect(() => {
+    // Nothing left to play through, so the control stops where it stands.
+    if (!observations.length) setPlaying(false)
+  }, [observations])
+
+  useEffect(() => {
+    if (reducedMotion) setPlaying(false)
+  }, [reducedMotion])
+
+  useEffect(() => {
+    if (!playing || !observations.length) return
     const timer = window.setInterval(() => {
-      const now = viewStore.getState().year ?? last
-      viewStore.getState().setYear(now >= last ? first : now + 1)
+      const list = observations
+      const at = observationIndex(list, viewStore.getState().year)
+      // Playback starts again at the first observation once it reaches the last.
+      const next = at + 1 >= list.length ? 0 : at + 1
+      viewStore.getState().setYear(list[next])
     }, STEP_MS)
     return () => window.clearInterval(timer)
-  }, [playing, first, last])
+  }, [playing, observations])
 
-  if (!range) return null
-  const setYear = (value: number) => viewStore.getState().setYear(Math.min(last, Math.max(first, value)))
+  if (!observations.length) return null
+  const first = observations[0]
+  const last = observations[observations.length - 1]
+  const goTo = (position: number) => viewStore.getState().setYear(observations[position])
 
   return (
     <div className="time-slider" role="group" aria-label="Year">
-      <button type="button" aria-label="Previous year" disabled={current <= first} onClick={() => setYear(current - 1)}>
+      <button
+        type="button"
+        aria-label="Previous year"
+        disabled={index <= 0}
+        onClick={() => goTo(index - 1)}
+      >
         <ChevronLeft size={16} />
       </button>
       <span>{first}</span>
       <input
-        type="range" min={first} max={last} step={1} value={current} aria-label="Year"
-        onChange={(event) => setYear(Number(event.target.value))}
+        type="range"
+        min={0}
+        max={observations.length - 1}
+        step={1}
+        value={index}
+        aria-label="Year"
+        aria-valuetext={current === null ? undefined : String(current)}
+        onChange={(event) => goTo(Number(event.target.value))}
       />
       <span>{last}</span>
-      <button type="button" aria-label="Next year" disabled={current >= last} onClick={() => setYear(current + 1)}>
+      <button
+        type="button"
+        aria-label="Next year"
+        disabled={index >= observations.length - 1}
+        onClick={() => goTo(index + 1)}
+      >
         <ChevronRight size={16} />
       </button>
       <strong>{current}</strong>
-      <button type="button" aria-label={playing ? 'Pause' : 'Play'} onClick={() => setPlaying((p) => !p)}>
+      <button
+        type="button"
+        aria-label={playing ? 'Pause' : 'Play'}
+        disabled={reducedMotion}
+        title={
+          reducedMotion
+            ? 'Playback is off because your system asks for reduced motion'
+            : undefined
+        }
+        onClick={() => setPlaying((p) => !p)}
+      >
         {playing ? <Pause size={16} /> : <Play size={16} />}
       </button>
     </div>

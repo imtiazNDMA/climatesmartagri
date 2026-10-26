@@ -20,6 +20,17 @@ IRRIGATION_LAYERS = [
     "irrigation-practice", "irrigated-share", "equipped-area", "groundwater-share",
     "surface-water-area", "groundwater-area", "irrigation-balance",
 ]
+ANNUAL_LAND_CLASSES = {
+    "1": ("Water", "#419bdf"),
+    "2": ("Trees", "#397d49"),
+    "4": ("Flooded vegetation", "#7a87c6"),
+    "5": ("Crops", "#e49635"),
+    "7": ("Built area", "#c4281b"),
+    "8": ("Bare ground", "#a59b8f"),
+    "9": ("Snow/ice", "#a8ebff"),
+    "10": ("Clouds", "#616161"),
+    "11": ("Rangeland", "#e3e2c3"),
+}
 
 
 def _client():
@@ -43,6 +54,31 @@ def test_shipped_catalogue_is_valid_and_complete():
     assert (years["emissions"].first, years["emissions"].last) == (1994, 2025)
     assert (years["water-balance"].first, years["water-balance"].last) == (2026, 2047)
     assert (years["food-security"].first, years["food-security"].last) == (2026, 2047)
+
+
+def test_annual_land_classification_contract_is_authoritative():
+    catalogue = load_catalogue(BACKEND_DIR / "catalogue.json")
+    section = next(section for section in catalogue.sections if section.id == "land-cover")
+    layer = next(layer for layer in catalogue.layers if layer.id == "annual-land-cover")
+
+    assert (section.years.first, section.years.last, section.years.available) == (
+        2017, 2023, list(range(2017, 2024)),
+    )
+    assert layer.years == section.years
+    assert (layer.kind, layer.status, layer.section_id) == ("raster", "ready", "land-cover")
+    assert layer.tile_source == "mpc"
+    assert {
+        item.value: (item.label, item.colour) for item in layer.legend.items
+    } == ANNUAL_LAND_CLASSES
+    assert layer.product is not None
+    assert layer.product.model_dump() == {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0",
+    }
 
 
 def test_boundaries_are_loaded_from_the_prepared_files():
@@ -189,32 +225,45 @@ def test_real_headlines_read_as_findings():
     assert all(len(title) <= 110 for title in titles.values())
 
 
-def test_land_cover_figures_come_from_the_rasters():
+def test_land_cover_figures_come_from_the_annual_statistics():
     client = _client()
     country = client.get("/api/sections/land-cover/data").json()
+    assert country["year"] == 2023
     figures = {f["label"]: f["value"] for f in country["figures"]}
-    assert 222 < figures["Land area"] < 260
-    assert 9.8 < figures["Forest"] < 22.3
-    assert 37 < figures["Irrigated cropland"] < 59.5
     assert all(f["unit"] == "million acres" for f in country["figures"])
+    assert 222 < figures["Land area"] < 260
+    # Clouds and the sea inside coastal boundaries leave a sliver of Pakistan unclassified.
+    assert 0.99 * figures["Land area"] < figures["Classified land"] <= figures["Land area"]
+    assert 40 < figures["Crops"] < 60
+    assert 5 < figures["Trees"] < 12
+    charts = {c["id"]: c for c in country["charts"]}
+    assert list(charts) == [
+        "land-cover-shares", "land-cover-change-previous", "land-cover-change-baseline",
+        "land-cover-trend", "land-cover-crops-ranking", "land-cover-trees-ranking",
+    ]
+    assert charts["land-cover-trend"]["categories"] == list(range(2017, 2024))
+    assert "Punjab" == charts["land-cover-crops-ranking"]["categories"][0]
+    assert all(len(chart["title"]) <= 110 for chart in charts.values())
+    # Net class-area change, never a conversion between classes.
+    words = " ".join([c["title"] for c in charts.values()] + [i["text"] for i in country["insights"]])
+    assert "converted" not in words.lower()
+
     places = client.get("/api/places").json()
     faisalabad = next(p for p in places if p["name"] == "Faisalabad")
-    district = client.get("/api/sections/land-cover/data", params={"place": faisalabad["id"]}).json()
-    assert district["level_used"] == "district"
-    shares = next(c for c in district["charts"] if c["id"] == "land-cover-shares")
-    assert shares["title"] == "How Faisalabad's land is classified"
-    assert sum(cell["squares"] for cell in shares["cells"]) == 100
-    # The country as a whole: what the charts say, from the real figures.
-    titles = {c["id"]: c["title"] for c in country["charts"]}
-    assert titles["land-cover-shares"] == "How Pakistan's land is classified"
-    assert "Others" in [cell["label"] for cell in next(c for c in country["charts"] if c["id"] == "land-cover-shares")["cells"]]
-    assert titles["land-cover-cropland"] == "Balochistan and Khyber Pakhtunkhwa farm mostly on rain"
-    assert titles["land-cover-forest-ranking"] == (
-        "Khyber Pakhtunkhwa and Jammu and Kashmir hold 58% of Pakistan's forest"
-    )
-    forest = next(c for c in country["charts"] if c["id"] == "land-cover-forest-ranking")
-    assert forest["note"] == "Balochistan is 35% of Pakistan's land and holds 0.8% of its forest."
-    assert all(len(title) <= 110 for title in titles.values())
+    district = client.get("/api/sections/land-cover/data", params={"place": faisalabad["id"], "year": 2019}).json()
+    assert (district["level_used"], district["year"]) == ("district", 2019)
+    assert {f["label"]: f["value"] for f in district["figures"]}["Most widespread: Crops"] > 1.0
+    ranking = next(c for c in district["charts"] if c["id"] == "land-cover-crops-ranking")
+    assert "Faisalabad" in ranking["categories"]
+
+
+def test_a_coastal_district_says_how_much_of_it_the_classification_reaches():
+    client = _client()
+    sujawal = next(p for p in client.get("/api/places").json() if p["name"] == "Sujawal")
+    data = client.get("/api/sections/land-cover/data", params={"place": sujawal["id"]}).json()
+
+    assert any("no data for 14% of Sujawal" in note for note in data["notes"])
+    assert "Not classified" in {f["label"] for f in data["figures"]}
 
 
 def test_the_crop_calendar_covers_four_provinces():

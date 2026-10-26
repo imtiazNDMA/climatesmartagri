@@ -3,6 +3,17 @@ import type { FeatureCollection } from 'geojson'
 export interface YearRange {
   first: number
   last: number
+  /** Exact observations when the series is not assumed to contain every intervening year. */
+  available?: number[] | null
+}
+
+export interface RasterProduct {
+  provider: string
+  collection: string
+  version: string
+  resolution_metres: number
+  area_unit: string
+  nodata_value: string
 }
 
 export interface LegendItem {
@@ -60,6 +71,20 @@ export interface Layer {
   max_zoom?: number | null
   /** Where a raster has data (west, south, east, north); the map asks for no tiles beyond it. */
   bounds?: [number, number, number, number] | null
+  /** Stable source semantics for a categorical product; concrete raster files stay server-side. */
+  product?: RasterProduct | null
+  /** Where the tiles come from: left out, a converted file; "mpc", the annual observation. */
+  tile_source?: 'mpc' | null
+}
+
+/** One annual land-classification observation: the tiles for a year and where they came from. */
+export interface LandCoverObservation {
+  year: number
+  collection: string
+  item_ids: string[]
+  tile_urls: string[]
+  bounds: [number, number, number, number]
+  attribution: string
 }
 
 export interface ForecastLayer {
@@ -369,6 +394,18 @@ export interface SectionData {
   figures: Figure[]
   charts: ChartSpec[]
   notes?: string[]
+  /** What changed against earlier observations, in sentences worked out by fixed rules. */
+  insights?: Insight[]
+}
+
+export interface Insight {
+  comparison: 'previous' | 'baseline'
+  from_year: number
+  to_year: number
+  rule: string
+  class?: string
+  text: string
+  values: { label: string; value: number; unit: string }[]
 }
 
 export interface Boundaries {

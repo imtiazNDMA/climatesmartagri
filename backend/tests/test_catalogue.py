@@ -93,6 +93,83 @@ def test_reversed_year_range_rejected(tmp_path):
         _load(tmp_path, data)
 
 
+def test_available_years_load_and_plain_ranges_remain_supported(tmp_path):
+    data = _valid()
+    data["sections"][0]["years"] = {
+        "first": 2017, "last": 2023, "available": [2017, 2019, 2023],
+    }
+    years = _load(tmp_path, data).sections[0].years
+    assert (years.first, years.last, years.available) == (2017, 2023, [2017, 2019, 2023])
+
+    data["sections"][0]["years"] = {"first": 2017, "last": 2023}
+    assert _load(tmp_path, data).sections[0].years.available is None
+
+
+@pytest.mark.parametrize(
+    "available",
+    [[], [2017, 2017, 2023], [2019, 2017, 2023], [2016, 2017, 2023], [2017, 2023, 2024], [2018, 2023]],
+)
+def test_invalid_available_years_are_rejected(tmp_path, available):
+    data = _valid()
+    data["sections"][0]["years"] = {"first": 2017, "last": 2023, "available": available}
+    with pytest.raises(CatalogueError, match="available"):
+        _load(tmp_path, data)
+
+
+def test_layer_observations_must_be_available_in_its_section(tmp_path):
+    data = _valid()
+    data["sections"][0]["years"] = {
+        "first": 2017, "last": 2023, "available": [2017, 2019, 2023],
+    }
+    data["layers"][0]["years"] = {
+        "first": 2017, "last": 2023, "available": [2017, 2020, 2023],
+    }
+    with pytest.raises(CatalogueError, match="l1"):
+        _load(tmp_path, data)
+
+
+def test_temporal_layer_can_be_staged_before_its_section_becomes_temporal(tmp_path):
+    data = _valid()
+    data["layers"][0]["years"] = {"first": 2017, "last": 2023}
+    layer = _load(tmp_path, data).layers[0]
+    assert layer.years.observations() == list(range(2017, 2024))
+
+
+def test_raster_product_requires_years_and_coded_classes(tmp_path):
+    data = _valid()
+    data["layers"][0]["product"] = {
+        "provider": "Provider", "collection": "collection", "version": "v1",
+        "resolution_metres": 10, "area_unit": "hectares", "nodata_value": "0",
+    }
+    with pytest.raises(CatalogueError, match="needs years"):
+        _load(tmp_path, data)
+
+    data["layers"][0]["years"] = {"first": 2017, "last": 2023}
+    with pytest.raises(CatalogueError, match="without a value"):
+        _load(tmp_path, data)
+
+
+def test_raster_product_rejects_duplicate_class_codes_and_bad_resolution(tmp_path):
+    data = _valid()
+    layer = data["layers"][0]
+    layer["years"] = {"first": 2017, "last": 2023}
+    layer["legend"]["items"] = [
+        {"colour": "#000000", "label": "First", "value": "1"},
+        {"colour": "#ffffff", "label": "Second", "value": "1"},
+    ]
+    layer["product"] = {
+        "provider": "Provider", "collection": "collection", "version": "v1",
+        "resolution_metres": 10, "area_unit": "hectares", "nodata_value": "0",
+    }
+    with pytest.raises(CatalogueError, match="duplicate class"):
+        _load(tmp_path, data)
+
+    layer["legend"]["items"][1]["value"] = "2"
+    layer["product"]["resolution_metres"] = 0
+    with pytest.raises(CatalogueError, match="resolution_metres"):
+        _load(tmp_path, data)
+
+
 def test_non_boundary_layer_needs_legend_and_section(tmp_path):
     data = _valid()
     del data["layers"][0]["legend"]

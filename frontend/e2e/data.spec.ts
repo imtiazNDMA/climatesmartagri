@@ -80,8 +80,9 @@ test('clicking a chart sets the year', async ({ page }) => {
   // where a raw page.mouse.click would land off-screen and hit nothing.
   await plot.click({ position: { x: box.width * 0.5, y: box.height * 0.6 } })
   const slider = page.getByRole('group', { name: 'Year' }).getByRole('slider')
-  await expect.poll(async () => Number(await slider.inputValue())).toBeLessThan(2009)
-  await expect.poll(async () => Number(await slider.inputValue())).toBeGreaterThan(2001)
+  const shown = async () => Number(await slider.getAttribute('aria-valuetext'))
+  await expect.poll(shown).toBeLessThan(2009)
+  await expect.poll(shown).toBeGreaterThan(2001)
 })
 
 test('a section with figures but no charts for the place says so', async ({ page }) => {

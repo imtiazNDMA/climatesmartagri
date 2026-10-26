@@ -9,6 +9,7 @@ import type {
   DistrictRiskResponse,
   ForecastTime,
   HazardCatalogue,
+  LandCoverObservation,
   Layer,
   Place,
   SectionData,
@@ -208,6 +209,22 @@ export function tileUrlTemplate(layerId: string, year: number | null, retry: num
   return `/api/tiles/${layerId}/{z}/{x}/{y}${query}`
 }
 
+/** Where the annual land-classification observation for a year is asked for. */
+export function landCoverObservationUrl(year: number | null, retry: number): string {
+  const params: string[] = []
+  if (year !== null) params.push(`year=${year}`)
+  if (retry > 0) params.push(`r=${retry}`)
+  const query = params.length ? `?${params.join('&')}` : ''
+  return `/api/land-cover/observation${query}`
+}
+
+export function fetchLandCoverObservation(
+  year: number | null,
+  retry: number,
+): Promise<LandCoverObservation> {
+  return getJson<LandCoverObservation>(landCoverObservationUrl(year, retry))
+}
+
 /** Where a raster or vector layer's tiles are: its own address if the catalogue gives one. */
 export function layerTileUrl(
   layer: Pick<Layer, 'id' | 'kind' | 'tile_url'>,
@@ -225,14 +242,16 @@ export function layerGeojsonUrl(layerId: string, retry: number): string {
 
 /** Learn whether a layer's data can be served: its shapes for a shape layer, its root tile otherwise. */
 export async function probeLayer(
-  layer: Pick<Layer, 'id' | 'kind' | 'tile_url'>,
+  layer: Pick<Layer, 'id' | 'kind' | 'tile_url' | 'tile_source'>,
   year: number | null,
   retry: number,
 ): Promise<boolean> {
   const address =
     layer.kind === 'geojson'
       ? layerGeojsonUrl(layer.id, retry)
-      : layerTileUrl(layer, year, retry).replace('{z}/{x}/{y}', '0/0/0')
+      : layer.tile_source === 'mpc'
+        ? landCoverObservationUrl(year, retry)
+        : layerTileUrl(layer, year, retry).replace('{z}/{x}/{y}', '0/0/0')
   try {
     return (await fetch(address)).ok
   } catch {

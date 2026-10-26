@@ -910,6 +910,8 @@ h2, h3 { margin: 0; }
 
 /* Figures, notes and charts in the section panel */
 .note { margin: 8px 0 0; font-size: 16px; color: var(--muted); }
+.insights { margin: 12px 0 0; padding-left: 20px; font-size: 16px; line-height: 1.45; }
+.insights li + li { margin-top: 6px; }
 .chart { margin: 0 0 24px; }
 /* In the panel each chart is a card, with its table and maximize buttons side by side in the corner. */
 .panel .chart-cell {
