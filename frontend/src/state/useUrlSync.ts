@@ -24,7 +24,9 @@ export function useUrlSync(catalogue: Catalogue, places: Place[]): void {
       const query = serializeView(pickView(state))
       window.history.replaceState(null, '', `${window.location.pathname}${query}`)
     }
+    // Listening before the first write means a year the view has to correct is written out too.
+    const unsubscribe = viewStore.subscribe(write)
     write()
-    return viewStore.subscribe(write)
+    return unsubscribe
   }, [catalogue, places])
 }

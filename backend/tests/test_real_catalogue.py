@@ -20,6 +20,17 @@ IRRIGATION_LAYERS = [
     "irrigation-practice", "irrigated-share", "equipped-area", "groundwater-share",
     "surface-water-area", "groundwater-area", "irrigation-balance",
 ]
+ANNUAL_LAND_CLASSES = {
+    "1": ("Water", "#419bdf"),
+    "2": ("Trees", "#397d49"),
+    "4": ("Flooded vegetation", "#7a87c6"),
+    "5": ("Crops", "#e49635"),
+    "7": ("Built area", "#c4281b"),
+    "8": ("Bare ground", "#a59b8f"),
+    "9": ("Snow/ice", "#a8ebff"),
+    "10": ("Clouds", "#616161"),
+    "11": ("Rangeland", "#e3e2c3"),
+}
 
 
 def _client():
@@ -43,6 +54,31 @@ def test_shipped_catalogue_is_valid_and_complete():
     assert (years["emissions"].first, years["emissions"].last) == (1994, 2025)
     assert (years["water-balance"].first, years["water-balance"].last) == (2026, 2047)
     assert (years["food-security"].first, years["food-security"].last) == (2026, 2047)
+
+
+def test_annual_land_classification_contract_is_authoritative():
+    catalogue = load_catalogue(BACKEND_DIR / "catalogue.json")
+    section = next(section for section in catalogue.sections if section.id == "land-cover")
+    layer = next(layer for layer in catalogue.layers if layer.id == "annual-land-cover")
+
+    assert (section.years.first, section.years.last, section.years.available) == (
+        2017, 2023, list(range(2017, 2024)),
+    )
+    assert layer.years == section.years
+    assert (layer.kind, layer.status, layer.section_id) == ("raster", "ready", "land-cover")
+    assert layer.tile_source == "mpc"
+    assert {
+        item.value: (item.label, item.colour) for item in layer.legend.items
+    } == ANNUAL_LAND_CLASSES
+    assert layer.product is not None
+    assert layer.product.model_dump() == {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0",
+    }
 
 
 def test_boundaries_are_loaded_from_the_prepared_files():

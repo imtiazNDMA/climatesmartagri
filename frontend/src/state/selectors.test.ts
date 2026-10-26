@@ -4,10 +4,11 @@ import {
   ancestors,
   clickTarget,
   effectiveYear,
+  observationIndex,
   searchPlaces,
   sectionsWithActiveLayers,
   tidyYear,
-  timeRange,
+  timeObservations,
 } from './selectors'
 import { emptyView, type View } from './viewState'
 
@@ -27,6 +28,11 @@ const catalogue: Catalogue = {
     layer('lz', 'static', { first: 2008, last: 2020 }),
   ],
 }
+const sparse: Catalogue = {
+  basemap_style_url: '',
+  sections: [section('sparse', { first: 2017, last: 2023, available: [2017, 2019, 2023] })],
+  layers: [layer('annual', 'sparse', { first: 2017, last: 2023, available: [2017, 2019, 2023] })],
+}
 const place = (id: string, name: string, level: Place['level'], parent: string | null): Place => ({
   id, name, level, parent_id: parent, bbox: [0, 0, 1, 1],
 })
@@ -41,32 +47,40 @@ const places: Place[] = [
 const view = (patch: Partial<View>): View => ({ ...emptyView, ...patch })
 const active = (id: string) => ({ id, opacity: 1, hidden: false })
 
-describe('timeRange', () => {
-  it('is null when nothing on screen has years', () => {
-    expect(timeRange(view({}), catalogue)).toBeNull()
-    expect(timeRange(view({ section: 'static', layers: [active('ls')] }), catalogue)).toBeNull()
+describe('timeObservations', () => {
+  it('is empty when nothing on screen has years', () => {
+    expect(timeObservations(view({}), catalogue)).toEqual([])
+    expect(timeObservations(view({ section: 'static', layers: [active('ls')] }), catalogue)).toEqual([])
   })
 
-  it('comes from the open section', () => {
-    expect(timeRange(view({ section: 'yearly' }), catalogue)).toEqual({ first: 2000, last: 2010 })
+  it('lists every year of a continuous range', () => {
+    expect(timeObservations(view({ section: 'yearly' }), catalogue)).toEqual(
+      Array.from({ length: 11 }, (_, i) => 2000 + i),
+    )
+  })
+
+  it('lists only the observations a sparse range declares', () => {
+    expect(timeObservations(view({ section: 'sparse' }), sparse)).toEqual([2017, 2019, 2023])
   })
 
   it('comes from an active layer even when its section is closed', () => {
-    expect(timeRange(view({ layers: [active('ly')] }), catalogue)).toEqual({ first: 1995, last: 2005 })
+    expect(timeObservations(view({ layers: [active('ly')] }), catalogue)).toEqual(
+      Array.from({ length: 11 }, (_, i) => 1995 + i),
+    )
   })
 
   it('counts hidden layers', () => {
     const hidden = { id: 'ly', opacity: 1, hidden: true }
-    expect(timeRange(view({ layers: [hidden] }), catalogue)).toEqual({ first: 1995, last: 2005 })
+    expect(timeObservations(view({ layers: [hidden] }), catalogue)).toHaveLength(11)
   })
 
-  it('is the widest span across the section and all active layers', () => {
+  it('combines the section and every active layer, once each', () => {
     const v = view({ section: 'yearly', layers: [active('ly'), active('lz')] })
-    expect(timeRange(v, catalogue)).toEqual({ first: 1995, last: 2020 })
+    expect(timeObservations(v, catalogue)).toEqual(Array.from({ length: 26 }, (_, i) => 1995 + i))
   })
 
   it('ignores ids that are not in the catalogue', () => {
-    expect(timeRange(view({ section: 'ghost', layers: [active('ghost')] }), catalogue)).toBeNull()
+    expect(timeObservations(view({ section: 'ghost', layers: [active('ghost')] }), catalogue)).toEqual([])
   })
 })
 
@@ -82,6 +96,36 @@ describe('effectiveYear', () => {
     expect(effectiveYear(years, 2005)).toBe(2005)
     expect(effectiveYear(years, 1990)).toBe(2000)
     expect(effectiveYear(years, 2030)).toBe(2010)
+  })
+  it('shows the nearest observation a sparse range declares', () => {
+    const sparseYears = { first: 2017, last: 2023, available: [2017, 2019, 2023] }
+    expect(effectiveYear(sparseYears, 2019)).toBe(2019)
+    expect(effectiveYear(sparseYears, 2018)).toBe(2017)
+    expect(effectiveYear(sparseYears, 2021)).toBe(2019)
+    expect(effectiveYear(sparseYears, 2030)).toBe(2023)
+  })
+  it('prefers the earlier observation when two are equally near', () => {
+    const sparseYears = { first: 2017, last: 2023, available: [2017, 2019, 2023] }
+    expect(effectiveYear(sparseYears, 2016)).toBe(2017)
+    expect(effectiveYear(sparseYears, 2020)).toBe(2019)
+  })
+})
+
+describe('observationIndex', () => {
+  it('places a year in the observation list', () => {
+    expect(observationIndex([2017, 2019, 2023], 2019)).toBe(1)
+  })
+
+  it('is the last observation when no year is chosen', () => {
+    expect(observationIndex([2017, 2019, 2023], null)).toBe(2)
+  })
+
+  it('places a year that is not an observation at its nearest', () => {
+    expect(observationIndex([2017, 2019, 2023], 2021)).toBe(1)
+  })
+
+  it('is nothing without observations', () => {
+    expect(observationIndex([], 2019)).toBe(-1)
   })
 })
 
@@ -162,5 +206,11 @@ describe('tidyYear', () => {
   })
   it('leaves the latest-year default alone', () => {
     expect(tidyYear(view({ section: 'yearly' }), catalogue)).toBeNull()
+  })
+  it('snaps a year that is not an observation to the nearest one', () => {
+    expect(tidyYear(view({ section: 'sparse', year: 2021 }), sparse)).toBe(2019)
+  })
+  it('keeps an observation as it is', () => {
+    expect(tidyYear(view({ section: 'sparse', year: 2023 }), sparse)).toBe(2023)
   })
 })

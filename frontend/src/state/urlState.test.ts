@@ -155,6 +155,19 @@ describe('parseView', () => {
     })
     expect(parse('?section=static&year=2005').dropped).toEqual(['year "2005"'])
   })
+
+  it('moves a year the observations do not have to the nearest one', () => {
+    const sparse: Catalogue = {
+      ...catalogue,
+      sections: [
+        { ...catalogue.sections[0], years: { first: 2017, last: 2023, available: [2017, 2019, 2023] } },
+        catalogue.sections[1],
+      ],
+    }
+    const parsed = parseView('?section=yearly&year=2018', sparse, places)
+    expect(parsed.view.year).toBe(2017)
+    expect(parsed.dropped).toEqual([])
+  })
 })
 
 describe('full view in the address bar', () => {
