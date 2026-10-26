@@ -358,6 +358,11 @@ class AiStore:
                 pairs.append((bool(faithful), value >= 0.5))
         return pairs
 
+    def read(self, sql: str, params: tuple = ()) -> list[tuple]:
+        """One read query under the store's lock, for read models (ops.py) that need their own SQL."""
+        with self._lock:
+            return self._db.execute(sql, params).fetchall()
+
     def close(self) -> None:
         self._db.close()
 
