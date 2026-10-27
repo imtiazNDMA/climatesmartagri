@@ -25,7 +25,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 
 | Section | State | Source |
 | --- | --- | --- |
-| Land Classification | Live: 4 raster layers (bare land shown as "Others"), figures and charts per district | `data/geospatial/rasters/*.tif` |
+| Land Classification | Live: the annual classification (2017–2023) and five class views (Trees, Rangeland, Bare ground, Crops, Built area), drawn by the browser from Microsoft Planetary Computer (ADR 0003); irrigated/rainfed cropland from a local raster; figures and charts per district from `backend/data/land_cover_annual.json` | MPC `io-lulc-annual-v02`; `data/geospatial/rasters/Irrigated&rainfed.tif` |
 | Climate Smart Irrigation Practices | Live: 4 map layers, figures and charts per district | `Irr_Prac.shp`, irrigation sheet |
 | Greenhouse-gas emissions | Live: charts, 1994–2025, national | `Pakistan_GHG_1994_2021_Excel_Data.xlsx` |
 | Crop water balance | Live: charts, 2026–2047, national | `CRW(efficiency) 25sep.xlsx` |
@@ -40,7 +40,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 Three scripts turn source files into what the backend serves. Source files are never changed. Restart the portal after running any of them.
 
 1. `uv run python backend/scripts/prepare_data.py` — boundaries, irrigation, emissions, water, food, crop calendar. Writes `backend/boundaries/` and `backend/data/`. About a minute.
-2. `uv run python backend/scripts/prepare_rasters.py` — converts the four rasters to Cloud-Optimized GeoTIFFs in `backend/rasters/` (not in git, about 1.1 GB). The 10 m files take 27 to 29 minutes each.
+2. `uv run python backend/scripts/prepare_rasters.py` — converts the irrigated/rainfed raster to a Cloud-Optimized GeoTIFF in `backend/rasters/` (not in git). Forest, shrub land and bare land are no longer converted: their layers are class views drawn from Microsoft Planetary Computer (ADR 0003).
 3. `uv run python backend/scripts/prepare_land_cover.py` — measures each land-cover class per district from the converted rasters. Under a minute. Run after step 2.
 
 ## Architecture in one page
@@ -161,6 +161,8 @@ Three scripts turn source files into what the backend serves. Source files are n
 ## Open items
 
 - **Delete `backend\rasters\tmpyt2t2_d9.tif`** (5.6 GB), left from a conversion I stopped. A safety check blocked my clean-up, so it is the user's to remove.
+- **The user may delete `backend\rasters\forest.tif`, `shrub-land.tif` and `bare-land.tif`**: since #59 nothing serves them (their layers are MPC class views). `prepare_land_cover.py` still reads them, and it is retired in #62.
+- **Irrigated/rainfed is the last land raster on this PC** (#61): it needs a hosting decision.
 - **Hazards guidance** is live but its thresholds are provisional (`provisional-2026-10`); they have not been reviewed against impact data or PMD's own warning thresholds. **Exposure and vulnerability** still have no data. The district map carries a population figure per district (about 313 million in total) that would suit exposure.
 - **The background map draws its own borders** and Kashmir labels beneath the project's boundaries. The style is a setting (`CSA_BASEMAP_STYLE_URL`).
 - **The tehsil practice layer uses a different boundary set** from the district map, so edges do not line up exactly, and it has no tehsils in Jammu and Kashmir.

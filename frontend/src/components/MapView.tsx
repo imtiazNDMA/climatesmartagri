@@ -14,6 +14,7 @@ import type { StoryCamera } from '../api/types'
 import { runOf } from '../forecast/choice'
 import { ForecastFrames, type FrameMap } from '../map/forecastFrames'
 import { basemapById, type BasemapId } from '../map/basemaps'
+import { clipTemplate, registerClipProtocol } from '../map/clipTiles'
 import { extremeColours, fillColour, glowStrength, shapeColour } from '../map/layerStyle'
 import { tooltipTable } from '../map/tooltip'
 import { DEFAULT_RISK_COLOURS, districtRiskColour, districtRiskOpacity } from '../map/districtRisk'
@@ -24,6 +25,7 @@ import { MapPopup, type PopupBlock } from './MapPopup'
 
 // MapLibre looks for its worker beside its own module, which a bundler moves; point it at the bundled copy.
 setWorkerUrl(workerUrl)
+registerClipProtocol()
 
 const BLANK_STYLE: StyleSpecification = {
   version: 8,
@@ -234,8 +236,12 @@ function addDataLayer(
     // nothing to draw, rather than last year's tiles under this year's label.
     const data = observation.data
     if (observation.status !== 'ready' || !data || data.year !== year) return false
+    // One mosaic per layer: a source's tiles list is mirrors of one tileset, never pieces of a mosaic.
+    // Its tiles cover whole item footprints, so each is cut to the country's outline.
+    const template = data.tiles[layer.id]
+    if (!template) return false
     map.addSource(id, {
-      type: 'raster', tiles: data.tile_urls, tileSize: 256,
+      type: 'raster', tiles: [clipTemplate(template)], tileSize: 256, attribution: data.attribution,
       maxzoom: layer.max_zoom ?? 22, bounds: data.bounds ?? undefined,
     })
     map.addLayer({ id, type: 'raster', source: id })

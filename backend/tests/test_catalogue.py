@@ -222,3 +222,37 @@ def test_geojson_layer_needs_a_property(tmp_path):
     data["layers"].append(layer)
     with pytest.raises(CatalogueError, match="shapes"):
         _load(tmp_path, data)
+
+
+def _mpc_layer(**overrides):
+    layer = {
+        "id": "trees", "section_id": "s1", "title": "Trees", "kind": "raster", "status": "ready",
+        "tile_source": "mpc", "years": {"first": 2017, "last": 2023},
+        "legend": {"type": "classes", "items": [{"colour": "#397d49", "label": "Trees", "value": "2"}]},
+    }
+    layer.update(overrides)
+    return layer
+
+
+def test_an_mpc_layer_with_one_real_class_loads(tmp_path):
+    data = _valid()
+    data["layers"] = [_mpc_layer()]
+    assert _load(tmp_path, data).layers[0].tile_source == "mpc"
+
+
+@pytest.mark.parametrize(
+    ("overrides", "message"),
+    [
+        ({"legend": {"type": "ramp", "colours": ["#000000", "#ffffff"], "min": 0, "max": 1}}, "needs a classes legend"),
+        ({"legend": {"type": "classes", "items": [{"colour": "#123456", "label": "Shrub", "value": "3"}]}},
+         "not an MPC class: 3"),
+        ({"legend": {"type": "classes", "items": [{"colour": "#123456", "label": "Shrub"}]}}, "not an MPC class: None"),
+        ({"legend": {"type": "classes", "items": [{"colour": "green", "label": "Trees", "value": "2"}]}}, "#rrggbb"),
+        ({"years": None}, "needs years"),
+    ],
+)
+def test_an_mpc_layer_must_colour_real_mpc_classes(tmp_path, overrides, message):
+    data = _valid()
+    data["layers"] = [_mpc_layer(**overrides)]
+    with pytest.raises(CatalogueError, match=message):
+        _load(tmp_path, data)

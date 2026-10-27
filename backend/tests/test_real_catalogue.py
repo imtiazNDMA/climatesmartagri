@@ -175,7 +175,27 @@ def test_irrigation_layers_are_served_and_match_their_legends():
     assert not any("extreme" in f["properties"] for f in surface)
 
 
-LAND_COVER = {"forest": {"2"}, "shrub-land": {"3"}, "bare-land": {"7"}, "irrigated-rainfed": {"2", "3"}}
+LAND_COVER = {"irrigated-rainfed": {"2", "3"}}
+MPC_CLASS_VIEWS = {"trees": "2", "rangeland": "11", "bare-ground": "8", "crops": "5", "built-area": "7"}
+
+
+def test_land_class_views_come_from_mpc_in_the_annual_maps_colours():
+    by_id = {layer.id: layer for layer in load_catalogue(BACKEND_DIR / "catalogue.json").layers}
+    annual = by_id["annual-land-cover"]
+    colours = {item.value: item.colour for item in annual.legend.items}
+    for layer_id, value in MPC_CLASS_VIEWS.items():
+        layer = by_id[layer_id]
+        assert (layer.tile_source, layer.source, layer.section_id) == ("mpc", None, "land-cover"), layer_id
+        assert (layer.years, layer.product) == (annual.years, annual.product), layer_id
+        assert [(item.value, item.colour) for item in layer.legend.items] == [(value, colours[value])], layer_id
+    assert not {"forest", "shrub-land", "bare-land"} & set(by_id)
+
+
+def test_class_views_follow_the_annual_map_and_irrigated_rainfed_comes_last():
+    ids = [layer.id for layer in load_catalogue(BACKEND_DIR / "catalogue.json").layers if layer.section_id == "land-cover"]
+    start = ids.index("annual-land-cover")
+    assert ids[start:start + 6] == ["annual-land-cover", *MPC_CLASS_VIEWS]
+    assert ids[-1] == "irrigated-rainfed"
 
 
 def test_land_cover_layers_name_their_files_and_class_values():

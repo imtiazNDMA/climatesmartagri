@@ -1,6 +1,7 @@
 """The annual land-classification observation the map draws for a chosen year."""
 
 import json
+from urllib.parse import parse_qsl, urlsplit
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,10 +27,7 @@ class FakeResolver:
             collection="io-lulc-annual-v02",
             version="v02",
             item_ids=(f"42Q-{year}", f"43Q-{year}"),
-            tile_templates=(
-                f"https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/{{z}}/{{x}}/{{y}}?item=42Q-{year}",
-                f"https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/{{z}}/{{x}}/{{y}}?item=43Q-{year}",
-            ),
+            search_id=f"pc1.{year}.abc",
             bounds=(60.87, 23.81, 79.3, 37.09),
             attribution="Esri / Impact Observatory / Microsoft Planetary Computer",
             expires_at=0.0,
@@ -51,6 +49,10 @@ def _catalogue() -> dict:
                  {"colour": "#419bdf", "label": "Water", "value": "1"},
                  {"colour": "#397d49", "label": "Trees", "value": "2"},
              ]}},
+            {"id": "trees", "section_id": "land-cover", "title": "Trees",
+             "kind": "raster", "status": "ready", "tile_source": "mpc", "max_zoom": 14,
+             "years": {"first": 2017, "last": 2023, "available": [2017, 2018, 2019, 2020, 2021, 2022, 2023]},
+             "legend": {"type": "classes", "items": [{"colour": "#397d49", "label": "Trees", "value": "2"}]}},
         ],
     }
 
@@ -68,8 +70,9 @@ def test_the_observation_defaults_to_the_latest_year(tmp_path):
 
     assert body["year"] == 2023
     assert resolver.calls == [2023]
-    assert len(body["tile_urls"]) == 2
-    assert body["tile_urls"][0].startswith("https://planetarycomputer.microsoft.com/")
+    assert body["search_id"] == "pc1.2023.abc"
+    assert "tile_urls" not in body
+    assert all(url.startswith("https://planetarycomputer.microsoft.com/") for url in body["tiles"].values())
     assert body["bounds"] == [60.87, 23.81, 79.3, 37.09]
     assert "Esri" in body["attribution"]
 
@@ -80,7 +83,7 @@ def test_a_chosen_year_resolves_that_year_only(tmp_path):
 
     assert body["year"] == 2019
     assert resolver.calls == [2019]
-    assert all("2019" in url for url in body["tile_urls"])
+    assert all("/mosaic/pc1.2019.abc/" in url for url in body["tiles"].values())
     assert body["item_ids"] == ["42Q-2019", "43Q-2019"]
 
 
@@ -88,7 +91,19 @@ def test_each_year_has_its_own_templates(tmp_path):
     client = _client(tmp_path)
     first = client.get("/api/land-cover/observation?year=2017").json()
     second = client.get("/api/land-cover/observation?year=2018").json()
-    assert first["tile_urls"] != second["tile_urls"]
+    assert first["tiles"] != second["tiles"]
+
+
+def _colormap(url: str) -> dict:
+    return json.loads(dict(parse_qsl(urlsplit(url).query))["colormap"])
+
+
+def test_the_observation_gives_every_mpc_layer_its_own_template(tmp_path):
+    body = _client(tmp_path).get("/api/land-cover/observation?year=2019").json()
+
+    assert set(body["tiles"]) == {"annual-land-cover", "trees"}
+    assert _colormap(body["tiles"]["annual-land-cover"]) == {"1": [65, 155, 223, 255], "2": [57, 125, 73, 255]}
+    assert _colormap(body["tiles"]["trees"]) == {"2": [57, 125, 73, 255]}
 
 
 def test_an_unsupported_year_is_refused(tmp_path):
@@ -137,5 +152,33 @@ def test_health_reports_a_service_that_cannot_start(tmp_path):
     assert health["land_cover"]["status"] == "unavailable"
     assert health["land_cover"]["error"] == "no boundaries"
     response = client.get("/api/land-cover/observation")
+    assert response.status_code == 503
+    assert response.json()["detail"]["reason"] == "not-configured"
+
+
+def test_the_outline_is_the_country_the_map_is_clipped_to(tmp_path):
+    boundaries = tmp_path / "boundaries"
+    boundaries.mkdir()
+    provinces = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[60, 20], [70, 20], [70, 30], [60, 30], [60, 20]]]}},
+        {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[70, 20], [80, 20], [80, 30], [70, 30], [70, 20]]]}},
+    ]}
+    (boundaries / "provinces.geojson").write_text(json.dumps(provinces), encoding="utf-8")
+    path = tmp_path / "catalogue.json"
+    path.write_text(json.dumps(_catalogue()), encoding="utf-8")
+    client = TestClient(create_app(Settings(path, boundaries, "https://example.test/s.json"), land_cover=FakeResolver()))
+
+    response = client.get("/api/land-cover/outline")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "public, max-age=86400"
+    body = response.json()
+    assert body["type"] == "Feature"
+    assert body["geometry"]["type"] == "Polygon"
+    xs = [x for x, _ in body["geometry"]["coordinates"][0]]
+    assert (min(xs), max(xs)) == (pytest.approx(60), pytest.approx(80))
+
+
+def test_without_boundaries_there_is_no_outline(tmp_path):
+    response = _client(tmp_path).get("/api/land-cover/outline")
     assert response.status_code == 503
     assert response.json()["detail"]["reason"] == "not-configured"
