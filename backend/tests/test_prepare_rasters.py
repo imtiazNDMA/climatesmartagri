@@ -64,7 +64,7 @@ def test_convert_leaves_no_partial_file_when_the_source_is_unreadable(tmp_path):
 
 
 def test_every_land_cover_layer_has_a_source_file_name():
-    assert set(RASTERS) == {"forest", "shrub-land", "bare-land", "irrigated-rainfed"}
+    assert set(RASTERS) == {"irrigated-rainfed"}
 
 
 def write_scattered_raster(path: Path, share: float = 0.10, size: int = 2048) -> None:

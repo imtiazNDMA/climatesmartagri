@@ -184,63 +184,208 @@
       "max_zoom": 14
     },
     {
-      "id": "forest",
+      "id": "trees",
       "section_id": "land-cover",
-      "title": "Forest cover",
+      "title": "Trees",
       "kind": "raster",
       "status": "ready",
+      "tile_source": "mpc",
       "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
-            "colour": "#2e7d32",
-            "label": "Forest",
+            "colour": "#397d49",
+            "label": "Trees",
             "value": "2"
           }
         ]
       },
-      "source": "forest.tif",
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
       "max_zoom": 14
     },
     {
-      "id": "shrub-land",
+      "id": "rangeland",
       "section_id": "land-cover",
-      "title": "Shrub land",
+      "title": "Rangeland",
       "kind": "raster",
       "status": "ready",
+      "tile_source": "mpc",
       "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
-            "colour": "#9ccc65",
-            "label": "Shrub land",
-            "value": "3"
+            "colour": "#e3e2c3",
+            "label": "Rangeland",
+            "value": "11"
           }
         ]
       },
-      "source": "shrub-land.tif",
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
       "max_zoom": 14
     },
     {
-      "id": "bare-land",
+      "id": "bare-ground",
       "section_id": "land-cover",
-      "title": "Bare land",
+      "title": "Bare ground",
       "kind": "raster",
       "status": "ready",
+      "tile_source": "mpc",
       "default_opacity": 0.85,
       "legend": {
         "type": "classes",
         "items": [
           {
-            "colour": "#bcaaa4",
-            "label": "Bare land",
+            "colour": "#a59b8f",
+            "label": "Bare ground",
+            "value": "8"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "crops",
+      "section_id": "land-cover",
+      "title": "Crops",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#e49635",
+            "label": "Crops",
+            "value": "5"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "built-area",
+      "section_id": "land-cover",
+      "title": "Built area",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#c4281b",
+            "label": "Built area",
             "value": "7"
           }
         ]
       },
-      "source": "bare-land.tif",
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
       "max_zoom": 14
     },
     {
