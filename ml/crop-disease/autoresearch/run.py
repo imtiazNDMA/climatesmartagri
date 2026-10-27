@@ -57,9 +57,10 @@ def append_result(path: Path, result: AttemptResult) -> None:
 
 def reset_candidate(project: Path, commit: str) -> None:
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
-    if head != commit:
-        raise RuntimeError(f"refusing to reset: HEAD is {head}, candidate is {commit}")
-    subprocess.run(["git", "reset", "--hard", f"{commit}^"], cwd=project, check=True)
+    candidate = subprocess.check_output(["git", "rev-parse", commit], cwd=project, text=True).strip()
+    if head != candidate:
+        raise RuntimeError(f"refusing to reset: HEAD is {head}, candidate is {candidate}")
+    subprocess.run(["git", "reset", "--hard", f"{candidate}^"], cwd=project, check=True)
 
 
 def run_attempt(

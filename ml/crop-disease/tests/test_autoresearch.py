@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 from autoresearch.prepare import load_data
-from autoresearch.run import Attempt, parse_metrics, run_attempt
+from autoresearch.run import Attempt, parse_metrics, reset_candidate, run_attempt
 
 
 def test_autoresearch_data_cannot_load_the_test_split(tmp_path):
@@ -74,3 +74,19 @@ def test_crash_is_recorded_and_candidate_commit_is_reset(tmp_path, monkeypatch):
         "commit\tval_macro_f1\tmemory_gb\tstatus\tdescription",
         "abc123\t\t\tcrash\tbroken syntax",
     ]
+
+
+def test_reset_accepts_an_abbreviated_candidate_sha(tmp_path):
+    subprocess.run(["git", "init"], cwd=tmp_path, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=tmp_path, check=True)
+    (tmp_path / "file.txt").write_text("base", encoding="utf-8")
+    subprocess.run(["git", "add", "file.txt"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-m", "base"], cwd=tmp_path, check=True, capture_output=True)
+    (tmp_path / "file.txt").write_text("candidate", encoding="utf-8")
+    subprocess.run(["git", "commit", "-am", "candidate"], cwd=tmp_path, check=True, capture_output=True)
+    candidate = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], cwd=tmp_path, text=True).strip()
+
+    reset_candidate(tmp_path, candidate)
+
+    assert (tmp_path / "file.txt").read_text(encoding="utf-8") == "base"

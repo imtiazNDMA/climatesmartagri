@@ -5,8 +5,13 @@ from __future__ import annotations
 import json
 import os
 import random
+import sys
 from collections import Counter
 from pathlib import Path
+
+PROJECT = Path(__file__).resolve().parents[1]
+if str(PROJECT) not in sys.path:
+    sys.path.insert(0, str(PROJECT))
 
 import mlflow
 import numpy as np
@@ -19,7 +24,6 @@ from torchvision import transforms
 from autoresearch.prepare import TimeBudget, evaluate_macro_f1, load_data, make_loaders
 from crop_disease.tracking import configure_mlflow, file_sha256, git_commit
 
-PROJECT = Path(__file__).resolve().parents[1]
 DATA_DIR = Path(os.environ["CSA_CROP_DATA_DIR"])
 MANIFEST = PROJECT / "data" / "manifest.csv"
 SEED = 42
