@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "512294414",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "PK",
+          "year": 2019
+        }
+      }
+    ],
+    "input_tokens": 4693,
+    "output_tokens": 116
+  },
+  {
+    "text": "In 2019, crops accounted for **20.2%** of Pakistan's classified land (about 48.7 million acres out of roughly 241.6 million acres classified). This is from the **Land Classification** section of the portal.",
+    "tool_calls": [],
+    "input_tokens": 15479,
+    "output_tokens": 171
+  }
+]

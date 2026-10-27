@@ -54,6 +54,7 @@ def build() -> AnnualLandCoverStats:
         })
     return AnnualLandCoverStats({
         "schema_version": 1, "classes": CODES, "years": ["2017", "2018", "2019"], "method": "counted",
+        "provenance": {"collection": "io-lulc-annual-v02", "cell_size_m": 80},
         "places": places,
     })
 
@@ -149,6 +150,7 @@ def test_a_year_that_is_not_published_says_so(provider):
 def test_a_place_with_no_statistics_says_so(provider):
     body = provider(at("d-nowhere", "Nowhere", "district"), 2019)
 
+    body.pop("provenance")
     assert body == {"figures": [], "charts": [], "notes": ["No land classification is available for Nowhere."]}
 
 
@@ -234,3 +236,14 @@ def test_nothing_says_converted(provider):
     for place_id, level in (("PK", "national"), ("p-a", "province"), ("d-cloudy", "district")):
         body = provider(at(place_id, place_id, level), 2019)
         assert "convert" not in str(body).lower()
+
+
+def test_every_answer_says_which_product_it_comes_from_and_how_it_was_measured(provider):
+    measured = provider(at("PK", "Pakistan", "national"), 2019)
+    unpublished = provider(at("PK", "Pakistan", "national"), 2016)
+    missing = provider(at("d-nowhere", "Nowhere", "district"), 2019)
+
+    for body in (measured, unpublished, missing):
+        assert "io-lulc-annual-v02" in body["provenance"]
+        assert "80 m" in body["provenance"]
+        assert "converted" not in body["provenance"]

@@ -223,6 +223,20 @@ def test_set_portal_view_rejects_unknown_and_coming_soon_targets(settings):
     assert bad_place.result == {"error": "Unknown place 'PK999'"}
 
 
+def test_set_portal_view_refuses_a_year_the_section_or_layer_does_not_hold(settings):
+    service = _portal_view_service(settings, ScriptedModel([]))
+    run = service._agent.registry.run
+
+    late = run(ToolCall("y", "set_portal_view", {"section_id": "alpha-section", "year": 2030}))
+    assert late.result == {"error": "Alpha section covers 2000 to 2010, not 2030"}
+    assert late.portal_actions == []
+    by_layer = run(ToolCall("l", "set_portal_view", {"layer_id": "fake-yearly", "year": 1999}))
+    assert by_layer.result == {"error": "Alpha section covers 2000 to 2010, not 1999"}
+    # Without a section or layer, the year must be one some section holds.
+    assert run(ToolCall("n", "set_portal_view", {"year": 2050})).result == {"error": "No section covers 2050"}
+    assert run(ToolCall("o", "set_portal_view", {"year": 2004})).portal_actions == [{"type": "set-year", "year": 2004}]
+
+
 def test_set_portal_view_turns_on_a_map_layer_with_ensure_on_semantics(settings):
     service = _portal_view_service(settings, ScriptedModel([]))
     output = service._agent.registry.run(ToolCall("l", "set_portal_view", {"layer_id": "fake-shapes"}))
@@ -420,3 +434,17 @@ def test_lm_studio_settings_are_configurable(settings):
     )
     assert configured.lm_studio_model == "qwen3"
     assert configured.lm_studio_timeout == 12
+
+
+def test_section_facts_tell_the_model_their_provenance_only_when_the_section_has_one():
+    from csa_portal.ai.agents.assistant import _section_tool_result
+    from csa_portal.facts import SectionFacts
+    from csa_portal.places import Place
+
+    place = Place("PK", "Pakistan", "national", None, (0.0, 0.0, 1.0, 1.0))
+
+    sourced = _section_tool_result(SectionFacts(place, 2023, [], provenance="Product X, 80 m."))
+    plain = _section_tool_result(SectionFacts(place, 2023, []))
+
+    assert sourced["provenance"] == "Product X, 80 m."
+    assert "provenance" not in plain

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The portal can't answer the \"why\" here. It holds each year's class areas for Pakistan, not which land moved between classes or why it moved, so I can't confirm or rule out farmers turning bare ground into rangeland.\n\nWhat the Land Classification section does show (2017 to 2023, national level):\n\n- **Bare ground** fell by **19,468.9 thousand acres**, a net class-area change of **−8.1 points** of classified land (from 21% to 13% of classified land).\n- **Rangeland** rose by **13,329.7 thousand acres**, a net class-area change of **+5.5 points** (it was the most widespread class in both 2017 and 2023, at 54.2% of classified land in 2023).\n\nSo the two changes happened in the same period, but the portal does not record that one became the other, or what drove either change. The figures come from Impact Observatory's 10 m annual land use and land cover product, which reports each year's net class areas only.\n\nIf you'd like, I can open the Land Classification section for a specific province or district, or show the year-by-year class areas, so you can see the trend in more detail.",
+    "tool_calls": [],
+    "input_tokens": 4701,
+    "output_tokens": 367
+  }
+]

@@ -1,0 +1,8 @@
+[
+  {
+    "text": "In the **Land Classification** section (2023), crops cover **0.60 million acres** of Sujawal — **34.2% of the district's classified land**.\n\nA couple of notes for context:\n- The 2023 classification covers **86.1%** of Sujawal's total land (1.75 million acres of 2.04 million acres), so the 34.2% figure is a share of the *classified* land, not of all land.\n- Crops were the second most widespread class, behind **Water** (38.9% of classified land).\n- Compared with 2022, land classified as crops rose by **27.8 thousand acres** (a net class-area change of +1.6 points of classified land).\n\nThe portal reports each year's class areas; it does not track which specific land changed class or why.",
+    "tool_calls": [],
+    "input_tokens": 4674,
+    "output_tokens": 398
+  }
+]
