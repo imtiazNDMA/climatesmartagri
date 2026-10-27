@@ -175,6 +175,7 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **AI decisions waiting on the user:** #21 which documents the assistant may answer from, #15 which agronomist reviews management guidance.
 - **Deferred:** officer sign-in (#12), advisory approval workflow, export and sharing. Advisories may remain clearly marked internal drafts, with no external distribution. Revisit ADR 0002 only if publishing or sharing enters scope.
 - **The `/api/sections/{id}/data` route still has its own copy of the place fallback**; moving it onto the facts module is a small follow-up.
+- **Crop disease model (#65, started 2026-10-27).** Plan: #66 data → #67 PyTorch + MLflow baselines → #68 autoresearch harness → #69 run → #70 calibrate/package → #71 portal. User decisions: PyTorch (not TF; TF has no Windows GPU), one 5-crop model replaces `improved-002` only if it wins on rice/maize, macro F1 on val selects and the locked test is scored once, code in `ml/crop-disease/` and images outside git (`CSA_CROP_DATA_DIR`). #66 (PR #72): 57% of the original test images were copies of training images; the clean manifest has 11,453 unique images, 37 classes. Waiting on Dr. Aamir: the bollworm merge, armyworm vs fall armyworm, and pink bollworm (dropped as too small, but a major pest). #17 is superseded by #65 pending the user's OK to close it.
 - **GitHub labels:** the triage labels (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`) and `ai` exist on `imtiazNDMA/climatesmartagri`.
 
 ## AI platform core (designed 2026-10-16)
