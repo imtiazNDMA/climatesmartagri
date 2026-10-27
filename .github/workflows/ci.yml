@@ -27,6 +27,9 @@ jobs:
       - run: npm ci
       - run: npm --prefix frontend ci
       - run: npm run check
+      - name: Crop disease data checks
+        working-directory: ml/crop-disease
+        run: uv run --locked pytest
 
   e2e:
     runs-on: ubuntu-latest
