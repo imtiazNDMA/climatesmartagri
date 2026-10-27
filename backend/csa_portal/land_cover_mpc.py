@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 
 import httpx
 from shapely import make_valid
-from shapely.geometry import mapping, shape
+from shapely.geometry import Polygon, mapping, shape
 from shapely.errors import GEOSException
 from shapely.ops import unary_union
 
@@ -26,6 +26,8 @@ SUPPORTED_YEARS = tuple(range(2017, 2024))
 ATTRIBUTION = "Esri / Impact Observatory / Microsoft Planetary Computer"
 # The classes the collection codes its cells with; 0 is no data.
 MPC_CLASS_CODES = frozenset({1, 2, 4, 5, 7, 8, 9, 10, 11})
+# Province boundaries meet imperfectly; closing gaps narrower than about 20 m joins them into one country.
+_OUTLINE_CLOSE_DEGREES = 0.0002
 # MPC hands out search ids like "pc1.1793161178.6ea9c1a9…"; anything else is not put into a URL.
 _SEARCH_ID = re.compile(r"[A-Za-z0-9._-]{1,128}")
 
@@ -60,6 +62,19 @@ def pakistan_geometry(boundaries_dir: Path) -> dict[str, Any]:
     if country.is_empty or not country.is_valid:
         raise MpcLandCoverError(f"{path} does not describe a valid country", "invalid-boundaries")
     return mapping(country)
+
+
+def country_outline(geometry: Mapping[str, Any]) -> dict[str, Any]:
+    """The country's outer edge, clean enough to clip the map to, as GeoJSON.
+
+    The union of the provinces is riddled with slivers where neighbouring boundaries do not quite
+    meet. Growing and shrinking it by about 20 m closes them, holes are dropped (the country has
+    none of its own), and the result is simplified to the same tolerance.
+    """
+    gap = _OUTLINE_CLOSE_DEGREES
+    country = make_valid(shape(geometry)).buffer(gap, join_style="mitre").buffer(-gap, join_style="mitre")
+    edges = [Polygon(part.exterior) for part in getattr(country, "geoms", [country]) if not part.is_empty]
+    return mapping(unary_union(edges).simplify(gap, preserve_topology=True))
 
 
 @dataclass(frozen=True)

@@ -154,3 +154,31 @@ def test_health_reports_a_service_that_cannot_start(tmp_path):
     response = client.get("/api/land-cover/observation")
     assert response.status_code == 503
     assert response.json()["detail"]["reason"] == "not-configured"
+
+
+def test_the_outline_is_the_country_the_map_is_clipped_to(tmp_path):
+    boundaries = tmp_path / "boundaries"
+    boundaries.mkdir()
+    provinces = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[60, 20], [70, 20], [70, 30], [60, 30], [60, 20]]]}},
+        {"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [[[70, 20], [80, 20], [80, 30], [70, 30], [70, 20]]]}},
+    ]}
+    (boundaries / "provinces.geojson").write_text(json.dumps(provinces), encoding="utf-8")
+    path = tmp_path / "catalogue.json"
+    path.write_text(json.dumps(_catalogue()), encoding="utf-8")
+    client = TestClient(create_app(Settings(path, boundaries, "https://example.test/s.json"), land_cover=FakeResolver()))
+
+    response = client.get("/api/land-cover/outline")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "public, max-age=86400"
+    body = response.json()
+    assert body["type"] == "Feature"
+    assert body["geometry"]["type"] == "Polygon"
+    xs = [x for x, _ in body["geometry"]["coordinates"][0]]
+    assert (min(xs), max(xs)) == (pytest.approx(60), pytest.approx(80))
+
+
+def test_without_boundaries_there_is_no_outline(tmp_path):
+    response = _client(tmp_path).get("/api/land-cover/outline")
+    assert response.status_code == 503
+    assert response.json()["detail"]["reason"] == "not-configured"

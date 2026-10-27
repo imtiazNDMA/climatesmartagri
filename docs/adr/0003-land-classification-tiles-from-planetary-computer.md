@@ -9,4 +9,5 @@ Per-place figures do not come from MPC at request time. They stay in the prepare
 - The portal now depends on MPC being reachable and on its terms of use. When it is not, only these layers show "Could not load"; figures, charts and every other layer are unaffected.
 - The forest, shrub-land and bare-land rasters (about 1.1 GB of converted files) are no longer converted or served, and their layers became class views. The files on disk are the owner's to delete.
 - Irrigated and rainfed cropland has no MPC equivalent, so it is the one land raster still served from a local file until a home for it is chosen.
+- MPC tiles cover whole item footprints, which reach into India, Afghanistan and Iran. The browser fetches each tile itself, through a `clip://` protocol, and cuts away everything outside Pakistan's outline (`/api/land-cover/outline`) on a canvas before MapLibre draws it. This works on every basemap, which a mask drawn over the map would not. If the outline cannot be loaded, tiles are drawn unclipped.
 - The colours of the class views are the MPC classification's own, so a class looks the same in the full map, its class view and the charts.

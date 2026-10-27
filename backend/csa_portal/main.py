@@ -33,6 +33,7 @@ from .land_cover_mpc import (  # noqa: E402
     LandCoverResolver,
     MpcLandCoverError,
     MpcLandCoverResolver,
+    country_outline,
     mosaic_tile_url,
     pakistan_geometry,
 )
@@ -168,17 +169,23 @@ def create_app(
     # --- The annual land-classification observation, served from Microsoft Planetary Computer.
     mpc_layers = [layer for layer in catalogue.layers if layer.tile_source == "mpc"]
     wants_observation = bool(mpc_layers)
-    if land_cover is None and land_cover_error is None and wants_observation:
+    country: dict[str, Any] | None = None
+    country_error: str | None = None
+    if wants_observation:
         try:
-            land_cover = MpcLandCoverResolver(
-                httpx.Client(timeout=30.0, follow_redirects=True),
-                pakistan_geometry(settings.boundaries_dir),
-            )
+            country = pakistan_geometry(settings.boundaries_dir)
         except MpcLandCoverError as err:
+            country_error = str(err)
+    # The edge the map clips the observation's tiles to.
+    outline = country_outline(country) if country is not None else None
+    if land_cover is None and land_cover_error is None and wants_observation:
+        if country is None:
             # Without the country's outline the catalogue cannot be asked what covers it;
             # the portal still starts, and says why the layer has no tiles.
-            land_cover_error = str(err)
-            logger.error("The annual land-classification service could not start: %s", err)
+            land_cover_error = country_error
+            logger.error("The annual land-classification service could not start: %s", country_error)
+        else:
+            land_cover = MpcLandCoverResolver(httpx.Client(timeout=30.0, follow_redirects=True), country)
 
     app = FastAPI(title="CSA Portal")
 
@@ -368,6 +375,14 @@ def create_app(
             "bounds": list(resolved.bounds),
             "attribution": resolved.attribution,
         }
+
+    @app.get("/api/land-cover/outline")
+    def land_cover_outline(response: Response) -> dict[str, Any]:
+        """Pakistan's outer edge: the map draws the annual land classification only inside it."""
+        if outline is None:
+            raise _error(503, "The country outline is not available", "not-configured")
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        return {"type": "Feature", "properties": {}, "geometry": outline}
 
     @app.get("/api/places")
     def get_places() -> list[dict[str, Any]]:

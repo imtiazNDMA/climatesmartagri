@@ -7,12 +7,13 @@ import httpx
 import pytest
 from urllib.parse import parse_qsl, urlsplit
 
-from shapely.geometry import box, mapping
+from shapely.geometry import box, mapping, shape
 
 from csa_portal.land_cover_mpc import (
     COLLECTION,
     MpcLandCoverError,
     MpcLandCoverResolver,
+    country_outline,
     mosaic_tile_url,
     pakistan_geometry,
 )
@@ -295,3 +296,16 @@ def test_pakistan_geometry_reports_missing_or_empty_boundaries(tmp_path):
     with pytest.raises(MpcLandCoverError) as caught:
         pakistan_geometry(tmp_path)
     assert caught.value.code == "invalid-boundaries"
+
+
+def test_the_country_outline_closes_slivers_between_provinces_and_drops_pinholes():
+    # Two provinces that should touch, 5 m apart, and a pinhole left inside one of them.
+    west = box(60, 20, 70, 30).difference(box(65, 25, 65.00001, 25.00001))
+    east = box(70.00005, 20, 80, 30)
+    outline = shape(country_outline(mapping(west.union(east))))
+
+    assert outline.geom_type == "Polygon"
+    assert outline.is_valid
+    assert list(outline.interiors) == []
+    assert abs(outline.area - 200) / 200 < 1e-4
+    assert outline.covers(box(69.9, 24, 70.1, 26))
