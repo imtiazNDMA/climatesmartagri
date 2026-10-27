@@ -43,3 +43,37 @@ uv run pytest
 - no held-out picture is a near copy of a training picture
 - every class has enough validation and test images
 - no runaway duplicate groups
+
+## Training and experiment tracking
+
+Training uses PyTorch, `timm`, the committed manifest, and the Windows CUDA build of PyTorch. Every run is written to a local SQLite-backed MLflow store under `.mlflow/`.
+
+```powershell
+$env:CSA_CROP_DATA_DIR = "G:\path\to\dataset_filtered"
+uv run train.py --experiment baseline --run-name pytorch-mobilenetv2-baseline
+```
+
+The default baseline keeps the historical MobileNetV2 architecture and schedule: a 256-unit ReLU head with 0.4 dropout, 15 head-only epochs using Adam at `1e-3`, followed by 25 epochs fine-tuning the final 40 backbone modules at `1e-5`. It adds the issue's required class-balanced loss. Model selection uses validation macro F1. Training never reads the locked test split.
+
+Open the experiment UI in another terminal:
+
+```powershell
+uv run mlflow ui --backend-store-uri sqlite:///.mlflow/mlflow.db --default-artifact-root .mlflow/artifacts
+```
+
+Runs log hyperparameters, git commit, manifest hash, per-epoch loss/accuracy/macro F1, the best checkpoint, a per-class JSON report, and a confusion matrix. Use `--experiment manual` for hand-tuned runs; `autoresearch` is reserved for #68.
+
+Evaluate a saved PyTorch checkpoint without training:
+
+```powershell
+uv run evaluate.py checkpoints/pytorch-mobilenetv2-baseline-best.pt --split val
+```
+
+Only after selecting the final model configuration, evaluate the locked test split once with `--split test` and record that run alongside the model decision.
+
+The historical Keras model is inference-only and isolated in an optional dependency group:
+
+```powershell
+uv sync --group keras
+uv run --group keras baseline_keras.py path/to/best_model.keras path/to/class_names.json
+```

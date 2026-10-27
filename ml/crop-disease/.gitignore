@@ -1,6 +1,7 @@
 # Images live outside git (see CSA_CROP_DATA_DIR); only the manifest and report are committed.
 .venv/
 .mlflow/
+mlruns/
 checkpoints/
 runs/
 *.pt
