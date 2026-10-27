@@ -7,6 +7,7 @@ import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from autoresearch.prepare import KILL_AFTER_SECONDS
 from crop_disease.tracking import configure_mlflow
@@ -25,7 +26,7 @@ class AttemptResult:
     commit: str
     val_macro_f1: float | None
     peak_vram_mb: float | None
-    status: str
+    status: Literal["keep", "discard", "crash"]
     description: str
 
 
@@ -56,11 +57,38 @@ def append_result(path: Path, result: AttemptResult) -> None:
 
 
 def reset_candidate(project: Path, commit: str) -> None:
+    dirty = subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=no"], cwd=project, text=True
+    ).strip()
+    if dirty:
+        raise RuntimeError("refusing to reset a dirty tracked worktree")
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
     candidate = subprocess.check_output(["git", "rev-parse", commit], cwd=project, text=True).strip()
     if head != candidate:
         raise RuntimeError(f"refusing to reset: HEAD is {head}, candidate is {candidate}")
     subprocess.run(["git", "reset", "--hard", f"{candidate}^"], cwd=project, check=True)
+
+
+def validate_candidate(project: Path, commit: str) -> str:
+    branch = subprocess.check_output(["git", "branch", "--show-current"], cwd=project, text=True).strip()
+    if not branch.startswith("autoresearch/"):
+        raise RuntimeError(f"run candidates only on an autoresearch/<tag> branch, not {branch!r}")
+    candidate = subprocess.check_output(["git", "rev-parse", commit], cwd=project, text=True).strip()
+    head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=project, text=True).strip()
+    if head != candidate:
+        raise RuntimeError(f"candidate must be current HEAD: HEAD is {head}, candidate is {candidate}")
+    dirty = subprocess.check_output(
+        ["git", "status", "--porcelain", "--untracked-files=no"], cwd=project, text=True
+    ).strip()
+    if dirty:
+        raise RuntimeError("candidate must start from a clean tracked worktree")
+    changed = subprocess.check_output(
+        ["git", "diff-tree", "--no-commit-id", "--name-only", "-r", candidate], cwd=project, text=True
+    ).splitlines()
+    allowed = "ml/crop-disease/autoresearch/train.py"
+    if changed != [allowed]:
+        raise RuntimeError(f"candidate must change only {allowed}; changed: {changed}")
+    return candidate
 
 
 def run_attempt(
@@ -69,14 +97,17 @@ def run_attempt(
     command: list[str],
     timeout_seconds: float = KILL_AFTER_SECONDS,
     baseline: float | None = None,
+    execute=subprocess.run,
 ) -> AttemptResult:
+    candidate = validate_candidate(project, attempt.commit)
+    attempt = Attempt(candidate, attempt.description)
     mlflow, _ = configure_mlflow(project, "autoresearch")
     active_run = mlflow.start_run(run_name=attempt.description)
     environment = os.environ.copy()
     environment["MLFLOW_RUN_ID"] = active_run.info.run_id
     environment["AUTORESEARCH_DESCRIPTION"] = attempt.description
     try:
-        completed = subprocess.run(
+        completed = execute(
             command,
             cwd=project / "autoresearch",
             stdout=subprocess.PIPE,
@@ -97,22 +128,26 @@ def run_attempt(
     else:
         output = completed.stdout
 
-    append_result(project / "autoresearch" / "results.tsv", result)
-    mlflow.set_tags({
-        "commit": result.commit,
-        "status": result.status,
-        "description": result.description,
-    })
-    if result.val_macro_f1 is not None:
-        mlflow.log_metric("val_macro_f1", result.val_macro_f1)
-    if result.peak_vram_mb is not None:
-        mlflow.log_metric("peak_vram_mb", result.peak_vram_mb)
-    log_path = project / "autoresearch" / "run.log"
-    log_path.write_text(output, encoding="utf-8")
-    mlflow.log_artifact(str(log_path))
-    mlflow.end_run(status="FINISHED" if result.status != "crash" else "FAILED")
     if result.status != "keep":
         reset_candidate(project, attempt.commit)
+    append_result(project / "autoresearch" / "results.tsv", result)
+    try:
+        mlflow.set_tags({
+            "commit": result.commit,
+            "status": result.status,
+            "description": result.description,
+        })
+        if result.val_macro_f1 is not None:
+            mlflow.log_metric("val_macro_f1", result.val_macro_f1)
+        if result.peak_vram_mb is not None:
+            mlflow.log_metric("peak_vram_mb", result.peak_vram_mb)
+        log_path = project / "autoresearch" / "run.log"
+        log_path.write_text(output, encoding="utf-8")
+        mlflow.log_artifact(str(log_path))
+        mlflow.end_run(status="FINISHED" if result.status != "crash" else "FAILED")
+    except Exception:
+        mlflow.end_run(status="FAILED")
+        raise
     return result
 
 

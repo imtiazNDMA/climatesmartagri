@@ -21,6 +21,7 @@ Improve validation macro F1 within a fixed ten-minute RTX 6000 training budget.
 1. Change one coherent idea in `train.py`. Architecture (`timm` only), resolution, augmentation, optimiser, schedule, loss and sampling are fair game.
 2. Prefer the simplest change that could explain an improvement. Complexity needs a measurable payoff.
 3. Commit the candidate before running it.
+   The runner rejects candidates that change any file except `autoresearch/train.py`, or run outside an `autoresearch/<tag>` branch.
 4. Run from `ml/crop-disease/autoresearch`:
 
    ```powershell

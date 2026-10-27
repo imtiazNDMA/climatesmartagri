@@ -72,10 +72,13 @@ def set_phase(model, fine_tune: bool) -> None:
         parameter.requires_grad = True
 
 
-def train_epoch(model, loader, optimizer, criterion, scaler, device) -> float:
+def train_epoch(model, loader, optimizer, criterion, scaler, device, budget: TimeBudget) -> float:
     model.train()
     total = 0.0
+    seen = 0
     for images, targets in loader:
+        if budget.expired():
+            break
         images, targets = images.to(device), targets.to(device)
         optimizer.zero_grad(set_to_none=True)
         with autocast(device_type="cuda"):
@@ -84,7 +87,8 @@ def train_epoch(model, loader, optimizer, criterion, scaler, device) -> float:
         scaler.step(optimizer)
         scaler.update()
         total += loss.item() * targets.size(0)
-    return total / len(loader.dataset)
+        seen += targets.size(0)
+    return total / max(seen, 1)
 
 
 def main() -> None:
@@ -137,7 +141,9 @@ def main() -> None:
                 (parameter for parameter in model.parameters() if parameter.requires_grad),
                 lr=FINE_TUNE_LR if fine_tune else HEAD_LR,
             )
-            train_loss = train_epoch(model, train_loader, optimizer, criterion, scaler, device)
+            train_loss = train_epoch(model, train_loader, optimizer, criterion, scaler, device, budget)
+            if budget.expired():
+                break
             score = evaluate_macro_f1(model, val_loader, device)
             best_f1 = max(best_f1, score)
             mlflow.log_metrics({"train_loss": train_loss, "val_macro_f1": score}, step=epoch)
