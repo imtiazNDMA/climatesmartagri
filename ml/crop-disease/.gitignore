@@ -4,6 +4,8 @@
 mlruns/
 checkpoints/
 runs/
+autoresearch/results.tsv
+autoresearch/run.log
 *.pt
 *.ts
 *.keras

@@ -77,3 +77,15 @@ The historical Keras model is inference-only and isolated in an optional depende
 uv sync --group keras
 uv run --group keras baseline_keras.py path/to/best_model.keras path/to/class_names.json
 ```
+
+## Autoresearch
+
+The validation-only experiment loop lives in `autoresearch/`. Its fixed `prepare.py` exposes train and validation data only; `autoresearch/train.py` is the sole agent-editable file. Each run has a ten-minute training budget and a hard 20-minute subprocess timeout.
+
+Read `autoresearch/program.md` before running an experiment. From this project directory, record one committed candidate with:
+
+```powershell
+uv run python -m autoresearch.run --commit <sha> --description "<idea>" --baseline 0.8304
+```
+
+Local `results.tsv`, `run.log`, checkpoints, and MLflow state remain outside git.
