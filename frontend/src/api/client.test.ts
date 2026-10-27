@@ -175,8 +175,12 @@ describe('the annual land-classification observation', () => {
     const body = {
       year: 2019,
       collection: 'io-lulc-annual-v02',
+      search_id: 'pc1.1.abc',
       item_ids: ['42Q-2019'],
-      tile_urls: ['https://planetarycomputer.microsoft.com/tiles/{z}/{x}/{y}'],
+      tiles: {
+        'annual-land-cover':
+          'https://planetarycomputer.microsoft.com/api/data/v1/mosaic/pc1.1.abc/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?collection=io-lulc-annual-v02',
+      },
       bounds: [60, 23, 79, 37],
       attribution: 'Esri',
     }
@@ -184,7 +188,7 @@ describe('the annual land-classification observation', () => {
     vi.stubGlobal('fetch', fetchMock)
     const observation = await fetchLandCoverObservation(2019, 0)
     expect(observation.year).toBe(2019)
-    expect(observation.tile_urls).toHaveLength(1)
+    expect(Object.keys(observation.tiles)).toEqual(['annual-land-cover'])
     expect(fetchMock).toHaveBeenCalledWith('/api/land-cover/observation?year=2019')
   })
 

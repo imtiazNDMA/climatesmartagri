@@ -33,6 +33,7 @@ from .land_cover_mpc import (  # noqa: E402
     LandCoverResolver,
     MpcLandCoverError,
     MpcLandCoverResolver,
+    mosaic_tile_url,
     pakistan_geometry,
 )
 from .ai.model import LmStudioModel  # noqa: E402
@@ -165,7 +166,8 @@ def create_app(
     layers = {layer.id: layer for layer in catalogue.layers}
 
     # --- The annual land-classification observation, served from Microsoft Planetary Computer.
-    wants_observation = any(layer.tile_source == "mpc" for layer in catalogue.layers)
+    mpc_layers = [layer for layer in catalogue.layers if layer.tile_source == "mpc"]
+    wants_observation = bool(mpc_layers)
     if land_cover is None and land_cover_error is None and wants_observation:
         try:
             land_cover = MpcLandCoverResolver(
@@ -355,7 +357,14 @@ def create_app(
             "year": resolved.year,
             "collection": resolved.collection,
             "item_ids": list(resolved.item_ids),
-            "tile_urls": list(resolved.tile_templates),
+            "search_id": resolved.search_id,
+            # One template per layer drawn from the observation, each colouring only its legend's classes.
+            "tiles": {
+                layer.id: mosaic_tile_url(
+                    resolved.search_id, {int(item.value): item.colour for item in layer.legend.items}
+                )
+                for layer in mpc_layers
+            },
             "bounds": list(resolved.bounds),
             "attribution": resolved.attribution,
         }

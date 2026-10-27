@@ -24,6 +24,8 @@ COLLECTION = "io-lulc-annual-v02"
 VERSION = "v02"
 SUPPORTED_YEARS = tuple(range(2017, 2024))
 ATTRIBUTION = "Esri / Impact Observatory / Microsoft Planetary Computer"
+# The classes the collection codes its cells with; 0 is no data.
+MPC_CLASS_CODES = frozenset({1, 2, 4, 5, 7, 8, 9, 10, 11})
 # MPC hands out search ids like "pc1.1793161178.6ea9c1a9…"; anything else is not put into a URL.
 _SEARCH_ID = re.compile(r"[A-Za-z0-9._-]{1,128}")
 

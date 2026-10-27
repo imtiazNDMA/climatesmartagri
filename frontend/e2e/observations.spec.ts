@@ -55,3 +55,45 @@ test('playback walks the observations and comes back to the first', async ({ pag
   await expect(slider.getByRole('slider')).toHaveAttribute('aria-valuetext', '2000', { timeout: 5000 })
   await slider.getByRole('button', { name: 'Pause' }).click()
 })
+
+const PIXEL = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
+
+test('two land layers from the observation each draw from their own mosaic of the same year', async ({ page }) => {
+  const years = { first: 2000, last: 2010 }
+  const mpcLayer = (id: string, title: string) => ({
+    id, title, section_id: 'alpha-section', kind: 'raster', status: 'ready', tile_source: 'mpc',
+    years, max_zoom: 14, default_opacity: 0.85, tile_url: null, bounds: null,
+    legend: { type: 'classes', items: [{ colour: '#397d49', label: title, value: '2' }] },
+  })
+  await page.route('**/api/catalogue', async (route) => {
+    const catalogue = await (await route.fetch()).json()
+    catalogue.layers.push(mpcLayer('mpc-all', 'Annual land classification'), mpcLayer('mpc-trees', 'Trees'))
+    await route.fulfill({ json: catalogue })
+  })
+  await page.route('**/api/land-cover/observation**', (route) => {
+    return route.fulfill({
+      json: {
+        year: 2010, collection: 'io-lulc-annual-v02', search_id: 'pc1.1.abc', item_ids: ['42Q-2010'],
+        tiles: {
+          'mpc-all': 'https://mpc.test/all/{z}/{x}/{y}.png',
+          'mpc-trees': 'https://mpc.test/trees/{z}/{x}/{y}.png',
+        },
+        bounds: [60, 23, 79, 37], attribution: 'Esri / Impact Observatory / Microsoft Planetary Computer',
+      },
+    })
+  })
+  const mosaics = new Set<string>()
+  await page.route('https://mpc.test/**', (route) => {
+    mosaics.add(new URL(route.request().url()).pathname.split('/')[1])
+    return route.fulfill({ status: 200, contentType: 'image/png', body: PIXEL })
+  })
+
+  await openPortal(page, '/?section=alpha-section&layers=mpc-all:0.85,mpc-trees:0.85&year=2010')
+  await page.locator('[data-map-ready="true"]').waitFor()
+
+  await expect.poll(() => [...mosaics].sort()).toEqual(['all', 'trees'])
+  await expect(page.getByRole('region', { name: 'Active layers' }).getByText('Could not load')).toHaveCount(0)
+})

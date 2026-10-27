@@ -234,8 +234,11 @@ function addDataLayer(
     // nothing to draw, rather than last year's tiles under this year's label.
     const data = observation.data
     if (observation.status !== 'ready' || !data || data.year !== year) return false
+    // One mosaic per layer: a source's tiles list is mirrors of one tileset, never pieces of a mosaic.
+    const template = data.tiles[layer.id]
+    if (!template) return false
     map.addSource(id, {
-      type: 'raster', tiles: data.tile_urls, tileSize: 256,
+      type: 'raster', tiles: [template], tileSize: 256, attribution: data.attribution,
       maxzoom: layer.max_zoom ?? 22, bounds: data.bounds ?? undefined,
     })
     map.addLayer({ id, type: 'raster', source: id })
