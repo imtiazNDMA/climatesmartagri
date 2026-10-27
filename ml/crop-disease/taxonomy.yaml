@@ -1,0 +1,63 @@
+# Maps the dataset's 40 folders to cleaned classes. Changing this file (or the seed) changes the
+# split: rebuild the manifest and treat it as a new dataset version.
+seed: 42
+# Bits that may differ between the 256-bit difference hashes of two pictures counted as copies.
+# Grouping is stable from 8 to 16 here; well above that, look-alike photographs start to chain.
+near_duplicate_distance: 12
+# A class needs this many unique images to be trained and scored at all.
+min_unique_images: 25
+min_eval_images: 4
+fractions: {train: 0.70, val: 0.15, test: 0.15}
+
+classes:
+  # ----- Cotton -----
+  # American bollworm (Helicoverpa armigera): the two folders share copies of the same pictures.
+  cotton_american_bollworm: {crop: Cotton, category: pest, sources: [American_Bollworm_on_Cotton, bollworm_on_Cotton]}
+  cotton_anthracnose: {crop: Cotton, category: disease, sources: [Anthracnose_on_Cotton]}
+  cotton_aphid: {crop: Cotton, category: pest, sources: [Cotton_Aphid]}
+  cotton_bacterial_blight: {crop: Cotton, category: disease, sources: [bacterial_blight_in_Cotton]}
+  cotton_boll_rot: {crop: Cotton, category: disease, sources: [bollrot_on_Cotton]}
+  cotton_healthy: {crop: Cotton, category: healthy, sources: [Healthy_cotton]}
+  cotton_mealybug: {crop: Cotton, category: pest, sources: [cotton_mealy_bug]}
+  cotton_pink_bollworm: {crop: Cotton, category: pest, sources: [pink_bollworm_in_cotton]}
+  cotton_red_cotton_bug: {crop: Cotton, category: pest, sources: [red_cotton_bug]}
+  cotton_thrips: {crop: Cotton, category: pest, sources: [thirps_on_cotton]}
+  cotton_whitefly: {crop: Cotton, category: pest, sources: [cotton_whitefly]}
+  cotton_wilt: {crop: Cotton, category: disease, sources: [Cotton_Wilt]}
+
+  # ----- Maize -----
+  # Kept apart pending expert confirmation: armyworm (Mythimna) and fall armyworm (Spodoptera
+  # frugiperda) are different species, and the two folders share only one picture.
+  maize_armyworm: {crop: Maize, category: pest, sources: [Maize_Army_worm]}
+  maize_common_rust: {crop: Maize, category: disease, sources: [Maize_Common_Rust]}
+  maize_ear_rot: {crop: Maize, category: disease, sources: [maize_ear_rot]}
+  maize_fall_armyworm: {crop: Maize, category: pest, sources: [maize_fall_armyworm]}
+  maize_gray_leaf_spot: {crop: Maize, category: disease, sources: [Maize_Gray_Leaf_Spot]}
+  maize_healthy: {crop: Maize, category: healthy, sources: [Healthy_Maize]}
+  maize_stem_borer: {crop: Maize, category: pest, sources: [maize_stem_borer]}
+
+  # ----- Rice -----
+  rice_bacterial_blight: {crop: Rice, category: disease, sources: [Becterial_Blight_in_Rice]}
+  rice_blast: {crop: Rice, category: disease, sources: [Rice_Blast]}
+  rice_brown_spot: {crop: Rice, category: disease, sources: [Rice_Brownspot]}
+  rice_tungro: {crop: Rice, category: disease, sources: [Rice_Tungro]}
+
+  # ----- Sugarcane -----
+  sugarcane_healthy: {crop: Sugarcane, category: healthy, sources: [Sugarcane_Healthy]}
+  sugarcane_mosaic: {crop: Sugarcane, category: disease, sources: [Mosaic_sugarcane]}
+  sugarcane_red_rot: {crop: Sugarcane, category: disease, sources: [RedRot_sugarcane]}
+  sugarcane_red_rust: {crop: Sugarcane, category: disease, sources: [RedRust_sugarcane]}
+  sugarcane_yellow_rust: {crop: Sugarcane, category: disease, sources: [Yellow_Rust_Sugarcane]}
+
+  # ----- Wheat -----
+  wheat_aphid: {crop: Wheat, category: pest, sources: [Wheat_aphid]}
+  wheat_black_rust: {crop: Wheat, category: disease, sources: [Wheat_black_rust]}
+  wheat_brown_rust: {crop: Wheat, category: disease, sources: [Wheat_Brown_leaf_Rust]}
+  wheat_flag_smut: {crop: Wheat, category: disease, sources: [Wheat_Flag_Smut]}
+  wheat_healthy: {crop: Wheat, category: healthy, sources: [Healthy_Wheat]}
+  wheat_leaf_blight: {crop: Wheat, category: disease, sources: [Wheat_leaf_blight]}
+  wheat_mite: {crop: Wheat, category: pest, sources: [Wheat_mite]}
+  wheat_powdery_mildew: {crop: Wheat, category: disease, sources: [Wheat_powdery_mildew]}
+  wheat_scab: {crop: Wheat, category: disease, sources: [Wheat_scab]}
+  wheat_stem_fly: {crop: Wheat, category: pest, sources: [Wheat_Stem_fly]}
+  wheat_yellow_rust: {crop: Wheat, category: disease, sources: [Wheat_Yellow_Rust]}
