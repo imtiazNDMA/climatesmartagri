@@ -5,12 +5,15 @@ from dataclasses import dataclass
 
 import httpx
 import pytest
+from urllib.parse import parse_qsl, urlsplit
+
 from shapely.geometry import box, mapping
 
 from csa_portal.land_cover_mpc import (
     COLLECTION,
     MpcLandCoverError,
     MpcLandCoverResolver,
+    mosaic_tile_url,
     pakistan_geometry,
 )
 
@@ -39,7 +42,11 @@ def resolver(handler, *, now=lambda: 1000.0, ttl=300.0):
     )
 
 
-def test_resolve_returns_one_template_per_item_and_safe_provenance():
+def registered(request: httpx.Request, search_id: str = "pc1.1.abc"):
+    return response(request, 200, {"searchid": search_id, "links": []})
+
+
+def test_resolve_registers_one_mosaic_over_exactly_the_years_items():
     seen = []
 
     def handler(request):
@@ -50,25 +57,22 @@ def test_resolve_returns_one_template_per_item_and_safe_provenance():
                 item("42Q-2019", 2019, bbox=[60, 20, 70, 40]),
                 item("43Q-2019", 2019, bbox=[70, 20, 80, 40]),
             ]})
-        item_id = request.url.params["item"]
-        return response(request, 200, {
-            "tiles": [f"https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/{{z}}/{{x}}/{{y}}?item={item_id}"],
-            "bounds": [60, 20, 80, 40],
-        })
+        return registered(request)
 
     result = resolver(handler).resolve(2019)
-
     assert result.year == 2019
+    assert result.search_id == "pc1.1.abc"
     assert result.item_ids == ("42Q-2019", "43Q-2019")
-    assert len(result.tile_templates) == 2
     assert result.bounds == (60.0, 20.0, 80.0, 40.0)
     assert result.collection == COLLECTION
     assert result.attribution.startswith("Esri")
     assert "secret" not in json.dumps(result.as_dict())
-    tile_requests = [request for request in seen if request.url.path.endswith("tilejson.json")]
-    assert [request.url.params["item"] for request in tile_requests] == list(result.item_ids)
-    assert all(request.url.params["assets"] == "data" for request in tile_requests)
-    assert all(request.url.params["colormap_name"] == "io-lulc-9-class" for request in tile_requests)
+    register = [request for request in seen if request.url.path.endswith("/mosaic/register")]
+    assert len(register) == 1
+    body = json.loads(register[0].content)
+    assert body["collections"] == [COLLECTION]
+    assert body["filter"] == {"op": "in", "args": [{"property": "id"}, ["42Q-2019", "43Q-2019"]]}
+    assert not any("tilejson" in str(request.url) for request in seen)
 
 
 def test_resolve_caches_then_refreshes_after_ttl():
@@ -80,14 +84,14 @@ def test_resolve_caches_then_refreshes_after_ttl():
         calls += 1
         if request.url.path.endswith("/search"):
             return response(request, 200, {"features": [item("42Q-2020", 2020)]})
-        return response(request, 200, {"tiles": [f"https://planetarycomputer.microsoft.com/tiles/{calls}/{{z}}/{{x}}/{{y}}"]})
+        return registered(request, f"pc1.{calls}.abc")
 
     service = resolver(handler, now=lambda: clock[0], ttl=60)
     first = service.resolve(2020)
     assert service.resolve(2020) is first
     assert calls == 2
     clock[0] = 1061
-    assert service.resolve(2020).tile_templates != first.tile_templates
+    assert service.resolve(2020).search_id != first.search_id
     assert calls == 4
 
 
@@ -99,7 +103,7 @@ def test_invalidate_forces_one_year_to_refresh():
         calls += 1
         if request.url.path.endswith("/search"):
             return response(request, 200, {"features": [item("42Q-2021", 2021)]})
-        return response(request, 200, {"tiles": ["https://planetarycomputer.microsoft.com/tiles/{z}/{x}/{y}"]})
+        return registered(request)
 
     service = resolver(handler)
     service.resolve(2021)
@@ -146,7 +150,7 @@ def test_network_failures_are_typed(failure, code):
     assert caught.value.code == code
 
 
-def test_malformed_stac_and_tilejson_are_rejected():
+def test_malformed_stac_is_rejected():
     def bad_stac(request):
         return response(request, 200, {"not_features": []})
 
@@ -154,14 +158,6 @@ def test_malformed_stac_and_tilejson_are_rejected():
         resolver(bad_stac).resolve(2020)
     assert caught.value.code == "invalid-upstream-response"
 
-    def bad_tiles(request):
-        if request.url.path.endswith("/search"):
-            return response(request, 200, {"features": [item("42Q-2020", 2020)]})
-        return response(request, 200, {"tiles": []})
-
-    with pytest.raises(MpcLandCoverError) as caught:
-        resolver(bad_tiles).resolve(2020)
-    assert caught.value.code == "invalid-upstream-response"
 
 
 def test_stac_pagination_is_followed_and_combined_deterministically():
@@ -184,30 +180,76 @@ def test_stac_pagination_is_followed_and_combined_deterministically():
             return response(request, 200, {
                 "features": [item("east", 2020, bbox=[70, 20, 80, 40])], "links": [],
             })
-        return response(request, 200, {
-            "tiles": [f"https://planetarycomputer.microsoft.com/tiles/{request.url.params['item']}/{{z}}/{{x}}/{{y}}"]
-        })
+        return registered(request)
 
     assert resolver(handler).resolve(2020).item_ids == ("east", "west")
 
 
+def test_a_cached_year_does_not_register_again():
+    registrations = 0
+
+    def handler(request):
+        nonlocal registrations
+        if request.url.path.endswith("/search"):
+            return response(request, 200, {"features": [item("42Q-2019", 2019)]})
+        registrations += 1
+        return registered(request)
+
+    service = resolver(handler)
+    service.resolve(2019)
+    service.resolve(2019)
+    assert registrations == 1
+
+
 @pytest.mark.parametrize(
-    "template",
-    [
-        "https://planetarycomputer.microsoft.com/tiles/{z}/{x}/{y}?sig=secret",
-        "https://planetarycomputer.microsoft.com/tiles/no-placeholders",
-        "https://attacker.test/tiles/{z}/{x}/{y}",
-    ],
+    ("status", "code"),
+    [(503, "upstream-unavailable"), (429, "upstream-unavailable"), (400, "upstream-rejected")],
 )
-def test_tile_templates_cannot_expose_credentials_or_untrusted_urls(template):
+def test_a_failed_registration_has_a_stable_error_code(status, code):
     def handler(request):
         if request.url.path.endswith("/search"):
             return response(request, 200, {"features": [item("42Q-2020", 2020)]})
-        return response(request, 200, {"tiles": [template]})
+        return response(request, status, {"message": "no"})
+
+    with pytest.raises(MpcLandCoverError) as caught:
+        resolver(handler).resolve(2020)
+    assert caught.value.code == code
+
+
+def test_a_registration_that_times_out_is_an_upstream_timeout():
+    def handler(request):
+        if request.url.path.endswith("/search"):
+            return response(request, 200, {"features": [item("42Q-2020", 2020)]})
+        raise httpx.ReadTimeout("slow")
+
+    with pytest.raises(MpcLandCoverError) as caught:
+        resolver(handler).resolve(2020)
+    assert caught.value.code == "upstream-timeout"
+
+
+@pytest.mark.parametrize("body", [{}, {"searchid": ""}, {"searchid": 7}, {"searchid": "../../x"}, {"searchid": "a b"}, {"searchid": "pc1.1.abc\n"}])
+def test_an_unusable_search_id_is_an_invalid_upstream_response(body):
+    def handler(request):
+        if request.url.path.endswith("/search"):
+            return response(request, 200, {"features": [item("42Q-2020", 2020)]})
+        return response(request, 200, body)
 
     with pytest.raises(MpcLandCoverError) as caught:
         resolver(handler).resolve(2020)
     assert caught.value.code == "invalid-upstream-response"
+
+
+def test_mosaic_tile_url_keeps_placeholders_and_encodes_the_colormap():
+    url = mosaic_tile_url("pc1.1.abc", {5: "#e49635", 2: "#397d49"})
+
+    assert url.startswith(
+        "https://planetarycomputer.microsoft.com/api/data/v1/mosaic/pc1.1.abc/tiles/WebMercatorQuad/{z}/{x}/{y}@1x.png?"
+    )
+    query = dict(parse_qsl(urlsplit(url).query))
+    assert query["collection"] == COLLECTION
+    assert query["assets"] == "data"
+    assert json.loads(query["colormap"]) == {"2": [57, 125, 73, 255], "5": [228, 150, 53, 255]}
+    assert not {"sig", "se", "sp", "sv", "st"} & {key.lower() for key in query}
 
 
 @pytest.mark.parametrize(

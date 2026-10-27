@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
-from urllib.parse import parse_qsl, urlsplit
+from urllib.parse import urlencode
 
 import httpx
 from shapely import make_valid
@@ -23,7 +24,8 @@ COLLECTION = "io-lulc-annual-v02"
 VERSION = "v02"
 SUPPORTED_YEARS = tuple(range(2017, 2024))
 ATTRIBUTION = "Esri / Impact Observatory / Microsoft Planetary Computer"
-COLORMAP = "io-lulc-9-class"
+# MPC hands out search ids like "pc1.1793161178.6ea9c1a9…"; anything else is not put into a URL.
+_SEARCH_ID = re.compile(r"[A-Za-z0-9._-]{1,128}")
 
 
 class MpcLandCoverError(RuntimeError):
@@ -64,13 +66,32 @@ class ResolvedLandCover:
     collection: str
     version: str
     item_ids: tuple[str, ...]
-    tile_templates: tuple[str, ...]
+    # The MPC mosaic registered over exactly item_ids; every tile URL for the year is built from it.
+    search_id: str
     bounds: tuple[float, float, float, float]
     attribution: str
     expires_at: float
 
     def as_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def mosaic_tile_url(search_id: str, colormap: Mapping[int, str]) -> str:
+    """The tile URL template for a year's mosaic, drawing each class in colormap in its #rrggbb colour.
+
+    Classes left out of the colormap are drawn transparent, so one entry draws one class. The
+    placeholders stay literal for the map; only the query is encoded.
+    """
+    colours = {
+        str(code): [int(colour[i:i + 2], 16) for i in (1, 3, 5)] + [255]
+        for code, colour in sorted(colormap.items())
+    }
+    query = urlencode({
+        "collection": COLLECTION,
+        "assets": "data",
+        "colormap": json.dumps(colours, separators=(",", ":")),
+    })
+    return f"{TILE_API}/mosaic/{search_id}/tiles/WebMercatorQuad/{{z}}/{{x}}/{{y}}@1x.png?{query}"
 
 
 class LandCoverResolver(Protocol):
@@ -228,44 +249,38 @@ class MpcLandCoverResolver:
             raise MpcLandCoverError(f"items for {year} do not cover Pakistan", "incomplete-source")
         return sorted(valid, key=lambda feature: feature["id"])
 
-    def _tile_template(self, item_id: str) -> str:
+    def _register_mosaic(self, item_ids: tuple[str, ...]) -> str:
+        """Register one MPC mosaic over exactly these items, so a tile draws whichever covers it.
+
+        The ids, not a date range, select the items: a year's range also touches the previous
+        year's items, which end on its first instant.
+        """
         body = self._json(
-            "GET",
-            f"{TILE_API}/item/tilejson.json",
-            params={
-                "collection": COLLECTION,
-                "item": item_id,
-                "assets": "data",
-                "colormap_name": COLORMAP,
-                "exitwhenfull": "False",
-                "skipcovered": "False",
+            "POST",
+            f"{TILE_API}/mosaic/register",
+            json={
+                "collections": [COLLECTION],
+                "filter-lang": "cql2-json",
+                "filter": {"op": "in", "args": [{"property": "id"}, list(item_ids)]},
             },
             timeout=20,
         )
-        tiles = body.get("tiles")
-        if not isinstance(tiles, list) or not tiles or not isinstance(tiles[0], str):
-            raise MpcLandCoverError(f"TileJSON for {item_id} has no tile template", "invalid-upstream-response")
-        template = tiles[0]
-        if not template.startswith("https://planetarycomputer.microsoft.com/"):
-            raise MpcLandCoverError(f"TileJSON for {item_id} returned an untrusted host", "invalid-upstream-response")
-        if not all(token in template for token in ("{z}", "{x}", "{y}")):
-            raise MpcLandCoverError(f"TileJSON for {item_id} returned an invalid template", "invalid-upstream-response")
-        secret_keys = {"sig", "se", "sp", "sv", "st", "spr", "srt", "skoid", "sktid", "skt", "ske", "sks", "skv"}
-        if secret_keys.intersection(key.lower() for key, _ in parse_qsl(urlsplit(template).query)):
-            raise MpcLandCoverError(f"TileJSON for {item_id} exposed credentials", "invalid-upstream-response")
-        return template
+        search_id = body.get("searchid")
+        if not isinstance(search_id, str) or not _SEARCH_ID.fullmatch(search_id):
+            raise MpcLandCoverError("mosaic registration returned no usable search id", "invalid-upstream-response")
+        return search_id
 
     def _resolve(self, year: int) -> ResolvedLandCover:
         items = self._items(year)
         item_ids = tuple(item["id"] for item in items)
-        templates = tuple(self._tile_template(item_id) for item_id in item_ids)
+        search_id = self._register_mosaic(item_ids)
         bounds = tuple(float(value) for value in self._aoi.bounds)
         return ResolvedLandCover(
             year=year,
             collection=COLLECTION,
             version=VERSION,
             item_ids=item_ids,
-            tile_templates=templates,
+            search_id=search_id,
             bounds=bounds,  # type: ignore[arg-type]
             attribution=ATTRIBUTION,
             expires_at=self._now() + self._ttl,
