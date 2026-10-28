@@ -84,6 +84,20 @@ test('the forecast section shows its layers as cards, a kind at a time, and name
   await expect(page.getByRole('group', { name: 'Forecast time' })).toHaveCount(0)
 })
 
+test('the empty forecast banner stays readable in dark mode', async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem('csa-theme', 'dark'))
+  await openWithForecast(page)
+  await page.getByRole('button', { name: 'Weather forecast' }).click()
+  const banner = page.getByRole('complementary', { name: 'Weather forecast' }).getByRole('region', { name: 'On the map' })
+
+  const colours = await banner.locator('.deck-hero-art').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { foreground: style.color, theme: document.documentElement.dataset.theme }
+  })
+  expect(colours).toEqual({ foreground: 'rgb(244, 247, 251)', theme: 'dark' })
+  await expect(banner.locator('.deck-hero-note')).toHaveCSS('color', 'rgb(195, 208, 226)')
+})
+
 test('turning a layer on draws it for the time closest to now, with a key and a time slider', async ({ page }) => {
   const mocks = await openWithForecast(page)
   await page.locator('[data-map-ready="true"]').waitFor()

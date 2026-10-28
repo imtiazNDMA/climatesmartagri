@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 from fastapi import FastAPI, HTTPException
@@ -272,6 +272,9 @@ class AnswerDetail:
     steps: list[AgentStep]
     input_tokens: int | None
     output_tokens: int | None
+    facts: list[Fact] = field(default_factory=list)
+    # The PORTAL CONTEXT the model was shown, so a judge can grade against the same thing.
+    context: dict[str, Any] = field(default_factory=dict)
 
 
 class AssistantService:
@@ -454,7 +457,7 @@ class AssistantService:
             "portal_actions": result.portal_actions,
             "trace_id": trace.id,
         }
-        return AnswerDetail(body, result.steps, result.input_tokens, result.output_tokens)
+        return AnswerDetail(body, result.steps, result.input_tokens, result.output_tokens, used_facts, context)
 
     def _view_facts(self, view: AssistantView) -> list[Fact]:
         if not view.section_id:

@@ -24,6 +24,8 @@ export function useLandCoverObservation(catalogue: Catalogue): LandCoverObservat
   const year = useView((s) => s.year)
   const retryCounts = useUi((s) => s.retryCounts)
   const wanted = wantedObservation(catalogue, layers, year)
+  // Retrying any of the layers drawn from the observation asks for it again.
+  const retry = wanted ? wanted.layerIds.reduce((sum, id) => sum + (retryCounts[id] ?? 0), 0) : 0
   const [state, setState] = useState<LandCoverObservationState>(IDLE)
 
   useEffect(() => {
@@ -31,7 +33,6 @@ export function useLandCoverObservation(catalogue: Catalogue): LandCoverObservat
       setState(IDLE)
       return
     }
-    const retry = retryCounts[wanted.layerId] ?? 0
     let cancelled = false
     setState({ status: 'loading', data: null, message: '' })
     fetchLandCoverObservation(wanted.year, retry)
@@ -47,7 +48,7 @@ export function useLandCoverObservation(catalogue: Catalogue): LandCoverObservat
     return () => {
       cancelled = true
     }
-  }, [wanted?.layerId, wanted?.year, retryCounts, catalogue])
+  }, [wanted?.year, retry, catalogue])
 
   return state
 }

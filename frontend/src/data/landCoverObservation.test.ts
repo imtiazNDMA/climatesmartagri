@@ -25,10 +25,12 @@ const local: Layer = {
   default_opacity: 1,
 }
 
+const trees: Layer = { ...annual, id: 'trees', title: 'Trees' }
+
 const catalogue: Catalogue = {
   basemap_style_url: 'x',
   sections: [],
-  layers: [annual, local],
+  layers: [annual, local, trees],
   forecast: null,
 }
 
@@ -43,7 +45,7 @@ describe('wantedObservation', () => {
       [{ id: 'annual-land-cover', opacity: 1, hidden: false }],
       2019,
     )
-    expect(wanted).toEqual({ layerId: 'annual-land-cover', year: 2019 })
+    expect(wanted).toEqual({ layerIds: ['annual-land-cover'], year: 2019 })
   })
 
   it('falls back to the latest year when the view has none', () => {
@@ -52,7 +54,7 @@ describe('wantedObservation', () => {
       [{ id: 'annual-land-cover', opacity: 1, hidden: false }],
       null,
     )
-    expect(wanted).toEqual({ layerId: 'annual-land-cover', year: 2023 })
+    expect(wanted).toEqual({ layerIds: ['annual-land-cover'], year: 2023 })
   })
 
   it('clamps a year the layer does not have to the nearest one it does', () => {
@@ -67,5 +69,13 @@ describe('wantedObservation', () => {
   it('ignores a layer that is not served from the observation', () => {
     const wanted = wantedObservation(catalogue, [{ id: 'forest', opacity: 1, hidden: false }], 2020)
     expect(wanted).toBeNull()
+  })
+
+  it('is one observation for every layer drawn from it, whatever order they are on the map', () => {
+    const on = (id: string) => ({ id, opacity: 1, hidden: false })
+    const one = wantedObservation(catalogue, [on('trees'), on('forest'), on('annual-land-cover')], 2020)
+    const other = wantedObservation(catalogue, [on('annual-land-cover'), on('trees')], 2020)
+    expect(one).toEqual({ layerIds: ['annual-land-cover', 'trees'], year: 2020 })
+    expect(other).toEqual(one)
   })
 })

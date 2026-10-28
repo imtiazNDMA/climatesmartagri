@@ -1,9 +1,12 @@
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from '@playwright/test'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const fixtures = path.join(root, 'backend', 'tests', 'fixtures')
+const opsDb = path.join(os.tmpdir(), 'csa-ops-e2e.db')
+const OPS_TOKEN = 'e2e-ops-token'
 
 export default defineConfig({
   testDir: './e2e',
@@ -14,7 +17,7 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:5183', viewport: { width: 1440, height: 900 } },
   webServer: [
     {
-      command: 'uv run uvicorn csa_portal.main:create_app --factory --app-dir backend --port 8010',
+      command: `uv run python backend/scripts/seed_ops_store.py --db "${opsDb}" --replace && uv run uvicorn csa_portal.main:create_app --factory --app-dir backend --port 8010`,
       cwd: root,
       url: 'http://127.0.0.1:8010/api/health',
       reuseExistingServer: false,
@@ -22,8 +25,10 @@ export default defineConfig({
         CSA_CATALOGUE_PATH: path.join(fixtures, 'test_catalogue.json'),
         CSA_BOUNDARIES_DIR: path.join(fixtures, 'boundaries'),
         CSA_BASEMAP_STYLE_URL: 'https://basemap.test/style.json',
-        // No AI store for browser tests: answers are traced in memory and nothing is written to backend/ai.db.
-        CSA_AI_DB: '',
+        // A freshly seeded AI store and an ops token, for the AI Ops dashboard tests. It lives in the system's temp
+        // folder, so nothing is written to backend/ai.db; the other tests mock the assistant and never write to it.
+        CSA_AI_DB: opsDb,
+        CSA_OPS_TOKEN: OPS_TOKEN,
       },
     },
     {

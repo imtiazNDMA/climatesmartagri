@@ -1,8 +1,11 @@
 """Convert the project's land-cover rasters to Cloud-Optimized GeoTIFFs that TiTiler can serve quickly.
 
-Run from the repo root (all four, or name the layers you want):
+Run from the repo root (every raster, or name the layers you want):
     uv run python backend/scripts/prepare_rasters.py
-    uv run python backend/scripts/prepare_rasters.py forest shrub-land
+    uv run python backend/scripts/prepare_rasters.py irrigated-rainfed
+
+Forest, shrub land and bare land are no longer converted: they are drawn from the annual
+land classification on Microsoft Planetary Computer.
 
 Reads from data/geospatial/rasters (never changes it) and writes backend/rasters/<layer id>.tif.
 The big files take a long time; a file that is already converted and newer than its source is skipped.
@@ -32,9 +35,6 @@ OUT = REPO / "backend" / "rasters"
 # Catalogue layer id -> source file.
 RASTERS = {
     "irrigated-rainfed": "Irrigated&rainfed.tif",
-    "forest": "Forest_cover.tif",
-    "shrub-land": "ShrubLand.tif",
-    "bare-land": "Bare_land.tif",
 }
 
 

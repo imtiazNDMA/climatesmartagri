@@ -108,8 +108,7 @@ def _emissions(data: dict[str, Any]) -> SectionDataProvider:
             "charts": [
                 _over_time(
                     "emissions-by-gas",
-                    f"Pakistan's yearly emissions grew {_num(data['total'][-1] / data['total'][0])} times "
-                    f"between {first} and {last}",
+                    f"Pakistan's annual emissions more than tripled since {first}",
                     "stacked-area", unit, years,
                     [_series(name, slot, data[key]) for name, key, slot in gases],
                 ),

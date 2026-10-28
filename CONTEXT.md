@@ -14,6 +14,10 @@ _Avoid_: page, tab, module
 One thing that can be drawn on the map, belonging to a section.
 _Avoid_: dataset, overlay
 
+**Class view**:
+A layer that draws one class of the annual land classification, such as Trees or Crops, from the same year's tiles as the full classification.
+_Avoid_: forest layer, mask
+
 **Place**:
 The country, a province or a district that figures and charts are about. A section without figures at a place falls back to the nearest place above it.
 _Avoid_: region, area, location
@@ -73,7 +77,7 @@ A change to the view (open a section, pick a place, set the year, turn on a laye
 _Avoid_: command, tool call
 
 **Advisory**:
-Written advice for one place and forecast period that joins district risk with crop stage. An AI drafts it; an officer approves it before it is shared.
+Written advice for one place and forecast period that joins district risk with crop stage. For now it remains an internal AI draft and cannot be exported or shared. If external distribution is added later, an officer must approve it first.
 _Avoid_: bulletin, warning, alert
 
 **Crop health screening**:

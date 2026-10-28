@@ -81,8 +81,11 @@ export interface Layer {
 export interface LandCoverObservation {
   year: number
   collection: string
+  /** The MPC mosaic registered over exactly item_ids. */
+  search_id: string
   item_ids: string[]
-  tile_urls: string[]
+  /** One tile URL template per layer drawn from the observation, keyed by layer id. */
+  tiles: Record<string, string>
   bounds: [number, number, number, number]
   attribution: string
 }

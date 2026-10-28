@@ -14,7 +14,8 @@ from ..agents.assistant import AssistantChatRequest, AssistantMessage, Assistant
 from ..model import ModelError
 from ..store import AiStore, EvalResultRecord, EvalRunRecord
 from .datasets import Dataset, EvalCase
-from .scorers import GATING, CaseRun, Score, case_passed, score_case
+from .judge import Judge, judge_scores
+from .scorers import GATING, JUDGE_SCORERS, CaseRun, Score, case_passed, score_case
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ def run_case(service: AssistantService, case: EvalCase, run_id: str) -> CaseRun:
         return CaseRun("", error.reason, [], time.perf_counter() - started, None, None, None)
     return CaseRun(
         detail.body["answer"], None, detail.steps, time.perf_counter() - started,
-        detail.input_tokens, detail.output_tokens, detail.body["trace_id"],
+        detail.input_tokens, detail.output_tokens, detail.body["trace_id"], detail.facts, detail.context,
     )
 
 
@@ -61,6 +62,8 @@ def run_dataset(
     before_case: Callable[[EvalCase, int], None] | None = None,
     after_case: Callable[[EvalCase, int], None] | None = None,
     store: AiStore | None = None,
+    judge: Judge | None = None,
+    judge_gates: bool = False,
 ) -> RunOutcome:
     run_id = secrets.token_hex(16)
     started = datetime.now(UTC)
@@ -73,11 +76,22 @@ def run_dataset(
             if after_case is not None:
                 after_case(case, repeat)
             scores = score_case(case, run)
+            if judge is not None:
+                if run.error is not None:
+                    scores.update({name: Score(None, None, "no answer") for name in JUDGE_SCORERS})
+                else:
+                    scores.update(judge_scores(judge.assess(case.question, run.answer, run.facts, run.context), gates=judge_gates))
             answer = run.answer if run.error is None else f"Evaluation error: {run.error}"
             results.append(CaseResult(case.id, repeat, run.trace_id, case_passed(scores), scores, answer))
+    summary = summarise(results, repeats)
+    status = "complete"
+    if judge is not None:
+        summary["judge"] = _judge_summary(results, judge.model_name, judge_gates)
+        if summary["judge"]["unavailable"]:
+            status = "partial"
     record = EvalRunRecord(
-        run_id, started, datetime.now(UTC), git_sha, dataset.name, dataset.version, mode, model, None, repeats,
-        "complete", summarise(results, repeats),
+        run_id, started, datetime.now(UTC), git_sha, dataset.name, dataset.version, mode, model,
+        judge.model_name if judge is not None else None, repeats, status, summary,
     )
     if store is not None:
         store.write_eval_run(record, [
@@ -116,3 +130,15 @@ def summarise(results: list[CaseResult], repeats: int) -> dict[str, Any]:
 def _sum(values: Any) -> int | None:
     known = [int(value) for value in values if value is not None]
     return sum(known) if known else None
+
+
+def _judge_summary(results: list[CaseResult], model: str, calibrated: bool) -> dict[str, Any]:
+    faithful = [r.scores["faithfulness"].value for r in results if r.scores["faithfulness"].value is not None]
+    helpful = [r.scores["helpfulness"].value for r in results if r.scores["helpfulness"].value is not None]
+    return {
+        "model": model,
+        "calibrated": calibrated,
+        "faithful_rate": sum(faithful) / len(faithful) if faithful else None,
+        "mean_helpfulness": sum(helpful) / len(helpful) if helpful else None,
+        "unavailable": sum(r.scores["faithfulness"].reason == "judge-unavailable" for r in results),
+    }

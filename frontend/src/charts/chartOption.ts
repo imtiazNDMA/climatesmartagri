@@ -1,7 +1,8 @@
 import type { ChartSpec, ChartSeries } from '../api/types'
+import { graphic } from 'echarts/core'
 
 /** Categorical colours in fixed slot order; a series keeps its slot wherever it appears. */
-export const SLOT_COLOURS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
+export const SLOT_COLOURS = ['#4c8ddb', '#e9824d', '#3db58a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948']
 
 /** The colours a chart writes and rules in, for the page's light or dark theme. */
 interface Ink { ink: string; strong: string; muted: string; grid: string; axis: string; surface: string }
@@ -111,10 +112,15 @@ export function endLabelOffsets(spec: ChartSpec, height: number): number[] {
 
 function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boolean, height: number, fontSize: number) {
   const stacked = spec.kind === 'stacked-area'
+  const editorial = spec.id === 'emissions-by-gas'
   const marked = markedYear(spec, year)
   const offsets = endLabels ? endLabelOffsets(spec, height) : spec.series.map(() => 0)
-  return spec.series.map((series, index) => {
+  const totalValues = spec.categories.map((_, categoryIndex) =>
+    spec.series.reduce((total, series) => total + (series.values[categoryIndex] ?? 0), 0))
+  const lastTotal = totalValues[totalValues.length - 1] ?? 0
+  const seriesOptions = spec.series.map((series, index) => {
     const colour = colourOf(series, p)
+    const last = series.values[series.values.length - 1]
     const marks: object[] = []
     if (index === 0 && marked !== null) marks.push({ xAxis: spec.categories.indexOf(marked) })
     if (index === 0 && spec.zero_line) marks.push({ yAxis: 0, label: { show: false } })
@@ -124,9 +130,17 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
       itemStyle: { color: colour },
       // Stacked bands are separated by a thin line in the surface colour.
       lineStyle: stacked
-        ? { width: 1.5, color: p.surface }
+        ? { width: editorial ? 1 : 1.5, color: editorial ? 'rgba(255,255,255,.3)' : p.surface }
         : { width: series.emphasis === 'strong' ? 3.5 : 2, color: colour },
-      ...(stacked ? { stack: 'total', areaStyle: { color: colour, opacity: 0.9 } } : {}),
+      ...(stacked ? {
+        stack: 'total',
+        areaStyle: editorial
+          ? { color: new graphic.LinearGradient(0, 0, 0, 1, [
+              { offset: 0, color: colour },
+              { offset: 1, color: `${colour}b8` },
+            ]), opacity: 0.94 }
+          : { color: colour, opacity: 0.9 },
+      } : {}),
       symbol: 'circle',
       showSymbol: Boolean(series.points),
       data: series.points
@@ -136,11 +150,18 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
       // The name written where the line ends, so nobody has to match colours to a legend.
       endLabel: {
         show: endLabels,
-        formatter: '{a}',
-        color: series.emphasis === 'strong' ? p.strong : p.ink,
-        fontWeight: series.emphasis === 'strong' ? 'bold' : 'normal',
-        fontSize: textSize(endLabels),
-        distance: 8,
+        formatter: stacked && last !== null && last !== undefined
+          ? `${series.name}  ${formatNumber(last)} · ${Math.round(last / lastTotal * 100)}%`
+          : '{a}',
+        color: editorial ? '#f8fafc' : series.emphasis === 'strong' ? p.strong : p.ink,
+        fontWeight: editorial || series.emphasis === 'strong' ? 'bold' : 'normal',
+        fontSize: editorial ? 15 : textSize(endLabels),
+        backgroundColor: editorial ? 'rgba(15,23,42,.82)' : 'transparent',
+        borderColor: editorial ? `${colour}aa` : 'transparent',
+        borderWidth: editorial ? 1 : 0,
+        borderRadius: editorial ? 8 : 0,
+        padding: editorial ? [7, 10] : 0,
+        distance: editorial ? 12 : 8,
         offset: [0, offsets[index]],
       },
       ...(marks.length
@@ -158,6 +179,53 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
         : {}),
     }
   })
+  if (!stacked) return seriesOptions
+  return [
+    ...seriesOptions,
+    {
+      name: 'Total emissions',
+      type: 'line',
+      data: totalValues,
+      symbol: 'none',
+      silent: true,
+      tooltip: { show: false },
+      lineStyle: { width: editorial ? 3 : 2.5, color: darkenForTotal(p), shadowColor: 'rgba(15,23,42,.35)', shadowBlur: 8 },
+      itemStyle: { color: darkenForTotal(p) },
+      endLabel: { show: false },
+      emphasis: { disabled: true },
+      z: 5,
+    },
+  ]
+}
+
+const darkenForTotal = (p: Ink) => p.surface === DARK.surface ? '#e8eef8' : '#334155'
+
+function stackedTooltip(p: Ink, spec: ChartSpec) {
+  return {
+    trigger: 'axis',
+    axisPointer: { type: 'line', lineStyle: { color: p.axis, width: 1 } },
+    backgroundColor: p.surface,
+    borderColor: p.axis,
+    borderWidth: 1,
+    padding: [12, 14],
+    textStyle: { color: p.ink, fontSize: 14 },
+    extraCssText: 'border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.18)',
+    formatter: (params: Array<{ axisValue: string; marker: string; seriesName: string; value: number | null }>) => {
+      const rows = params.filter((item) => item.seriesName !== 'Total emissions')
+      const total = rows.reduce((sum, item) => sum + (item.value ?? 0), 0)
+      const title = rows[0]?.axisValue ?? ''
+      return [
+        `<div style="margin-bottom:8px;color:${p.strong};font-weight:700">${title}</div>`,
+        `<div style="margin-bottom:8px;color:${p.strong};font-weight:700">Total&nbsp;&nbsp;${formatNumber(total)} ${spec.unit}</div>`,
+        ...rows.map((item) => {
+          const value = item.value ?? 0
+          const share = total ? Math.round(value / total * 100) : 0
+          return `<div style="display:flex;justify-content:space-between;gap:24px;margin-top:5px">` +
+            `<span>${item.marker}${item.seriesName}</span><strong>${formatNumber(value)} · ${share}%</strong></div>`
+        }),
+      ].join('')
+    },
+  }
 }
 
 function barColour(p: Ink, spec: ChartSpec, series: ChartSeries, index: number, value: number | null): string {
@@ -231,6 +299,7 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
   const endLabels = large && !isBar && Boolean(spec.end_labels)
   const showLegend = spec.series.length > 1 && !endLabels
   const fontSize = textSize(large)
+  const editorial = spec.id === 'emissions-by-gas'
   // A few named bars always keep their names, wrapped onto a second line when they are long.
   const named = isBar && !spec.time && spec.categories.length <= MAX_LABELLED_BARS
   const categories = categoryAxis(
@@ -238,9 +307,23 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
     spec.categories,
     fontSize,
     isBar ? {} : { boundaryGap: false },
-    named && !spec.horizontal ? { interval: 0, width: large ? 170 : 110, overflow: 'break' } : {},
+    editorial
+      ? { interval: (_index: number, value: string) => ['1994', '2000', '2006', '2012', '2018', '2025'].includes(value) }
+      : named && !spec.horizontal ? { interval: 0, width: large ? 170 : 110, overflow: 'break' } : {},
   )
-  const values = valueAxis(p, spec.unit, fontSize, Boolean(spec.hide_axis), spec.axis_min, spec.axis_max)
+  const baseValues = valueAxis(p, spec.unit, fontSize, Boolean(spec.hide_axis), spec.axis_min, spec.axis_max)
+  const values = editorial ? {
+    ...baseValues,
+    name: '',
+    splitNumber: 4,
+    axisLine: { show: false },
+    axisTick: { show: false },
+    splitLine: { show: true, lineStyle: { color: dark ? 'rgba(148,163,184,.16)' : 'rgba(71,85,105,.14)' } },
+  } : baseValues
+  const styledCategories = editorial ? {
+    ...categories,
+    axisLine: { lineStyle: { color: dark ? 'rgba(148,163,184,.28)' : 'rgba(71,85,105,.22)' } },
+  } : categories
   const horizontal = isBar && Boolean(spec.horizontal)
   const longestName = Math.max(...spec.series.map((s) => s.name.length))
   return {
@@ -250,9 +333,9 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
     animationDelay: isBar ? (index: number) => index * 120 : 0,
     textStyle: { fontFamily: FONT, fontSize },
     grid: {
-      left: horizontal ? 16 : 4,
-      right: endLabels ? Math.max(140, Math.min(360, 24 + longestName * 9)) : horizontal ? labelRoom(spec, large) : 28,
-      top: showLegend ? 48 : 32,
+      left: editorial ? 12 : horizontal ? 16 : 4,
+      right: editorial && endLabels ? 250 : endLabels ? Math.max(140, Math.min(360, 24 + longestName * 9)) : horizontal ? labelRoom(spec, large) : 28,
+      top: editorial ? 20 : showLegend ? 48 : 32,
       bottom: 4,
       // ECharts 6's form of the old containLabel: the margins hold the axis labels too.
       outerBoundsMode: 'same',
@@ -267,15 +350,15 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
       itemHeight: 12,
       textStyle: { color: p.ink, fontSize },
     },
-    tooltip: {
+    tooltip: spec.kind === 'stacked-area' ? stackedTooltip(p, spec) : {
       textStyle: { fontSize },
       trigger: 'axis',
       axisPointer: { type: isBar ? 'shadow' : 'line' },
       valueFormatter: (value: number | null) =>
         value === null || value === undefined ? 'Not reported' : [formatNumber(value), spec.unit].filter(Boolean).join(' '),
     },
-    xAxis: horizontal ? values : categories,
-    yAxis: horizontal ? { ...categories, inverse: true } : values,
+    xAxis: horizontal ? values : styledCategories,
+    yAxis: horizontal ? { ...styledCategories, inverse: true } : values,
     series: isBar ? barSeries(p, spec, large) : timeSeries(p, spec, year, endLabels, chartHeight(spec, large), fontSize),
   }
 }

@@ -57,3 +57,18 @@ def test_a_reply_without_token_counts_gives_none_not_zero(settings):
     detail = service(settings, ScriptedModel([Completion(text="Plain.")])).answer_in_detail(AssistantChatRequest(question="Q"))
 
     assert (detail.input_tokens, detail.output_tokens) == (None, None)
+
+
+def test_answer_in_detail_and_the_case_run_carry_the_facts_the_answer_drew_on(settings):
+    from csa_portal.ai.evals.datasets import EvalCase
+    from csa_portal.ai.evals.runner import run_case
+
+    model = ScriptedModel([
+        Completion(tool_calls=[ToolCall("s", "get_section_facts", {"section_id": "alpha-section", "place_id": "PK101", "year": 2010})]),
+        Completion(text="It was 180 units."),
+    ])
+    case = EvalCase.model_validate({"id": "c", "question": "And in 2010?", "expected_kind": "any"})
+
+    run = run_case(service(settings, model), case, "r" * 32)
+
+    assert [fact.value for fact in run.facts] == [180]

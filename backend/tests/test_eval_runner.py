@@ -90,3 +90,85 @@ def test_the_report_summarises_each_dataset_and_shows_every_repeat(settings):
     assert "- Flaky: `wobbly`" in report
     assert "| Required Terms | 3/4 (75.0%) |" in report
     assert "| `wobbly` | fail pass | required_terms: missing: hello |" in report
+
+
+from csa_portal.ai.evals.judge import Judge, JudgeVerdict  # noqa: E402
+
+ONE = Dataset.model_validate({"name": "one", "version": 1, "review_status": "draft", "cases": [
+    {"id": "hello", "question": "Say hello", "expected_kind": "any", "required_terms": ["hello"]},
+]})
+UNFAITHFUL = JudgeVerdict(faithful=False, unsupported_claims=["a made-up figure"], helpfulness=2, reason="Invented.")
+
+
+def judged(settings, verdicts, *, gates):
+    judge = Judge(ScriptedModel([Completion(data=verdict) for verdict in verdicts]), "gemma")
+    model = ScriptedModel([Completion(text="hello") for _ in verdicts])
+    return run_dataset(assistant(settings, model), ONE, mode="live", model="qwen", judge=judge, judge_gates=gates)
+
+
+def test_an_uncalibrated_judge_is_recorded_but_an_unfaithful_verdict_does_not_fail_the_case(settings):
+    outcome = judged(settings, [UNFAITHFUL], gates=False)
+
+    [result] = outcome.results
+    assert result.passed is True
+    assert result.scores["faithfulness"].value == 0.0 and result.scores["faithfulness"].passed is None
+    assert (outcome.record.judge_model, outcome.record.status) == ("gemma", "complete")
+    assert outcome.record.summary["judge"] == {
+        "model": "gemma", "calibrated": False, "faithful_rate": 0.0, "mean_helpfulness": 2.0, "unavailable": 0,
+    }
+
+
+def test_a_calibrated_judge_fails_a_case_its_deterministic_checks_passed(settings):
+    [result] = judged(settings, [UNFAITHFUL], gates=True).results
+
+    assert result.passed is False
+
+
+def test_a_judge_that_cannot_answer_leaves_the_deterministic_result_and_marks_the_run_partial(settings):
+    class Unloaded:
+        def complete(self, messages, tools=None, output=None):
+            raise ModelError(404, "assistant-misconfigured", "Model not loaded")
+
+    model = ScriptedModel([Completion(text="hello")])
+    outcome = run_dataset(assistant(settings, model), ONE, mode="live", model="qwen",
+                          judge=Judge(Unloaded(), "gemma"), judge_gates=True)
+
+    [result] = outcome.results
+    assert result.passed is True
+    assert result.scores["faithfulness"].reason == "judge-unavailable"
+    assert outcome.record.status == "partial"
+    assert outcome.record.summary["judge"]["unavailable"] == 1
+
+
+def test_the_judge_is_not_asked_about_a_run_that_has_no_answer(settings):
+    class Down:
+        def complete(self, messages, tools=None):
+            raise ModelError(503, "assistant-unavailable", "down")
+
+    judge_model = ScriptedModel([])
+    outcome = run_dataset(assistant(settings, Down()), ONE, mode="live", model="qwen",
+                          judge=Judge(judge_model, "gemma"))
+
+    assert outcome.results[0].scores["faithfulness"].reason == "no answer"
+    assert judge_model.sent == []
+
+
+def test_the_report_names_the_judge_and_whether_it_is_calibrated(settings):
+    outcome = judged(settings, [UNFAITHFUL], gates=False)
+
+    report = markdown_report([(ONE, outcome)])
+
+    assert "- Judge `gemma` (uncalibrated): faithful 0.0%, mean helpfulness 2.0/5, unavailable 0" in report
+
+
+def test_the_judge_grades_with_the_context_and_facts_the_assistant_was_shown(settings):
+    import json as json_module
+
+    judge_model = ScriptedModel([Completion(data=JudgeVerdict(faithful=True, helpfulness=5, reason="Fine."))])
+    model = ScriptedModel([Completion(text="hello")])
+
+    run_dataset(assistant(settings, model), ONE, mode="live", model="qwen", judge=Judge(judge_model, "gemma"))
+
+    data = json_module.loads(judge_model.sent[0][1]["content"])
+    assert data["context"]["portal"]["title"] == "Climate Smart Agriculture Portal"
+    assert "current_view" in data["context"]

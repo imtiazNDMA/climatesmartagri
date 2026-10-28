@@ -2,27 +2,26 @@ import type { Catalogue, Layer } from '../api/types'
 import { effectiveYear } from '../state/selectors'
 import type { ActiveLayer } from '../state/viewState'
 
-/** The observation the map needs: which layer is served from it, and for which year. */
+/** The observation the map needs: the layers served from it, in catalogue order, and for which year. */
 export interface WantedObservation {
-  layerId: string
+  layerIds: string[]
   year: number
 }
 
 /**
- * The annual observation the map should be showing: the first layer served from the observation
- * that is on the map, and the year that layer actually shows.
+ * The annual observation the map should be showing. Every layer served from it shares one request
+ * per year, so which of them are on, or in what order, does not change what is asked for.
  */
 export function wantedObservation(
   catalogue: Catalogue,
   layers: ActiveLayer[],
   year: number | null,
 ): WantedObservation | null {
-  for (const active of layers) {
-    const layer: Layer | undefined = catalogue.layers.find((l) => l.id === active.id)
-    if (!layer || layer.tile_source !== 'mpc') continue
+  const on = new Set(layers.map((active) => active.id))
+  const served: Layer[] = catalogue.layers.filter((layer) => layer.tile_source === 'mpc' && on.has(layer.id))
+  for (const layer of served) {
     const shown = effectiveYear(layer.years, year)
-    if (shown === null) continue
-    return { layerId: layer.id, year: shown }
+    if (shown !== null) return { layerIds: served.map((l) => l.id), year: shown }
   }
   return null
 }

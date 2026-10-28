@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
+
+from .land_cover_mpc import MPC_CLASS_CODES
 
 SectionStatus = Literal["ready", "no-data", "coming-soon"]
 # A forecast section takes its layers from the forecast layer list, not from this catalogue.
@@ -143,6 +146,8 @@ class Catalogue(BaseModel):
                 )
             if layer.legend is None:
                 raise ValueError(f"layer '{layer.id}' has no legend")
+            if layer.tile_source == "mpc":
+                _check_mpc_layer(layer)
             if layer.kind == "geojson" and not layer.property:
                 raise ValueError(f"geojson layer '{layer.id}' has no property")
             if layer.source and layer.kind != "raster":
@@ -165,6 +170,19 @@ class Catalogue(BaseModel):
                         f"layer '{layer.id}' has years unavailable in section '{section.id}': {sorted(outside)}"
                     )
         return self
+
+
+def _check_mpc_layer(layer: Layer) -> None:
+    """A layer drawn from the MPC observation colours real MPC classes, since its legend becomes the colormap."""
+    if not layer.years:
+        raise ValueError(f"MPC layer '{layer.id}' needs years")
+    if not isinstance(layer.legend, ClassLegend):
+        raise ValueError(f"MPC layer '{layer.id}' needs a classes legend")
+    for item in layer.legend.items:
+        if item.value is None or not item.value.isdigit() or int(item.value) not in MPC_CLASS_CODES:
+            raise ValueError(f"MPC layer '{layer.id}' has a value that is not an MPC class: {item.value}")
+        if not re.fullmatch(r"#[0-9a-fA-F]{6}", item.colour):
+            raise ValueError(f"MPC layer '{layer.id}' colour {item.colour!r} is not #rrggbb")
 
 
 def load_catalogue(path: Path) -> Catalogue:

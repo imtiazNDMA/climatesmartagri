@@ -191,3 +191,11 @@ def test_an_exporter_that_cannot_send_is_counted_and_logged_and_the_answer_goes_
     assert len(sink.traces) == 1
     assert (tracer.failures, tracer.status) == (1, "degraded")
     assert any("could not be exported" in record.getMessage() for record in caplog.records)
+
+
+def test_evaluation_traces_keep_their_text_even_with_content_capture_off():
+    sink = Sink()
+    with Tracer(sink, capture_content=False).trace("assistant", model="qwen", question="Golden question", source="eval") as active:
+        active.answered("Golden answer")
+
+    assert (sink.traces[0].question_text, sink.traces[0].answer_text) == ("Golden question", "Golden answer")
