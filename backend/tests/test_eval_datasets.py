@@ -12,8 +12,8 @@ BACKEND = Path(__file__).resolve().parents[1]
 def test_both_datasets_load_with_their_names_and_versions():
     golden, adversarial = load_dataset("golden"), load_dataset("adversarial")
 
-    assert (golden.name, golden.version, len(golden.cases)) == ("golden", 2, 52)
-    assert (adversarial.name, adversarial.version) == ("adversarial", 1)
+    assert (golden.name, golden.version, len(golden.cases)) == ("golden", 3, 60)
+    assert (adversarial.name, adversarial.version) == ("adversarial", 2)
     assert len(adversarial.cases) >= 18
 
 
@@ -24,7 +24,8 @@ def test_every_case_points_at_real_sections_places_and_tools():
 
     sections = {section.id for section in load_catalogue(BACKEND / "catalogue.json").sections}
     places = load_places(BACKEND / "boundaries").by_id
-    tools = {tool.name for tool in assistant_tools(None).tools}
+    # set_portal_view is registered beside the fact tools, once the catalogue and places are known.
+    tools = {tool.name for tool in assistant_tools(None).tools} | {"set_portal_view"}
     for dataset in (load_dataset("golden"), load_dataset("adversarial")):
         for case in dataset.cases:
             assert case.view.section_id is None or case.view.section_id in sections, case.id
@@ -42,7 +43,8 @@ def test_the_golden_set_asks_about_other_views_and_names_the_tools_for_them():
     cross_view = [case for case in load_dataset("golden").cases if case.expected_tools]
 
     assert len(cross_view) >= 8
-    assert all(case.id.startswith("cross-") for case in cross_view)
+    # Questions about another view, and requests to change the view.
+    assert all(case.id.startswith(("cross-", "view-")) for case in cross_view)
 
 
 def test_the_adversarial_set_covers_injection_warnings_invented_figures_and_off_topic():

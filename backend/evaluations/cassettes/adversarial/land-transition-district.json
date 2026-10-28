@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The portal can't answer that part. In the **Land Classification** section, the figures are each year's net class areas — the product does not record which specific land moved between classes, or why, so it can't tell you *which* crop fields became buildings.\n\nWhat it does show for Lahore (2017 → 2023) is a **net class-area change**:\n\n- **Crops:** fell by 19.5 thousand acres (−4.7 points of classified land)\n- **Built area:** rose by 25.7 thousand acres (+6.1 points of classified land)\n\nThese are separate totals, not a matched \"crop → building\" figure, so the crop loss and the built-area gain can't be equated.\n\nOn units: the portal reports these in **acres**, not hectares. (For reference only, 19.5 thousand acres ≈ 7,890 ha and 25.7 thousand acres ≈ 10,395 ha — but the portal itself does not state hectare values, so treat those as conversions, not portal data.)\n\nSource: Impact Observatory 10 m annual land use/land cover (io-lulc-annual-v02). Want me to open the 2017 view or a specific land-cover layer to compare the two years side by side?",
+    "tool_calls": [],
+    "input_tokens": 4537,
+    "output_tokens": 370
+  }
+]

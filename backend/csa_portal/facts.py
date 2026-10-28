@@ -67,6 +67,8 @@ class SectionFacts:
     charts: list[ChartSummary] = field(default_factory=list)
     # Sentences about what changed, worked out by fixed rules; every number in them is also a fact.
     insights: list[str] = field(default_factory=list)
+    # Which product the figures come from and how they were measured, when the section says.
+    provenance: str | None = None
 
 
 @dataclass(frozen=True)
@@ -203,11 +205,15 @@ class Facts:
                 facts.append(Fact(value["label"], value["value"], value["unit"], place.name, between, source))
         charts = data.get("charts", [])
         for chart in charts:
-            facts += _chart_facts(chart, place.name, when, f"{source} / {chart['title']}")
+            # A chart over time holds every year's value whichever year is selected, so its source
+            # leaves the selected year out and each value keeps one source id.
+            chart_source = f"{section.title} / {place.name}" if chart.get("time") else source
+            facts += _chart_facts(chart, place.name, when, f"{chart_source} / {chart['title']}")
         summaries = [ChartSummary(chart["title"], chart.get("unit", ""), chart.get("headline")) for chart in charts]
         return SectionFacts(
             place, year, facts, list(data.get("notes", [])), summaries,
             [insight["text"] for insight in data.get("insights", [])],
+            data.get("provenance"),
         )
 
 

@@ -19,7 +19,8 @@ class GroundingScore:
         return not self.unsupported
 
 
-_NUMBER = re.compile(r"(?<![\w.])[-+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\w)")
+# Models often write a typographic minus (U+2212) for negative changes.
+_NUMBER = re.compile(r"(?<![\w.])[-+−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\w)")
 # "1.", "2)" or "(3)" opening a line numbers a list; it is not a figure.
 _LIST_MARKER = re.compile(r"(?m)^[ \t]*(?:\d{1,2}[.)]|\(\d{1,2}\))[ \t]+")
 # A number in the first cell of a Markdown table is a row ordinal, not a factual claim.
@@ -29,7 +30,7 @@ _TABLE_ORDINAL = re.compile(r"(?m)^[ \t]*\|[ \t]*\d{1,2}[ \t]*\|")
 def answer_numbers(answer: str) -> tuple[float, ...]:
     """Numbers a reader sees, excluding digits embedded in words such as CO2 or model names, and list numbering."""
     text = _TABLE_ORDINAL.sub("|", _LIST_MARKER.sub("", answer))
-    return tuple(float(match.group().replace(",", "")) for match in _NUMBER.finditer(text))
+    return tuple(float(match.group().replace(",", "").replace("−", "-")) for match in _NUMBER.finditer(text))
 
 
 def score_grounding(answer: str, fact_values: Sequence[float], *, relative_tolerance: float = 0.015) -> GroundingScore:

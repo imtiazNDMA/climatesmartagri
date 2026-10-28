@@ -392,10 +392,27 @@ def _change_chart(name: str, comparison: Comparison) -> dict[str, Any] | None:
     }
 
 
+def _provenance(stats: AnnualLandCoverStats) -> str:
+    """Which product the figures come from and how they were measured, for whoever quotes them."""
+    provenance = stats.provenance
+    collection = provenance.get("collection", "io-lulc-annual-v02")
+    cell = provenance.get("cell_size_m")
+    how = f", measured on its {cell} m overview" if cell else ""
+    return (
+        f"Impact Observatory's 10 m annual land use and land cover ({collection}, Microsoft Planetary "
+        f"Computer){how}. Figures are each year's net class areas; the product does not say which land "
+        "moved between classes, or why."
+    )
+
+
 def provider_for(stats: AnnualLandCoverStats):
     """The section's provider: one place in one year, the latest when no year is asked for."""
+    provenance = _provenance(stats)
 
     def provider(place: Place, year: int | None) -> dict[str, Any]:
+        return {**answer(place, year), "provenance": provenance}
+
+    def answer(place: Place, year: int | None) -> dict[str, Any]:
         found = stats.place(place.id)
         if found is None or not found.years:
             return {"figures": [], "charts": [], "notes": [f"No land classification is available for {place.name}."]}

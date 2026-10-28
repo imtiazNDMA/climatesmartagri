@@ -1,0 +1,8 @@
+[
+  {
+    "text": "Between 2017 and 2023, the area of Pakistan classified as **built area rose by 2,435.4 thousand acres** — a **net class-area change of +1.0 percentage points** of classified land (Land Classification section).\n\nA couple of notes on how to read this:\n- The portal reports each year's class areas, so this is a net class-area change — the difference between the 2017 and 2023 totals. It does not track which specific land moved into built area or why.\n- For reference, built area made up 3.7% of Pakistan's classified land in 2023 (8.84 million acres).",
+    "tool_calls": [],
+    "input_tokens": 4697,
+    "output_tokens": 328
+  }
+]

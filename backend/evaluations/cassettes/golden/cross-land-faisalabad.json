@@ -3,21 +3,21 @@
     "text": null,
     "tool_calls": [
       {
-        "id": "218427159",
+        "id": "803135948",
         "name": "find_place",
         "arguments": {
           "name": "Faisalabad"
         }
       }
     ],
-    "input_tokens": 1624,
-    "output_tokens": 83
+    "input_tokens": 3662,
+    "output_tokens": 70
   },
   {
     "text": null,
     "tool_calls": [
       {
-        "id": "280479618",
+        "id": "705561798",
         "name": "get_section_facts",
         "arguments": {
           "section_id": "land-cover",
@@ -25,13 +25,13 @@
         }
       }
     ],
-    "input_tokens": 1745,
-    "output_tokens": 84
+    "input_tokens": 3783,
+    "output_tokens": 92
   },
   {
-    "text": "According to the **Land Classification** section of the portal, Faisalabad district has:\n\n- **Forest area:** about **0.205 million acres** (≈ 204,800 acres)\n- **Forest share of all land:** **13.9%**\n\nFor context, the portal notes that Faisalabad holds about **6% of Punjab's total forest**, ranking **3rd out of 38 districts** in the province.\n\n(Plain-language note: \"million acres\" is a unit of land area; 1 million acres ≈ 4,047 square kilometres, so 0.205 million acres ≈ 830 km².)",
+    "text": "According to the **Land Classification** section (2023 data), Faisalabad has very little tree cover:\n\n- **Trees:** ~0.00018 million acres (about 182 acres)\n- **Share of classified land:** 0.0%\n\nThe classification covers 100% of Faisalabad's land area (~1.47 million acres). For context, crops dominate at 85% and built area accounts for 13.4%. Faisalabad ranked 35th of 38 Punjab districts in tree area, holding almost none of the province's trees.",
     "tool_calls": [],
-    "input_tokens": 7217,
-    "output_tokens": 207
+    "input_tokens": 12626,
+    "output_tokens": 270
   }
 ]

@@ -38,6 +38,17 @@ _Avoid_: alert, hazard layer
 **Derived model**:
 A field the portal computes from forecasts, such as frost degree-hours, because no forecast gives it directly.
 
+**Observation**:
+One year of the annual land classification, measured for every place from the same product the same way.
+
+**Classified land**:
+The part of a place an observation assigns to a class. Cloud and no data are not classified, so a class's share of classified land and its share of all land differ; coverage says how much of the place was classified.
+_Avoid_: total area, land cover (for the classified part)
+
+**Net class-area change**:
+The difference in one class's area between two observations. It says how much more or less land was classified as the class, not which land moved between classes or why.
+_Avoid_: converted, conversion, transition, lost to, turned into
+
 **Guidance**:
 The portal's own reading of forecasts for agriculture. It is never an official warning.
 _Avoid_: warning, alert

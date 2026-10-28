@@ -26,3 +26,10 @@ def test_markdown_table_row_numbers_are_not_factual_figures():
 | 10 | Weather Forecast | Ready |"""
 
     assert score_grounding(answer, []).numbers == ()
+
+
+def test_a_typographic_minus_sign_keeps_the_figure_negative():
+    result = score_grounding("Bare ground changed by −8.1 points.", [-8.1])
+
+    assert result.numbers == (-8.1,)
+    assert result.passed

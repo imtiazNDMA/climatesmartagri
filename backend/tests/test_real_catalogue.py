@@ -353,3 +353,27 @@ def test_every_live_section_turns_into_facts_for_a_district_and_the_country():
     # The water balance chart's values are facts that a grounding check can find.
     water = facts.section("water-balance", "PK", 2047)
     assert any(f.label == "35% efficiency" and f.value == -38.7 and f.when == "2047" for f in water.facts)
+
+
+def test_the_assistant_can_open_a_place_and_year_on_the_annual_land_layer():
+    from csa_portal.ai.agents.assistant import register_portal_view_tool
+    from csa_portal.ai.model import ToolCall
+    from csa_portal.ai.tools import ToolRegistry
+    from csa_portal.catalogue import load_catalogue
+    from csa_portal.places import load_places
+
+    settings = Settings.from_env()
+    registry = ToolRegistry()
+    register_portal_view_tool(registry, load_catalogue(settings.catalogue_path), load_places(settings.boundaries_dir), None)
+
+    shown = registry.run(ToolCall("v", "set_portal_view", {
+        "section_id": "land-cover", "place_id": "d-punjab-lahore", "year": 2019, "layer_id": "annual-land-cover",
+    }))
+    too_late = registry.run(ToolCall("w", "set_portal_view", {"layer_id": "annual-land-cover", "year": 2024}))
+
+    assert [action["type"] for action in shown.portal_actions] == [
+        "open-section", "select-place", "set-year", "toggle-layer",
+    ]
+    assert shown.portal_actions[2] == {"type": "set-year", "year": 2019}
+    assert shown.portal_actions[3]["layer_id"] == "annual-land-cover"
+    assert too_late.result == {"error": "Land Classification covers 2017 to 2023, not 2024"}

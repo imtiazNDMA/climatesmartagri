@@ -3,21 +3,21 @@
     "text": null,
     "tool_calls": [
       {
-        "id": "629788584",
+        "id": "337647064",
         "name": "find_place",
         "arguments": {
           "name": "Punjab"
         }
       }
     ],
-    "input_tokens": 1681,
-    "output_tokens": 133
+    "input_tokens": 3718,
+    "output_tokens": 81
   },
   {
     "text": null,
     "tool_calls": [
       {
-        "id": "374461485",
+        "id": "618720243",
         "name": "get_section_facts",
         "arguments": {
           "section_id": "land-cover",
@@ -25,13 +25,13 @@
         }
       }
     ],
-    "input_tokens": 1798,
-    "output_tokens": 80
+    "input_tokens": 3835,
+    "output_tokens": 103
   },
   {
-    "text": "According to the **Land Classification** section of the portal, cropland makes up **67.4% of Punjab's total land area**. It breaks down into two types:\n\n- **Irrigated cropland:** 57.9% of all land (about 29.3 million acres)\n- **Rainfed cropland:** 9.5% of all land (about 4.8 million acres)\n\nFor context, the rest of Punjab's land is classified as \"Others\" (21.5%), shrub land (8.3%), and forest (6.7%).\n\nNote: The portal reports these as shares of total land area; \"cropland\" here includes both irrigated and rainfed agricultural land.",
+    "text": "According to the **Land Classification** section of the portal, in 2023 land classified as **crops** covered **60.3%** of Punjab's classified land — about **30.5 million acres**. The classification covers 100% of Punjab's land area (~50.6 million acres), so that share applies to the whole province.\n\nCrops was the most widespread land class in Punjab in both 2017 and 2023.",
     "tool_calls": [],
-    "input_tokens": 7438,
-    "output_tokens": 265
+    "input_tokens": 15199,
+    "output_tokens": 247
   }
 ]

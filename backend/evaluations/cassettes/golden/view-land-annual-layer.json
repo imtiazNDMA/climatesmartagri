@@ -1,0 +1,23 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "378317431",
+        "name": "set_portal_view",
+        "arguments": {
+          "layer_id": "annual-land-cover",
+          "year": 2020
+        }
+      }
+    ],
+    "input_tokens": 4691,
+    "output_tokens": 110
+  },
+  {
+    "text": "Done — the **Annual land classification** layer is now turned on and the portal is set to **2020** for Pakistan (national view, Land Classification section).",
+    "tool_calls": [],
+    "input_tokens": 4766,
+    "output_tokens": 103
+  }
+]

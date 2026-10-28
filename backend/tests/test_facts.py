@@ -96,8 +96,9 @@ def test_every_value_a_chart_draws_is_a_fact_naming_its_chart():
     ]
     assert {f.chart for f in answer.facts} == {c.title for c in answer.charts}
     assert [(f.label, f.value, f.unit, f.when, f.source) for f in answer.facts] == [
-        ("Food needed", 178, "Mt", "2009", "Alpha section / Pakistan / 2010 / Food needs rise"),
-        ("Food needed", 180, "Mt", "2010", "Alpha section / Pakistan / 2010 / Food needs rise"),
+        # A chart over time is not tied to the selected year, so its source does not name it.
+        ("Food needed", 178, "Mt", "2009", "Alpha section / Pakistan / Food needs rise"),
+        ("Food needed", 180, "Mt", "2010", "Alpha section / Pakistan / Food needs rise"),
         ("Growth, Methane", 2.5, "times", "2010", "Alpha section / Pakistan / 2010 / Methane grew most"),
         ("Forest", 6.3, "%", "2010", "Alpha section / Pakistan / 2010 / How the land is classified"),
         ("Sindh, Groundwater", 4.1, "%", "2010", "Alpha section / Pakistan / 2010 / Where water comes from"),
@@ -210,3 +211,36 @@ def test_a_figure_that_is_a_share_of_a_whole_gives_its_share_as_a_fact_too():
         ("Served by groundwater", 12.78, "million acres", None),
         ("Served by groundwater, share of equipped land", 30.9, "%", None),
     ]
+
+
+def test_a_value_over_time_keeps_its_source_id_whichever_year_is_selected():
+    def trend(place, year):
+        return {"figures": [{"label": "Crops", "value": year - 1990, "unit": "million acres"}], "charts": [{
+            "id": "trend", "title": "Crops grew", "kind": "line", "unit": "%", "time": True,
+            "categories": [2004, 2007, 2010], "series": [{"name": "Crops", "values": [10.0, 11.0, 12.0]}],
+        }]}
+
+    facts = Facts(load_catalogue(FIXTURES / "test_catalogue.json"), load_places(FIXTURES / "boundaries"),
+                  {"alpha-section": trend})
+    def series(year):
+        return {(f.label, f.when): f for f in facts.section("alpha-section", "PK", year).facts if f.chart}
+
+    in_2010, in_2004 = series(2010), series(2004)
+
+    assert sorted(in_2010) == [("Crops", "2004"), ("Crops", "2007"), ("Crops", "2010")]
+    assert all(in_2010[key].source_id == in_2004[key].source_id for key in in_2010)
+    assert in_2010[("Crops", "2007")].source == "Alpha section / Pakistan / Crops grew"
+    # A figure is for the selected year, so its source still names it.
+    figure = next(f for f in facts.section("alpha-section", "PK", 2004).facts if f.chart is None)
+    assert figure.source == "Alpha section / Pakistan / 2004"
+
+
+def test_a_section_says_where_its_figures_come_from_when_its_provider_does():
+    def sourced(place, year):
+        return {"figures": [], "provenance": "Survey of 2004, 10 m cells."}
+
+    facts = Facts(load_catalogue(FIXTURES / "test_catalogue.json"), load_places(FIXTURES / "boundaries"),
+                  {"alpha-section": sourced, "beta-section": irrigation})
+
+    assert facts.section("alpha-section", "PK", 2004).provenance == "Survey of 2004, 10 m cells."
+    assert facts.section("beta-section", "PK").provenance is None
