@@ -129,6 +129,31 @@ describe('chartOption for charts over time', () => {
 })
 
 describe('chartOption for bar charts', () => {
+  const labelled: ChartSpec = {
+    ...bars, hide_axis: true,
+    bar_labels: ['30.5M acres', '12.7M', '−9.19k'],
+    bar_details: ["30.5M acres\n60% of Sindh's land", "12.7M acres\n37% of Punjab's land", "<b>"],
+  }
+
+  it('writes a bar label in place of the value when one is given', () => {
+    const series = option(labelled).series[0]
+    expect(series.label.show).toBe(true)
+    expect([0, 1, 2].map((i) => series.label.formatter({ value: 1, dataIndex: i }))).toEqual(labelled.bar_labels)
+  })
+
+  it('tells the details in the tooltip, a line each, escaped and kept inside the chart', () => {
+    const tooltip = option(labelled).tooltip
+    expect(tooltip.confine).toBe(true)
+    expect(tooltip.formatter([{ name: 'Sindh', dataIndex: 0, value: 30 }]))
+      .toBe("<strong>Sindh</strong><br/>30.5M acres<br/>60% of Sindh&#39;s land")
+    expect(tooltip.formatter([{ name: 'KP', dataIndex: 2, value: 10 }])).toBe('<strong>KP</strong><br/>&lt;b&gt;')
+  })
+
+  it('keeps every tooltip inside its chart', () => {
+    expect(option(bars).tooltip.confine).toBe(true)
+    expect(option(lines).tooltip.confine).toBe(true)
+  })
+
   it('puts categories on the vertical axis when horizontal, first on top', () => {
     const o = option(bars)
     expect(o.yAxis.type).toBe('category')
@@ -183,14 +208,26 @@ describe('storytelling styles', () => {
     expect(plain.itemStyle.color).toBe(SLOT_COLOURS[2])
   })
 
-  it('labels the line ends, and drops the legend, only in the large view', () => {
-    const large = option(story, null, true)
-    expect(large.series.every((s: Loose) => s.endLabel.show === true)).toBe(true)
-    expect(large.legend.show).toBe(false)
-    expect(large.grid.right).toBeGreaterThan(100)
-    const small = option(story)
-    expect(small.series.every((s: Loose) => !s.endLabel?.show)).toBe(true)
-    expect(small.legend.show).toBe(true)
+  it('labels the line ends in place of a legend, in the sidebar as in the large view', () => {
+    for (const large of [true, false]) {
+      const chart = option(story, null, large)
+      expect(chart.series.every((s: Loose) => s.endLabel.show === true)).toBe(true)
+      expect(chart.legend.show).toBe(false)
+      expect(chart.grid.right).toBeGreaterThan(100)
+    }
+    expect(option(lines).legend.show).toBe(true)
+  })
+
+  it('draws small lines faint and unnamed in the sidebar, but names them all in the large view', () => {
+    const crowded: ChartSpec = {
+      ...story,
+      series: [...story.series, { name: 'Water', slot: 2, values: [0.1, 0.2, 0.2] }],
+    }
+    const water = (large: boolean) => option(crowded, null, large).series[2]
+    expect(water(false).endLabel.show).toBe(false)
+    expect(water(false).lineStyle.opacity).toBeLessThan(1)
+    expect(water(true).endLabel.show).toBe(true)
+    expect(water(true).lineStyle.opacity).toBe(1)
   })
 
   it('adds values and shares to stacked-area end labels', () => {

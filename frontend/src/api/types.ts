@@ -327,6 +327,14 @@ export interface ChartSpec {
   stacked?: boolean
   /** Words written at the end of each bar, one per category. */
   bar_notes?: string[]
+  /** The whole text at the end of each bar, in place of its value. */
+  bar_labels?: string[]
+  /** What a bar's tooltip says, a line per 
+. */
+  bar_details?: string[]
+  /** Charts with the same group share one card, switched between by their group labels. */
+  group?: string
+  group_label?: string
   /** The bars the headline is about; the others are drawn fainter. */
   highlights?: number[]
   /** No numbers along the value axis: the bars are labelled themselves. */

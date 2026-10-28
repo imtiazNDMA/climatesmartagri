@@ -5,6 +5,7 @@ import { formatNumber } from '../charts/chartOption'
 import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
+import { ChartGroup, groupCharts } from './ChartGroup'
 
 const EMPTY_STATES: Record<string, string> = {
   'no-data': 'Data not loaded yet',
@@ -28,7 +29,9 @@ export function ChartsView({
   const [fullscreenId, setFullscreenId] = useState<string | null>(null)
   // A chart that is no longer offered, after a change of place for instance, cannot stay maximized.
   const maximized = data?.charts.find((chart) => chart.id === maximizedId) ?? null
-  const shown = maximized ? [maximized] : (data?.charts ?? [])
+  // Charts are shown a card at a time; a maximized chart brings the card it is on.
+  const cards = groupCharts(data?.charts ?? [])
+  const shown = maximized ? cards.filter((card) => card.includes(maximized)) : cards
 
   useEffect(() => {
     if (!maximized) return
@@ -112,31 +115,37 @@ export function ChartsView({
 
       {data && data.charts.length > 0 && (
         <div className="charts-view-grid">
-          {shown.map((chart) => (
-            <div key={chart.id} className="chart-cell" data-chart-id={chart.id}>
-              <ChartFigure spec={chart} year={data.year} large />
-              <div className="chart-actions">
-                {data.charts.length > 1 && (
-                <button
-                  type="button"
-                  className="chart-size"
-                  title={maximized ? 'Minimize' : 'Maximize'}
-                  aria-label={`${maximized ? 'Minimize' : 'Maximize'}: ${chart.title}`}
-                  onClick={() => viewStore.getState().maximize(maximized ? null : chart.id)}
-                >
-                  {maximized ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
-                </button>
+          {shown.map((card) => (
+            <div key={card[0].id} className="chart-cell" data-chart-id={card[0].id}>
+              <ChartGroup charts={card} initial={maximized?.id}>
+                {(chart, switcher) => (
+                  <>
+                    <ChartFigure spec={chart} year={data.year} large switcher={switcher} />
+                    <div className="chart-actions">
+                      {cards.length > 1 && (
+                        <button
+                          type="button"
+                          className="chart-size"
+                          title={maximized ? 'Minimize' : 'Maximize'}
+                          aria-label={`${maximized ? 'Minimize' : 'Maximize'}: ${chart.title}`}
+                          onClick={() => viewStore.getState().maximize(maximized ? null : chart.id)}
+                        >
+                          {maximized ? <Minimize2 size={18} aria-hidden /> : <Maximize2 size={18} aria-hidden />}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="chart-fullscreen"
+                        title={fullscreenId === card[0].id ? 'Exit full screen' : 'View chart full screen'}
+                        aria-label={`${fullscreenId === card[0].id ? 'Exit full screen' : 'View full screen'}: ${chart.title}`}
+                        onClick={(event) => void toggleFullscreen(event.currentTarget.closest<HTMLDivElement>('.chart-cell')!, card[0].id)}
+                      >
+                        {fullscreenId === card[0].id ? <Shrink size={18} aria-hidden /> : <Expand size={18} aria-hidden />}
+                      </button>
+                    </div>
+                  </>
                 )}
-                <button
-                  type="button"
-                  className="chart-fullscreen"
-                  title={fullscreenId === chart.id ? 'Exit full screen' : 'View chart full screen'}
-                  aria-label={`${fullscreenId === chart.id ? 'Exit full screen' : 'View full screen'}: ${chart.title}`}
-                  onClick={(event) => void toggleFullscreen(event.currentTarget.closest<HTMLDivElement>('.chart-cell')!, chart.id)}
-                >
-                  {fullscreenId === chart.id ? <Shrink size={18} aria-hidden /> : <Expand size={18} aria-hidden />}
-                </button>
-              </div>
+              </ChartGroup>
             </div>
           ))}
         </div>

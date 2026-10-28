@@ -3,7 +3,7 @@ import { GridComponent, LegendComponent, MarkLineComponent, TooltipComponent } f
 import { init, use as registerEChartsModules, type ECharts } from 'echarts/core'
 import { SVGRenderer } from 'echarts/renderers'
 import { Table2 } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import type { ChartSpec } from '../api/types'
 import { chartHeight, chartOption, formatNumber, markedYear, REPLAY_MS } from '../charts/chartOption'
 import { useDarkTheme } from '../state/useDarkTheme'
@@ -25,7 +25,9 @@ registerEChartsModules([
  * `large` is the full view, where lines are labelled at their ends.
  * Most charts draw themselves in again periodically. The editorial emissions chart animates once.
  */
-export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: number | null; large?: boolean }) {
+export function Chart({
+  spec, year, large = false, switcher,
+}: { spec: ChartSpec; year: number | null; large?: boolean; switcher?: ReactNode }) {
   const plot = useRef<HTMLDivElement>(null)
   const chart = useRef<ECharts | null>(null)
   const latest = useRef(spec)
@@ -93,11 +95,12 @@ export function Chart({ spec, year, large = false }: { spec: ChartSpec; year: nu
   return (
     <figure className={`${large ? 'chart chart-large' : 'chart'}${isEmissionsTrend ? ' chart-editorial' : ''}`} aria-label={spec.title}>
       <figcaption>
+        {switcher}
         {isEmissionsTrend && <span className="chart-eyebrow">Emissions trend · 1994–2025</span>}
         <h4>{spec.title}</h4>
         {isEmissionsTrend && <p className="chart-subtitle">Total greenhouse gas emissions by gas, 1994–2025 · MtCO₂e</p>}
         {/* Bars without an axis still need their unit said once. */}
-        {spec.hide_axis && spec.unit && <p className="chart-unit">Bar length: {spec.unit}</p>}
+        {spec.hide_axis && spec.unit && !spec.bar_labels && <p className="chart-unit">Bar length: {spec.unit}</p>}
       </figcaption>
       {isEmissionsTrend && (
         <div className="chart-editorial-summary" aria-label={`${growth.toFixed(1)} times growth from ${formatNumber(firstTotal)} to ${formatNumber(lastTotal)} megatonnes carbon dioxide equivalent`}>

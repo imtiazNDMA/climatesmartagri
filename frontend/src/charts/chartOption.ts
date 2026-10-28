@@ -110,8 +110,15 @@ export function endLabelOffsets(spec: ChartSpec, height: number): number[] {
   return offsets
 }
 
-function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boolean, height: number, fontSize: number) {
+/** Lines that never reach a tenth of the chart's highest value; in the sidebar they are drawn faint and left unnamed. */
+export function minorLines(spec: ChartSpec): boolean[] {
+  const top = Math.max(0, ...spec.series.flatMap((s) => s.values.map((v) => v ?? 0)))
+  return spec.series.map((series) => Math.max(0, ...series.values.map((v) => v ?? 0)) < top / 10)
+}
+
+function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boolean, large: boolean, height: number, fontSize: number) {
   const stacked = spec.kind === 'stacked-area'
+  const faint = endLabels && !large && !stacked ? minorLines(spec) : spec.series.map(() => false)
   const editorial = spec.id === 'emissions-by-gas'
   const marked = markedYear(spec, year)
   const offsets = endLabels ? endLabelOffsets(spec, height) : spec.series.map(() => 0)
@@ -131,7 +138,7 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
       // Stacked bands are separated by a thin line in the surface colour.
       lineStyle: stacked
         ? { width: editorial ? 1 : 1.5, color: editorial ? 'rgba(255,255,255,.3)' : p.surface }
-        : { width: series.emphasis === 'strong' ? 3.5 : 2, color: colour },
+        : { width: series.emphasis === 'strong' ? 3.5 : faint[index] ? 1.25 : 2, color: colour, opacity: faint[index] ? 0.55 : 1 },
       ...(stacked ? {
         stack: 'total',
         areaStyle: editorial
@@ -149,13 +156,13 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
       emphasis: { focus: 'series' },
       // The name written where the line ends, so nobody has to match colours to a legend.
       endLabel: {
-        show: endLabels,
+        show: endLabels && !faint[index],
         formatter: stacked && last !== null && last !== undefined
           ? `${series.name}  ${formatNumber(last)} · ${Math.round(last / lastTotal * 100)}%`
           : '{a}',
         color: editorial ? '#f8fafc' : series.emphasis === 'strong' ? p.strong : p.ink,
         fontWeight: editorial || series.emphasis === 'strong' ? 'bold' : 'normal',
-        fontSize: editorial ? 15 : textSize(endLabels),
+        fontSize: editorial ? 15 : textSize(large),
         backgroundColor: editorial ? 'rgba(15,23,42,.82)' : 'transparent',
         borderColor: editorial ? `${colour}aa` : 'transparent',
         borderWidth: editorial ? 1 : 0,
@@ -200,8 +207,29 @@ function timeSeries(p: Ink, spec: ChartSpec, year: number | null, endLabels: boo
 
 const darkenForTotal = (p: Ink) => p.surface === DARK.surface ? '#e8eef8' : '#334155'
 
+const escapeHtml = (text: string) =>
+  text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
+
+/** A bar's tooltip: its name, then the lines of its details. */
+function detailTooltip(spec: ChartSpec, fontSize: number) {
+  return {
+    confine: true,
+    trigger: 'axis',
+    axisPointer: { type: 'shadow' },
+    textStyle: { fontSize },
+    formatter: (params: Array<{ name: string; dataIndex: number; value: number | null }>) => {
+      const item = params[0]
+      if (!item) return ''
+      // The details are the bar's whole story, a line each, its amount with the unit first.
+      const lines = spec.bar_details?.[item.dataIndex]?.split('\n') ?? [[formatNumber(item.value), spec.unit].join(' ')]
+      return [`<strong>${escapeHtml(item.name)}</strong>`, ...lines.map(escapeHtml)].join('<br/>')
+    },
+  }
+}
+
 function stackedTooltip(p: Ink, spec: ChartSpec) {
   return {
+    confine: true,
     trigger: 'axis',
     axisPointer: { type: 'line', lineStyle: { color: p.axis, width: 1 } },
     backgroundColor: p.surface,
@@ -244,6 +272,8 @@ function barMaxWidth(spec: ChartSpec, large: boolean): number {
 
 /** What is written at the end of a bar: its value, its note, or both when the bar is one amount. */
 export function barLabel(spec: ChartSpec, index: number, value: number | null): string {
+  const label = spec.bar_labels?.[index]
+  if (label !== undefined) return label
   const note = spec.bar_notes?.[index]
   if (note === undefined) return spoken(value, spec.unit)
   return spec.stacked ? note : `${spoken(value, spec.unit)} · ${note}`
@@ -262,7 +292,7 @@ function barSeries(p: Ink, spec: ChartSpec, large: boolean) {
     itemStyle: { color: colourOf(series, p), borderRadius: !spec.stacked || seriesIndex === lastSeries ? rounded : 0 },
     label: {
       // A stacked bar is labelled once, at its end; bars with notes are always labelled.
-      show: spec.bar_notes
+      show: spec.bar_notes || spec.bar_labels
         ? !spec.stacked || seriesIndex === lastSeries
         : spec.categories.length <= MAX_LABELLED_BARS,
       position: spec.horizontal ? 'right' : 'top',
@@ -285,7 +315,7 @@ function barSeries(p: Ink, spec: ChartSpec, large: boolean) {
 
 /** Room to the right of horizontal bars for what is written at their ends. */
 function labelRoom(spec: ChartSpec, large: boolean): number {
-  if (!spec.bar_notes) return large ? 100 : 64
+  if (!spec.bar_notes && !spec.bar_labels) return large ? 100 : 64
   const last = spec.series[spec.series.length - 1]
   const longest = Math.max(0, ...spec.categories.map((_, i) => barLabel(spec, i, last?.values[i] ?? null).length))
   // Roughly the width of that many characters in bold, plus a little air.
@@ -296,7 +326,7 @@ function labelRoom(spec: ChartSpec, large: boolean): number {
 export function chartOption(spec: ChartSpec, year: number | null, large = false, dark = false): Record<string, unknown> {
   const p = dark ? DARK : LIGHT
   const isBar = spec.kind === 'bar'
-  const endLabels = large && !isBar && Boolean(spec.end_labels)
+  const endLabels = !isBar && Boolean(spec.end_labels)
   const showLegend = spec.series.length > 1 && !endLabels
   const fontSize = textSize(large)
   const editorial = spec.id === 'emissions-by-gas'
@@ -350,7 +380,9 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
       itemHeight: 12,
       textStyle: { color: p.ink, fontSize },
     },
-    tooltip: spec.kind === 'stacked-area' ? stackedTooltip(p, spec) : {
+    tooltip: spec.kind === 'stacked-area' ? stackedTooltip(p, spec) : spec.bar_details ? detailTooltip(spec, fontSize) : {
+      // Kept inside the chart, so a tooltip near the card's edge is not cut off.
+      confine: true,
       textStyle: { fontSize },
       trigger: 'axis',
       axisPointer: { type: isBar ? 'shadow' : 'line' },
@@ -359,6 +391,6 @@ export function chartOption(spec: ChartSpec, year: number | null, large = false,
     },
     xAxis: horizontal ? values : styledCategories,
     yAxis: horizontal ? { ...styledCategories, inverse: true } : values,
-    series: isBar ? barSeries(p, spec, large) : timeSeries(p, spec, year, endLabels, chartHeight(spec, large), fontSize),
+    series: isBar ? barSeries(p, spec, large) : timeSeries(p, spec, year, endLabels, large, chartHeight(spec, large), fontSize),
   }
 }
