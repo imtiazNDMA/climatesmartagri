@@ -40,6 +40,13 @@ export function observationIndex(observations: number[], year: number | null): n
   return best
 }
 
+/** The observation playback goes to after this year: the next one, or the first after the last. */
+export function nextObservation(observations: number[], year: number | null): number | null {
+  if (!observations.length) return null
+  const at = observationIndex(observations, year)
+  return observations[at + 1 >= observations.length ? 0 : at + 1]
+}
+
 /** The year a layer or section actually shows: its nearest available year. */
 export function effectiveYear(years: YearRange | null | undefined, year: number | null): number | null {
   const observations = rangeObservations(years)

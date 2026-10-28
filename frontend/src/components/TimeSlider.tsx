@@ -2,16 +2,22 @@ import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import type { Catalogue } from '../api/types'
 import { observationIndex, timeObservations } from '../state/selectors'
+import { uiStore, useUi } from '../state/uiState'
 import { emptyView, useView, viewStore } from '../state/viewState'
 
-/** How long one observation stays on screen before the next one takes its place. */
+/** How long one observation stays on screen, once the map has drawn it, before the next one takes its place. */
 const STEP_MS = 1500
+/** The longest playback waits for the map to draw a year, so a layer that never loads cannot stall it. */
+const MAX_WAIT_MS = 8000
 
 export function TimeSlider({ catalogue }: { catalogue: Catalogue }) {
   const section = useView((s) => s.section)
   const layers = useView((s) => s.layers)
   const year = useView((s) => s.year)
-  const [playing, setPlaying] = useState(false)
+  const playing = useUi((s) => s.playing)
+  const setPlaying = uiStore.getState().setPlaying
+  // True while a layer on the map is still drawing the year on show.
+  const catchingUp = useUi((s) => Object.keys(s.yearLoading).length > 0)
   const [reducedMotion, setReducedMotion] = useState(false)
   // The control moves through the observations the visible content actually has, so it never
   // asks for a year that was never published.
@@ -35,23 +41,27 @@ export function TimeSlider({ catalogue }: { catalogue: Catalogue }) {
   useEffect(() => {
     // Nothing left to play through, so the control stops where it stands.
     if (!observations.length) setPlaying(false)
-  }, [observations])
+  }, [observations, setPlaying])
 
   useEffect(() => {
     if (reducedMotion) setPlaying(false)
-  }, [reducedMotion])
+  }, [reducedMotion, setPlaying])
+
+  // Playback stops with the control.
+  useEffect(() => () => setPlaying(false), [setPlaying])
 
   useEffect(() => {
     if (!playing || !observations.length) return
-    const timer = window.setInterval(() => {
+    // Each year is held for a while once the map has drawn it, so the picture never runs behind the label.
+    const timer = window.setTimeout(() => {
       const list = observations
       const at = observationIndex(list, viewStore.getState().year)
       // Playback starts again at the first observation once it reaches the last.
       const next = at + 1 >= list.length ? 0 : at + 1
       viewStore.getState().setYear(list[next])
-    }, STEP_MS)
-    return () => window.clearInterval(timer)
-  }, [playing, observations])
+    }, catchingUp ? MAX_WAIT_MS : STEP_MS)
+    return () => window.clearTimeout(timer)
+  }, [playing, observations, year, catchingUp])
 
   if (!observations.length) return null
   const first = observations[0]
@@ -98,7 +108,7 @@ export function TimeSlider({ catalogue }: { catalogue: Catalogue }) {
             ? 'Playback is off because your system asks for reduced motion'
             : undefined
         }
-        onClick={() => setPlaying((p) => !p)}
+        onClick={() => setPlaying(!playing)}
       >
         {playing ? <Pause size={16} /> : <Play size={16} />}
       </button>

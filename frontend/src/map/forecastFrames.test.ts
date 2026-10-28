@@ -3,7 +3,7 @@ import { ForecastFrames, type FrameMap } from './forecastFrames'
 
 /** A map that remembers its layers and their opacity, and loads a source only when told to. */
 class FakeMap implements FrameMap {
-  layers = new Map<string, { opacity: number; before?: string; paint: Record<string, unknown> }>()
+  layers = new Map<string, { opacity: number; before?: string; paint: Record<string, unknown>; visibility: string }>()
   sources = new Map<string, Record<string, unknown>>()
   loaded = new Set<string>()
   addSource(id: string, source: Record<string, unknown>) {
@@ -11,7 +11,7 @@ class FakeMap implements FrameMap {
   }
   addLayer(layer: Record<string, unknown>, before?: string) {
     const paint = layer.paint as Record<string, unknown>
-    this.layers.set(layer.id as string, { opacity: paint['raster-opacity'] as number, before, paint })
+    this.layers.set(layer.id as string, { opacity: paint['raster-opacity'] as number, before, paint, visibility: 'visible' })
   }
   removeLayer(id: string) {
     this.layers.delete(id)
@@ -26,8 +26,13 @@ class FakeMap implements FrameMap {
   getSource(id: string) {
     return this.sources.get(id)
   }
-  setPaintProperty(id: string, _name: string, value: unknown) {
-    this.layers.get(id)!.opacity = value as number
+  setPaintProperty(id: string, name: string, value: unknown) {
+    const layer = this.layers.get(id)!
+    if (name === 'raster-opacity') layer.opacity = value as number
+    else layer.paint[name] = value
+  }
+  setLayoutProperty(id: string, _name: string, value: unknown) {
+    this.layers.get(id)!.visibility = value as string
   }
   moveLayer(id: string, before?: string) {
     this.layers.get(id)!.before = before
@@ -212,5 +217,64 @@ describe('owning sources', () => {
     expect(ForecastFrames.owns('forecast-4')).toBe(true)
     expect(ForecastFrames.owns('data-forest')).toBe(false)
     expect(ForecastFrames.owns(undefined)).toBe(false)
+  })
+})
+
+describe('frames of an annual layer', () => {
+  let annual: ForecastFrames
+  beforeEach(() => {
+    annual = new ForecastFrames(map, {
+      opacity: 0.85, fadeMs: 400, maxzoom: 14, prefix: 'data-trees@', attribution: 'Esri',
+      anchor: () => 'borders', onLoading: (state) => loading.push(state), later: (run, ms) => timers.push({ run, ms }),
+    })
+  })
+
+  it('names its sources after the layer, and owns only those', () => {
+    annual.show('https://tiles/2019/{z}/{x}/{y}')
+    expect([...map.sources.keys()]).toEqual(['data-trees@1'])
+    expect(map.sources.get('data-trees@1')).toMatchObject({ attribution: 'Esri', maxzoom: 14 })
+    expect(annual.ownsSource('data-trees@1')).toBe(true)
+    expect(annual.ownsSource('forecast-1')).toBe(false)
+  })
+
+  it('changes the opacity of the frame on screen at once, and blends later frames to it', () => {
+    annual.show('a')
+    map.loaded.add('data-trees@1')
+    annual.settle()
+    annual.setOpacity(0.4)
+    const front = map.layers.get('data-trees@1')!
+    expect(front.opacity).toBe(0.4)
+    expect(front.paint['raster-opacity-transition']).toEqual({ duration: 400, delay: 0 })
+    annual.show('b')
+    map.loaded.add('data-trees@2')
+    annual.settle()
+    expect(map.opacities()['data-trees@2']).toBe(0.4)
+  })
+
+  it('hides its frames, including one that arrives while hidden', () => {
+    annual.show('a')
+    map.loaded.add('data-trees@1')
+    annual.settle()
+    annual.setVisible(false)
+    expect(map.layers.get('data-trees@1')!.visibility).toBe('none')
+    annual.show('b')
+    map.loaded.add('data-trees@2')
+    annual.settle()
+    expect(map.layers.get('data-trees@2')!.visibility).toBe('none')
+    annual.setVisible(true)
+    expect(map.layers.get('data-trees@2')!.visibility).toBe('visible')
+  })
+
+  it('takes every frame off the map at once when disposed, and stops counting as loading', () => {
+    annual.show('a')
+    map.loaded.add('data-trees@1')
+    annual.settle()
+    annual.show('b')
+    annual.preload('c')
+    loading.length = 0
+    annual.dispose()
+    expect(map.layers.size).toBe(0)
+    expect(map.sources.size).toBe(0)
+    expect(loading).toEqual([false])
   })
 })
