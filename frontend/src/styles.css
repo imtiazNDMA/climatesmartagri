@@ -589,7 +589,7 @@ h2, h3 { margin: 0; }
 .crop-intro > svg { flex: none; margin-top: 2px; color: var(--accent); }
 .crop-intro h3 { font-size: 17px; }
 .crop-intro p { margin: 4px 0 0; color: var(--muted); line-height: 1.45; }
-.crop-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 0; padding: 0; border: 0; }
+.crop-choice { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin: 0; padding: 0; border: 0; }
 .crop-choice legend { grid-column: 1 / -1; margin-bottom: 2px; font-size: 14px; font-weight: 650; color: var(--muted); }
 .crop-choice button { padding: 9px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); }
 .crop-choice button[aria-pressed='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); font-weight: 700; }
@@ -618,6 +618,7 @@ h2, h3 { margin: 0; }
 .crop-message { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border-radius: 9px; line-height: 1.4; }
 .crop-message svg { flex: none; margin-top: 1px; }
 .crop-error, .crop-warning { background: color-mix(in srgb, #f59e0b 14%, var(--surface)); color: color-mix(in srgb, #f59e0b 68%, var(--ink)); }
+.crop-note { background: color-mix(in srgb, var(--muted) 10%, var(--surface)); color: var(--muted); font-size: 13px; }
 .crop-ok { background: color-mix(in srgb, #16a34a 13%, var(--surface)); color: color-mix(in srgb, #16a34a 62%, var(--ink)); }
 .crop-disclaimer { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .crop-spinner { animation: none; } }

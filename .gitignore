@@ -65,3 +65,6 @@ backend/cache/
 .service_account.txt
 csa_earthengine_key.json
 *service_account*.json
+
+# Rebuilt by ml/crop-disease/package_model.py; 61 MB, too large for git.
+backend/models/crop-classification/five-crop-001/model.ts

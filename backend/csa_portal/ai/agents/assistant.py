@@ -346,7 +346,7 @@ class AssistantService:
             ("calendar", "Plan around the seasons", "The climate-smart crop calendar compares traditional timings with adjusted planting and harvesting windows.", "climate-calendar", [68.9, 25.9], 6.6, 10, 32),
             ("forecast", "Look ahead", "Weather forecast layers let you move through model time and inspect temperature, rainfall, wind and visibility.", "forecast", [70.5, 33.8], 5.7, -8, 28),
             ("hazards", "See where risk concentrates", "Hazard guidance turns forecast fields into district low, medium and high risk screening.", "hazards", [73.0, 31.0], 5.8, 15, 38),
-            ("crop-ai", "Inspect crop health", "The crop detector screens Rice and Maize leaf images for visible disease, pest and healthy classes.", "crop-classification", [67.0, 24.9], 7.2, 0, 24),
+            ("crop-ai", "Inspect crop health", "The crop detector screens Rice, Maize, Cotton, Wheat and Sugarcane leaf images for visible disease, pest and healthy classes.", "crop-classification", [67.0, 24.9], 7.2, 0, 24),
             ("assistant", "Continue exploring", "Ask the local Qwen guide to explain the current view, compare indicators, or point you to the right section.", None, [69.4, 30.4], 4.4, 0, 0),
         ]
         steps = []
