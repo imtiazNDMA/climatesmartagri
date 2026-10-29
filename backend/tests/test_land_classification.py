@@ -189,7 +189,9 @@ def test_the_national_ranking_compares_provinces_in_the_selected_year(provider):
     assert ranking["categories"] == ["Alpha", "Beta"]
     assert ranking["series"][0]["values"] == pytest.approx([million_acres(900), million_acres(100)])
     assert ranking["title"] == "Alpha held 90% of Pakistan's crops in 2017"
-    assert ranking["bar_notes"] == ["30% of its land", "10% of its land"]
+    assert ranking["bar_labels"] == ["2.22k acres", "247"]
+    assert ranking["bar_details"] == ["2.22k acres\n30% of Alpha's land", "247 acres\n10% of Beta's land"]
+    assert "bar_notes" not in ranking
 
 
 def test_a_district_ranking_keeps_the_selected_district_when_capped(provider):

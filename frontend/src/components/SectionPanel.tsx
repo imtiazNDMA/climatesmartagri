@@ -7,6 +7,7 @@ import type { PortalData } from '../data/usePortalData'
 import type { SectionDataState } from '../data/useSectionData'
 import { useView, viewStore } from '../state/viewState'
 import { ChartFigure } from './ChartFigure'
+import { ChartGroup, groupCharts } from './ChartGroup'
 import { CropClassificationPanel } from './CropClassificationPanel'
 import { HazardsPanel } from './HazardsPanel'
 import type { HazardProductsState } from '../data/useHazardProducts'
@@ -92,13 +93,6 @@ function Figures({ state, placeSelected }: { state: SectionDataState; placeSelec
           {note}
         </p>
       ))}
-      {(data.insights ?? []).length > 0 && (
-        <ul className="insights" aria-label="What changed">
-          {(data.insights ?? []).map((insight) => (
-            <li key={`${insight.comparison}-${insight.rule}-${insight.class ?? ''}`}>{insight.text}</li>
-          ))}
-        </ul>
-      )}
       {data.figures.length === 0 && (data.notes ?? []).length === 0 && (
         <p className="empty">No figures for this selection.</p>
       )}
@@ -263,7 +257,7 @@ export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts,
           <Part
             icon={BarChart3}
             heading="Charts"
-            count={hasCharts ? String(sectionData.data.charts.length) : undefined}
+            count={hasCharts ? String(groupCharts(sectionData.data.charts).length) : undefined}
             action={
               hasCharts && !full ? (
                 <button type="button" className="full-view-button" onClick={() => viewStore.getState().setFull(true)}>
@@ -280,18 +274,24 @@ export function SectionPanel({ data, sectionData, forecastTimes, hazardProducts,
                 </button>
               </p>
             ) : sectionData.status === 'ready' && sectionData.data.charts.length > 0 ? (
-              sectionData.data.charts.map((chart) => (
-                <div key={chart.id} className="chart-cell">
-                  <ChartFigure spec={chart} year={sectionData.data.year} />
-                  <button
-                    type="button"
-                    className="chart-size"
-                    title="Maximize"
-                    aria-label={`Maximize: ${chart.title}`}
-                    onClick={() => viewStore.getState().maximize(chart.id)}
-                  >
-                    <Maximize2 size={17} aria-hidden />
-                  </button>
+              groupCharts(sectionData.data.charts).map((card) => (
+                <div key={card[0].id} className="chart-cell">
+                  <ChartGroup charts={card}>
+                    {(chart, switcher) => (
+                      <>
+                        <ChartFigure spec={chart} year={sectionData.data.year} switcher={switcher} />
+                        <button
+                          type="button"
+                          className="chart-size"
+                          title="Maximize"
+                          aria-label={`Maximize: ${chart.title}`}
+                          onClick={() => viewStore.getState().maximize(chart.id)}
+                        >
+                          <Maximize2 size={17} aria-hidden />
+                        </button>
+                      </>
+                    )}
+                  </ChartGroup>
                 </div>
               ))
             ) : (

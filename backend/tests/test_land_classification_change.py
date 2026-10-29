@@ -4,7 +4,7 @@ import re
 
 import pytest
 
-from csa_portal.land_classification import CLASSES, provider_for, thousand_acres
+from csa_portal.land_classification import CLASSES, acres_label, provider_for, thousand_acres
 from csa_portal.land_cover_stats import AnnualLandCoverStats
 from csa_portal.places import Place
 
@@ -171,8 +171,21 @@ def test_the_change_chart_has_a_zero_line_and_shows_both_years():
     assert change["series"][0]["name"] == "Net class-area change, 2017 to 2019"
     assert change["categories"][0] == "Crops" and change["categories"][-1] == "Rangeland"
     assert change["series"][0]["values"][0] == pytest.approx(round(thousand_acres(500), 1))
-    assert change["bar_notes"][0] == "+5.0 pts"
-    assert change["title"] == "Land classified as rangeland lost most in Pk, 2017 to 2019"
+    # One short amount per bar; the unit is said once, and the points go to the tooltip.
+    assert change["bar_labels"][0] == "+1.24k acres" and change["bar_labels"][-1].startswith("−")
+    assert "acres" not in change["bar_labels"][-1]
+    assert change["bar_details"][0] == "+1.24k acres\n+5.0 percentage points of classified land"
+    assert change["hide_axis"] is True and "bar_notes" not in change
+    assert change["title"] == "Rangeland fell most in Pk: −1.73k acres, 2017 to 2019"
+
+
+def test_the_change_charts_share_one_card_with_a_switch():
+    body = body_for(build(PK=GROWING), 2019)
+
+    changes = [c for c in body["charts"] if c["id"].startswith("land-cover-change-")]
+    assert len(changes) == 2
+    assert {c["group"] for c in changes} == {"land-cover-change"}
+    assert [c["group_label"] for c in changes] == ["Since 2018", "Since 2017"]
 
 
 def test_the_wording_never_claims_conversion_and_the_output_is_deterministic():
@@ -184,3 +197,18 @@ def test_the_wording_never_claims_conversion_and_the_output_is_deterministic():
     text = " ".join(i["text"] for i in first["insights"]).lower()
     assert "convert" not in text and " became " not in text and " into " not in text
     assert "classified as" in text and "net class-area change" in text
+
+
+@pytest.mark.parametrize(
+    ("hectares", "kwargs", "expected"),
+    [
+        (-19_468_900 / 2.47105, {"signed": True}, "−19.5M acres"),
+        (13_329_700 / 2.47105, {"signed": True}, "+13.3M acres"),
+        (404_600, {"signed": False, "unit": False}, "1M"),
+        (3_720, {}, "9.19k acres"),
+        (40, {"unit": False}, "99"),
+        (0, {"signed": True}, "0 acres"),
+    ],
+)
+def test_acre_labels_are_short_with_three_significant_figures(hectares, kwargs, expected):
+    assert acres_label(hectares, **kwargs) == expected

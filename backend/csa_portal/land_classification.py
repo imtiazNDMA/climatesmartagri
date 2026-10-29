@@ -194,7 +194,10 @@ def _holders(stats: AnnualLandCoverStats, place: StatsPlace, year: int, code: st
         "series": [{"name": CLASSES[code][0], "slot": 1, "values": [million_acres(m.classes_ha[code]) for _, m in shown]}],
         "horizontal": True, "bar_colours": [CLASSES[code][1]] * len(shown), "highlights": highlights,
         "hide_axis": True, "still": True,
-        "bar_notes": [f"{pct(measured.share_of_land(code))}% of its land" for _, measured in shown],
+        "bar_labels": [acres_label(m.classes_ha[code], unit=n == 0) for n, (_, m) in enumerate(shown)],
+        "bar_details": [
+            f"{acres_label(m.classes_ha[code])}\n{pct(m.share_of_land(code))}% of {part.name}'s land" for part, m in shown
+        ],
     }
 
 
@@ -217,6 +220,20 @@ def thousand_acres(hectares: float) -> float:
 
 def _signed(value: float) -> str:
     return f"{value:+.1f}"
+
+
+def acres_label(hectares: float, *, signed: bool = False, unit: bool = True) -> str:
+    """An amount of land as a chart writes it: three significant figures, in M or k acres when large."""
+    acres = hectares * HECTARES_TO_ACRES
+    size = abs(acres)
+    if size >= 999_500:
+        text = f"{size / 1_000_000:.3g}M"
+    elif size >= 999.5:
+        text = f"{size / 1_000:.3g}k"
+    else:
+        text = f"{round(size):,}"
+    sign = "−" if text != "0" and acres < 0 else "+" if signed and text != "0" else ""
+    return f"{sign}{text}{' acres' if unit else ''}"
 
 
 @dataclass(frozen=True)
@@ -375,8 +392,9 @@ def _change_chart(name: str, comparison: Comparison) -> dict[str, Any] | None:
     before, after = comparison.before.year, comparison.after.year
     biggest = max(shown, key=lambda c: (abs(c.change_ha), -list(CLASSES).index(c.code)))
     if biggest.material:
-        verb = "gained" if biggest.change_ha > 0 else "lost"
-        title = f"Land classified as {CLASSES[biggest.code][0].lower()} {verb} most in {name}, {before} to {after}"
+        verb = "rose" if biggest.change_ha > 0 else "fell"
+        amount = acres_label(biggest.change_ha, signed=True)
+        title = f"{CLASSES[biggest.code][0]} {verb} most in {name}: {amount}, {before} to {after}"
     else:
         title = f"No class in {name} changed materially from {before} to {after}"
     return {
@@ -387,8 +405,15 @@ def _change_chart(name: str, comparison: Comparison) -> dict[str, Any] | None:
             "name": f"Net class-area change, {before} to {after}", "slot": 1,
             "values": [round(thousand_acres(c.change_ha), 1) for c in shown],
         }],
-        "horizontal": True, "colour_by_sign": True, "zero_line": True, "still": True,
-        "bar_notes": [f"{_signed(round(c.change_pp, 1))} pts" for c in shown],
+        "horizontal": True, "colour_by_sign": True, "zero_line": True, "still": True, "hide_axis": True,
+        # The unit is said on the first bar only; the share of classified land waits in the tooltip.
+        "bar_labels": [acres_label(c.change_ha, signed=True, unit=n == 0) for n, c in enumerate(shown)],
+        "bar_details": [
+            f"{acres_label(c.change_ha, signed=True)}\n{_signed(round(c.change_pp, 1))} percentage points of classified land"
+            for c in shown
+        ],
+        # The comparisons are one card, switched between.
+        "group": "land-cover-change", "group_label": f"Since {before}",
     }
 
 
