@@ -65,3 +65,12 @@ def test_backbone_head_checkpoint_reloads_into_a_fresh_model(monkeypatch):
     images = torch.randn(2, 3, 64, 64)
     assert torch.equal(trained(images), restored(images))
     assert restored(images).shape == (2, 5)
+
+
+def test_learning_rate_warms_up_then_decays_to_zero_over_the_fixed_epochs():
+    from autoresearch.train import LR, lr_at
+
+    assert lr_at(0, 1000) == 0
+    assert lr_at(30, 1000) == LR
+    assert lr_at(500, 1000) < LR
+    assert lr_at(1000, 1000) == 0

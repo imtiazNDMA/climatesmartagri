@@ -34,8 +34,8 @@ IMAGE_SIZE = 224
 MODEL_NAME = "convnext_nano"
 LR = 3e-4
 WEIGHT_DECAY = 0.05
+EPOCHS = 25
 WARMUP_FRACTION = 0.03
-SCHEDULE_FRACTION = 0.95
 EMA_DECAY = 0.998
 
 
@@ -56,23 +56,24 @@ def build_model(num_classes: int, model_name: str = MODEL_NAME, pretrained: bool
     return nn.Sequential(backbone, head)
 
 
-def lr_at(budget: TimeBudget) -> float:
-    progress = min(budget.elapsed() / (budget.seconds * SCHEDULE_FRACTION), 1.0)
+def lr_at(step: int, total_steps: int) -> float:
+    progress = min(step / total_steps, 1.0)
     if progress < WARMUP_FRACTION:
         return LR * progress / WARMUP_FRACTION
     progress = (progress - WARMUP_FRACTION) / (1 - WARMUP_FRACTION)
     return LR * 0.5 * (1 + math.cos(math.pi * progress))
 
 
-def train_epoch(model, ema, loader, optimizer, criterion, scaler, device, budget: TimeBudget) -> float:
+def train_epoch(model, ema, loader, optimizer, criterion, scaler, device, budget: TimeBudget, epoch: int) -> float:
     model.train()
     total = 0.0
     seen = 0
-    for images, targets in loader:
+    total_steps = EPOCHS * len(loader)
+    for batch, (images, targets) in enumerate(loader):
         if budget.expired():
             break
         for group in optimizer.param_groups:
-            group["lr"] = lr_at(budget)
+            group["lr"] = lr_at(epoch * len(loader) + batch, total_steps)
         images, targets = images.to(device, non_blocking=True), targets.to(device, non_blocking=True)
         optimizer.zero_grad(set_to_none=True)
         with autocast(device_type="cuda"):
@@ -130,12 +131,12 @@ def main() -> None:
         mlflow.set_tags({"commit": git_commit(PROJECT), "description": description})
         mlflow.log_params({
             "model": MODEL_NAME, "image_size": IMAGE_SIZE, "batch_size": BATCH_SIZE,
-            "lr": LR, "weight_decay": WEIGHT_DECAY,
+            "lr": LR, "weight_decay": WEIGHT_DECAY, "epochs": EPOCHS,
             "manifest_sha256": file_sha256(MANIFEST), "seed": SEED,
             "class_names": json.dumps(prepared.train.class_names),
         })
-        while not budget.expired():
-            train_loss = train_epoch(model, ema, train_loader, optimizer, criterion, scaler, device, budget)
+        while epoch < EPOCHS and not budget.expired():
+            train_loss = train_epoch(model, ema, train_loader, optimizer, criterion, scaler, device, budget, epoch)
             if budget.expired():
                 break
             score = evaluate_macro_f1(ema.module, val_loader, device)
@@ -149,12 +150,13 @@ def main() -> None:
             mlflow.log_metrics({"train_loss": train_loss, "val_macro_f1": score}, step=epoch)
             epoch += 1
         peak_vram_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
-        mlflow.log_metrics({"best_val_macro_f1": best_f1, "peak_vram_mb": peak_vram_mb})
+        mlflow.log_metrics({"best_val_macro_f1": best_f1, "peak_vram_mb": peak_vram_mb, "epochs_completed": epoch})
         if checkpoint.exists():
             mlflow.log_artifact(str(checkpoint), artifact_path="model")
 
     print(f"val_macro_f1: {best_f1:.6f}")
     print(f"peak_vram_mb: {peak_vram_mb:.1f}")
+    print(f"epochs_completed: {epoch}/{EPOCHS}")
 
 
 if __name__ == "__main__":
