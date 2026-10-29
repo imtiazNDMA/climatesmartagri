@@ -41,7 +41,7 @@ Three scripts turn source files into what the backend serves. Source files are n
 
 1. `uv run python backend/scripts/prepare_data.py` — boundaries, irrigation, emissions, water, food, crop calendar. Writes `backend/boundaries/` and `backend/data/`. About a minute.
 2. `uv run python backend/scripts/prepare_rasters.py` — converts the irrigated/rainfed raster to a Cloud-Optimized GeoTIFF in `backend/rasters/` (not in git). Forest, shrub land and bare land are no longer converted: their layers are class views drawn from Microsoft Planetary Computer (ADR 0003).
-3. `uv run python backend/scripts/prepare_land_cover.py` — measures each land-cover class per district from the converted rasters. Under a minute. Run after step 2.
+3. `uv run python backend/scripts/prepare_land_cover_stats.py` — the annual land-classification figures per district, from Microsoft Planetary Computer. Writes `backend/data/land_cover_annual.json`; without it the Land Classification section has no figures (the static `land_cover.json` fallback was retired in #62).
 
 ## Architecture in one page
 
@@ -161,8 +161,8 @@ Three scripts turn source files into what the backend serves. Source files are n
 ## Open items
 
 - **Delete `backend\rasters\tmpyt2t2_d9.tif`** (5.6 GB), left from a conversion I stopped. A safety check blocked my clean-up, so it is the user's to remove.
-- **The user may delete `backend\rasters\forest.tif`, `shrub-land.tif` and `bare-land.tif`**: since #59 nothing serves them (their layers are MPC class views). `prepare_land_cover.py` still reads them, and it is retired in #62.
-- **Irrigated/rainfed is the last land raster on this PC** (#61): it needs a hosting decision.
+- **The user may delete `backend\rasters\forest.tif`, `shrub-land.tif` and `bare-land.tif`**: since #59 nothing serves them (their layers are MPC class views). Nothing reads them any more (`prepare_land_cover.py` was retired in #62).
+- **Irrigated/rainfed is the last land raster on this PC** (#61): it needs a hosting decision. Since #62 the irrigated-vs-rainfed cropland chart and figures are gone from the panel; #61 lists what to bring back.
 - **Hazards guidance** is live but its thresholds are provisional (`provisional-2026-10`); they have not been reviewed against impact data or PMD's own warning thresholds. **Exposure and vulnerability** still have no data. The district map carries a population figure per district (about 313 million in total) that would suit exposure.
 - **The background map draws its own borders** and Kashmir labels beneath the project's boundaries. The style is a setting (`CSA_BASEMAP_STYLE_URL`).
 - **The tehsil practice layer uses a different boundary set** from the district map, so edges do not line up exactly, and it has no tehsils in Jammu and Kashmir.
