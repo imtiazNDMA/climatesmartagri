@@ -3,6 +3,7 @@ import type {
   Catalogue,
   AssistantChatMessage,
   AssistantChatResponse,
+  AssistantLanguage,
   AssistantOverview,
   AssistantTour,
   Crop,
@@ -145,12 +146,13 @@ export function askAssistant(
     } | null
   },
   signal?: AbortSignal,
+  language: AssistantLanguage = 'en',
 ) {
   return responseJson<AssistantChatResponse>(() =>
     fetch('/api/assistant/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history: history.slice(-8), view }),
+      body: JSON.stringify({ question, history: history.slice(-8), view, language }),
       signal,
     }),
   )

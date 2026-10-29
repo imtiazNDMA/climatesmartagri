@@ -1,0 +1,53 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "622344858",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "irrigation",
+          "place_id": "d-punjab-lahore"
+        }
+      },
+      {
+        "id": "983124449",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "water-balance",
+          "place_id": "d-punjab-lahore"
+        }
+      }
+    ],
+    "input_tokens": 3448,
+    "output_tokens": 495
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "319138762",
+        "name": "get_section_facts",
+        "arguments": {
+          "place_id": "d-punjab-lahore",
+          "section_id": "land-cover"
+        }
+      },
+      {
+        "id": "882905579",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "d-punjab-lahore"
+        }
+      }
+    ],
+    "input_tokens": 19391,
+    "output_tokens": 209
+  },
+  {
+    "text": "میں Climate Smart Agriculture Portal کے متعلقہ حصوں (جیسے Climate Smart Irrigation Practices، Crop water balance، Land Classification اور Climate-smart crop calendar) میں لاہور (Lahore) کے لیے مٹی کے pH کی کوئی معلومات نہیں پا سکا۔ اس پورٹل میں مٹی کے pH کا کوئی ڈیٹا موجود نہیں ہے، اس لیے میں اس کی قدر بتانے کے قابل نہیں ہوں۔\n\nاگر آپ چاہیں تو میں آپ کو لاہور کے بارے میں پورٹل میں دستیاب دیگر معلومات (مثلاً آبپاشی، زمین کی درجہ بندی یا فصل کی پوکا کی رہنمائی) فراہم کر سکتا ہوں۔",
+    "tool_calls": [],
+    "input_tokens": 31942,
+    "output_tokens": 228
+  }
+]

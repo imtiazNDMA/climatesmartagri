@@ -16,7 +16,7 @@ A map-first Climate Smart Agriculture portal for Pakistan, for disaster manageme
 
 ## State of the code
 
-- **Branch:** `feat/portal-data` is GitHub's default branch for `imtiazNDMA/climatesmartagri` (public). Since 2026-10-15 work goes on a branch per ticket (`feat/<issue>-<slug>`, `fix/...`) with a pull request into `feat/portal-data`, merged with a merge commit once CI is green; `Closes #N` in the PR closes the issue. `main` and the shell branches beneath have never been pushed.
+- **Branch:** `main` is GitHub's default branch for `imtiazNDMA/climatesmartagri` (public) since 2026-10-29, when `feat/portal-data` was merged into it (#85) and every merged feature branch was deleted. Work goes on a branch per ticket (`feat/<issue>-<slug>`, `fix/...`) with a pull request into `main`, merged with a merge commit once CI is green; `Closes #N` in the PR closes the issue.
 - **Kept out of git:** `data/geospatial/vectors/sajid(2oct)/` (about 700 MB) and `Aamir Ai  Project/` (2.4 GB: a separate crop-disease project with wheat, cotton and sugarcane data and a treatment guide), both in `.gitignore`.
 - **Domain language and decisions:** `CONTEXT.md` (glossary: place, guidance vs warning, district risk, crop stage, fact, grounded, view action, advisory, crop health screening) and `docs/adr/` (0001 local model by default, 0002 advisories need officer approval).
 - **Design documents:** spec and plan for the shell only, under `docs/superpowers/`. Everything after the shell was built from short designs agreed in chat.
@@ -121,6 +121,12 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **Next on the critical path:** #4 evaluation suite (baseline score of the current assistant before #7 changes it), then #7 tools over facts. #5 and #6 are also unblocked.
 - **The separate AI project** (`Aamir Ai  Project/`) covers wheat, cotton and sugarcane with a treatment guide; #15 and #17 plan to bring it in. The portal's own classifier (`improved-002`) is Rice and Maize only and untested on Pakistan field images.
 
+## Assistant in Urdu (#10, 2026-10-29)
+
+- The chat request takes `language` (`en`/`ur`); the Urdu instruction goes in the question turn (`LANGUAGE_INSTRUCTIONS` in `ai/agents/assistant.py`), so English prompts and cassettes are unchanged. The panel has an English / اردو switch (`assistantLanguage.ts`, stored in `localStorage`), Noto Nastaliq Urdu via `@fontsource`, Urdu styles in `assistantUrdu.css` (kept out of `styles.css`, which holds the user's uncommitted edits).
+- `golden_ur` (60 machine-translated cases, same checks) is in the default evaluation runs and the CI gate (baseline 66.7%). Live on qwen3.8-27b: grounded numbers 90.0% Urdu against 87.8% English; disclaimer 90.0% against 99.4%; pass^3 53% against 58%. Details: `docs/evaluations/assistant-urdu-10-evaluation.md`.
+- **#10 stays open until a native Urdu reader fills in `docs/evaluations/assistant-urdu-review.md`** (regenerate with `backend/scripts/urdu_review_sample.py`). Known follow-ups: Urdu refusal verbs and bold list numbers in the scorers, the disclaimer left out, the medical refusal.
+
 ## Decisions the user made
 
 - Audience is general disaster management stakeholders; everything must be interactive.
@@ -169,9 +175,8 @@ Three scripts turn source files into what the backend serves. Source files are n
 - **The tehsil practice layer uses a different boundary set** from the district map, so edges do not line up exactly, and it has no tehsils in Jammu and Kashmir.
 - **Nothing on the page says why land cover shares exceed or fall short of 100%** now that the notes are gone.
 - **Units for water and food** are still unknown.
-- **Only the shell had an independent code review.** Everything on `feat/portal-data` has tests but no second reviewer.
+- **Only the shell had an independent code review.** Everything since, now on `main`, has tests but no second reviewer.
 - **Deferred from the shell review:** search says "No places match" when boundaries are missing; lenient number parsing in the URL; the URL is rewritten on every change; some validation errors use a different shape; "Check again" gives no feedback when the backend is still down.
-- **`main` has never been pushed.** Everything merges into `feat/portal-data`, the default branch; the user has not said whether it should ever reach `main`.
 - **This repo is public, and this file names the PMD server's address and port** (*Weather forecast*). The user was told on 2026-10-15 and has not decided whether to remove it.
 - **AI decisions waiting on the user:** #21 which documents the assistant may answer from, #15 which agronomist reviews management guidance.
 - **Deferred:** officer sign-in (#12), advisory approval workflow, export and sharing. Advisories may remain clearly marked internal drafts, with no external distribution. Revisit ADR 0002 only if publishing or sharing enters scope.

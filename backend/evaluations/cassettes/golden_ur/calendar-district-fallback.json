@@ -1,0 +1,23 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "931365507",
+        "name": "set_portal_view",
+        "arguments": {
+          "section_id": "climate-calendar",
+          "place_id": "d-punjab-faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 3694,
+    "output_tokens": 534
+  },
+  {
+    "text": "پورٹل میں **Climate-smart crop calendar** سیکشن کھول کر فیصل آباد [Faisalabad] منتخب کر دی گئی ہے۔ اب آپ کو فیصل آباد کے لیے موسم کے مطابق فصلی کیلنڈر دکھایا جا رہا ہے۔",
+    "tool_calls": [],
+    "input_tokens": 3771,
+    "output_tokens": 102
+  }
+]

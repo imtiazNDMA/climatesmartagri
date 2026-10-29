@@ -64,6 +64,28 @@ def test_chat_sends_compact_grounded_context(settings):
     assert "series" not in prompt
 
 
+def test_an_urdu_question_asks_for_an_urdu_answer_with_western_digits(settings):
+    model = FakeAssistant("جواب")
+    client = TestClient(create_app(settings, assistant_client=model))
+
+    response = client.post("/api/assistant/chat", json={"question": "یہاں کیا ہے؟", "language": "ur"})
+
+    assert response.status_code == 200
+    prompt = model.messages[-1]["content"]
+    assert "ANSWER LANGUAGE:" in prompt
+    assert "Urdu" in prompt and "0-9" in prompt
+    assert model.messages[0]["role"] == "system"
+
+
+def test_english_is_the_default_and_other_languages_are_rejected(settings):
+    model = FakeAssistant()
+    client = TestClient(create_app(settings, assistant_client=model))
+
+    assert client.post("/api/assistant/chat", json={"question": "What is here?"}).status_code == 200
+    assert "ANSWER LANGUAGE:" not in model.messages[-1]["content"]
+    assert client.post("/api/assistant/chat", json={"question": "Hi", "language": "fr"}).status_code == 422
+
+
 def test_chat_rejects_unknown_view_identifiers(settings):
     client = TestClient(create_app(settings, assistant_client=FakeAssistant()))
     response = client.post(

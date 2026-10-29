@@ -1,0 +1,39 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "639939096",
+        "name": "find_place",
+        "arguments": {
+          "name": "Lahore"
+        }
+      }
+    ],
+    "input_tokens": 3825,
+    "output_tokens": 145
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "397173117",
+        "name": "set_portal_view",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "d-punjab-lahore",
+          "year": 2019,
+          "layer_id": "annual-land-cover"
+        }
+      }
+    ],
+    "input_tokens": 3948,
+    "output_tokens": 133
+  },
+  {
+    "text": "نقشے پر لاہور (Lahore) کی 2019 کی زمین کی درجہ بندی دکھائی جا رہی ہے۔ میں نے \"Land Classification\" سیکشن کھولا، لاہور منتخب کیا، سال 2019 مقرر کیا اور \"Annual land classification\" لیئر آن کر دی ہے۔\n\nنوٹ: یہ درجہ بندی ہر سال کے کلاس کے رقبے دکھاتی ہے؛ دو سالوں کے درمیان فرق کو \"نیٹ کلاس رقبے میں تبدیلی\" کہا جاتا ہے۔",
+    "tool_calls": [],
+    "input_tokens": 4064,
+    "output_tokens": 200
+  }
+]

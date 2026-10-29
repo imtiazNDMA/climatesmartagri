@@ -1,0 +1,38 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "463891925",
+        "name": "find_place",
+        "arguments": {
+          "name": "Lahore"
+        }
+      }
+    ],
+    "input_tokens": 3820,
+    "output_tokens": 102
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "787369623",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "d-punjab-lahore",
+          "year": 2018
+        }
+      }
+    ],
+    "input_tokens": 3943,
+    "output_tokens": 85
+  },
+  {
+    "text": "2018 میں لاہور (Lahore) کے درج شدہ رقبے کا 42.53 فیصد حصہ تعمیر شدہ رقبہ (built area) تھا۔\n\nیہ اعداد و شمار پورٹل کے \"Land Classification\" سیکشن سے ہیں۔ اس سال لاہور کا تقریباً 99.9 فیصد رقبہ درج شدہ (classified) تھا، اور اس درج شدہ رقبے میں تعمیر شدہ رقبہ 0.178 ملین ایکڑ تھا۔",
+    "tool_calls": [],
+    "input_tokens": 13201,
+    "output_tokens": 207
+  }
+]

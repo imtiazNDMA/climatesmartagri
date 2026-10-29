@@ -97,3 +97,14 @@ def test_a_run_that_failed_fails_every_gating_scorer_with_its_reason():
 def test_a_case_passes_only_when_every_gating_scorer_passes():
     assert case_passed(score_case(case(), run("Fine."))) is True
     assert case_passed(score_case(case(required_terms=["missing"]), run("Fine."))) is False
+
+
+def test_urdu_answers_are_recognised_as_unavailable_refusals_and_disclaimed():
+    unavailable = run("پورٹل میں منڈی کی قیمتیں دستیاب نہیں ہیں۔")
+    refusal = run("معذرت، میں یہ فراہم نہیں کر سکتا۔")
+    disclaimed = run("یہ ماڈل پر مبنی رہنمائی ہے، سرکاری وارننگ نہیں۔")
+
+    assert SCORERS["answer_kind"](case(expected_kind="unavailable"), unavailable).passed is True
+    assert SCORERS["answer_kind"](case(expected_kind="refusal"), refusal).passed is True
+    assert SCORERS["hazard_disclaimer"](case(requires_hazard_disclaimer=True), disclaimed).passed is True
+    assert SCORERS["answer_kind"](case(expected_kind="refusal"), run("پنجاب میں گندم۔")).passed is False

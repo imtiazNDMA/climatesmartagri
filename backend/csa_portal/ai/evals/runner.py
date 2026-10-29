@@ -34,11 +34,12 @@ class RunOutcome:
     results: list[CaseResult]
 
 
-def run_case(service: AssistantService, case: EvalCase, run_id: str) -> CaseRun:
+def run_case(service: AssistantService, case: EvalCase, run_id: str, language: str = "en") -> CaseRun:
     request = AssistantChatRequest(
         question=case.question,
         history=[AssistantMessage(role=m.role, content=m.content) for m in case.history],
         view=AssistantView(**case.view.model_dump()),
+        language=language,
     )
     started = time.perf_counter()
     try:
@@ -72,7 +73,7 @@ def run_dataset(
         for repeat in range(repeats):
             if before_case is not None:
                 before_case(case, repeat)
-            run = run_case(service, case, run_id)
+            run = run_case(service, case, run_id, dataset.language)
             if after_case is not None:
                 after_case(case, repeat)
             scores = score_case(case, run)

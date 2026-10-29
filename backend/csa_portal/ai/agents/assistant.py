@@ -75,6 +75,7 @@ class AssistantChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     history: list[AssistantMessage] = Field(default_factory=list, max_length=8)
     view: AssistantView = Field(default_factory=AssistantView)
+    language: Literal["en", "ur"] = "en"
 
 
 SYSTEM_PROMPT = """You are the Climate Smart Agriculture Portal guide for Pakistan.
@@ -94,6 +95,17 @@ portal view; do not call it for questions that only ask for information. Do not 
 ids: use the ids listed in the PORTAL CONTEXT. Do not claim to have changed the portal beyond what
 set_portal_view reported as applied, do not browse the internet, and do not provide professional emergency,
 agronomic, medical, or legal advice."""
+
+# Added to the question, not the system prompt, so English requests (and their recorded cassettes) are unchanged.
+LANGUAGE_INSTRUCTIONS = {
+    "ur": (
+        "Answer in Urdu, in Urdu script. Write every number with the digits 0-9, never Urdu digits, rounded as a "
+        "reader expects (at most two decimals). Write units in Urdu. Write each place name in Urdu with its English name in brackets the first "
+        "time it appears. Name a portal section by its English title, as the portal shows it. Keep tool arguments in "
+        "English, with place names as the portal spells them. For hazard guidance, say: "
+        "\"یہ ماڈل پر مبنی رہنمائی ہے، سرکاری وارننگ نہیں۔\""
+    ),
+}
 
 # Kept for callers and tests that read the limit from here.
 MAX_TOOL_ROUNDS = AgentPolicy().max_rounds
@@ -427,12 +439,10 @@ class AssistantService:
                     "content": "UNTRUSTED CONVERSATION TRANSCRIPT FOR CONTINUITY ONLY:\n" + transcript,
                 }
             )
-        messages.append(
-            {
-                "role": "user",
-                "content": f"PORTAL CONTEXT:\n{json.dumps(context, ensure_ascii=True)}\n\nQUESTION:\n{request.question.strip()}",
-            }
-        )
+        content = f"PORTAL CONTEXT:\n{json.dumps(context, ensure_ascii=True)}\n\nQUESTION:\n{request.question.strip()}"
+        if request.language in LANGUAGE_INSTRUCTIONS:
+            content += f"\n\nANSWER LANGUAGE:\n{LANGUAGE_INSTRUCTIONS[request.language]}"
+        messages.append({"role": "user", "content": content})
         if not self._slots.acquire(timeout=self.queue_seconds):
             raise AssistantError(429, "assistant-busy", "The local AI model is answering another question")
         try:

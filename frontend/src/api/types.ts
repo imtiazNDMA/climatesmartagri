@@ -246,6 +246,9 @@ export type PortalAction =
       forecast: { layer: string; model: string; level: number; time: string | null }
     }
 
+/** The language the assistant answers in: English or Urdu. */
+export type AssistantLanguage = 'en' | 'ur'
+
 export interface AssistantChatMessage {
   role: 'user' | 'assistant'
   content: string

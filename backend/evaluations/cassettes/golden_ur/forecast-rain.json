@@ -1,0 +1,8 @@
+[
+  {
+    "text": "جی ہاں، **Weather forecast** سیکشن میں بارش کے کئی لیر موجود ہیں جنہیں نقشے پر دکھایا جا سکتا ہے:\n\n- **3-hour precipitation** (3 گھنٹے کی بارش)\n- **6-hour precipitation** (6 گھنٹے کی بارش)\n- **12-hour precipitation** (12 گھنٹے کی بارش)\n- **24-hour precipitation** (24 گھنٹے کی بارش)\n- **7-day precipitation** (7 دن کی بارش)\n- **Precipitation since the run began** (رین شروع ہونے سے اب تک کی بارش)\n\nان کے علاوہ برفباری (snowfall) اور سلیٹ (sleet) کے لیر بھی دستیاب ہیں۔\n\nاگر آپ چاہیں تو میں کسی مخصوص لیر کو نقشے پر آن کر دیتا ہوں — صرف بتائیں کہ کتنے گھنٹوں/دنوں کی بارش دیکھنی ہے اور کون سا ماڈل (جیسے cma-gfs، ecmwf-ifs، pmd-wrf وغیرہ) پسند ہے۔",
+    "tool_calls": [],
+    "input_tokens": 11728,
+    "output_tokens": 649
+  }
+]
