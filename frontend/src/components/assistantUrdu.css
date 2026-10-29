@@ -1,0 +1,39 @@
+/* Urdu in the portal guide: Nastaliq needs taller lines than Latin text. */
+.assistant-language {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  justify-self: end;
+  border: 1px solid var(--line, #d9d8d2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.assistant-tabs .assistant-language button {
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+.assistant-language [lang='ur'] {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  line-height: 1.9;
+}
+
+.assistant-panel [lang='ur'],
+.assistant-panel :is(input, button, small, p)[lang='ur'] {
+  font-family: 'Noto Nastaliq Urdu', serif;
+}
+.assistant-panel :is(p, small, li, td, th)[lang='ur'],
+.assistant-panel .assistant-message-content[lang='ur'] :is(p, li, td, th, h2, h3, h4) {
+  line-height: 2.1;
+}
+.assistant-panel .assistant-message-content[lang='ur'] {
+  text-align: right;
+}
+.assistant-panel .assistant-message-content[lang='ur'] :is(ul, ol) {
+  padding-left: 0;
+  padding-right: 1.4em;
+}
+.assistant-panel input[lang='ur'] {
+  line-height: 2;
+}

@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from csa_portal.ai.evals.datasets import Dataset, EvalCase, dump_dataset, load_dataset
+from csa_portal.ai.evals.datasets import Dataset, EvalCase, dataset_path, dump_dataset, load_dataset
 
 BACKEND = Path(__file__).resolve().parents[1]
 
@@ -15,6 +15,19 @@ def test_both_datasets_load_with_their_names_and_versions():
     assert (golden.name, golden.version, len(golden.cases)) == ("golden", 3, 60)
     assert (adversarial.name, adversarial.version) == ("adversarial", 2)
     assert len(adversarial.cases) >= 18
+
+
+def test_the_urdu_golden_set_asks_the_english_questions_in_urdu_with_the_same_checks():
+    english, urdu = load_dataset("golden"), load_dataset("golden_ur")
+
+    assert (urdu.name, urdu.language, english.language) == ("golden_ur", "ur", "en")
+    assert [case.id for case in urdu.cases] == [case.id for case in english.cases]
+    for en, ur in zip(english.cases, urdu.cases, strict=True):
+        same = ("view", "expected_kind", "expected_section", "fact_values", "forbidden_values", "expected_tools",
+                "requires_hazard_disclaimer", "max_tool_calls")
+        assert {key: getattr(ur, key) for key in same} == {key: getattr(en, key) for key in same}, en.id
+        assert any("؀" <= ch <= "ۿ" for ch in ur.question), en.id
+    assert dump_dataset(urdu) == dataset_path("golden_ur").read_text(encoding="utf-8")
 
 
 def test_every_case_points_at_real_sections_places_and_tools():

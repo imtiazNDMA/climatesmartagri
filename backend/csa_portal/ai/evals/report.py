@@ -6,6 +6,8 @@ from .datasets import Dataset
 from .runner import CaseResult, RunOutcome
 from .scorers import GATING, JUDGE_SCORERS
 
+LANGUAGES = {"en": "English", "ur": "Urdu"}
+
 
 def markdown_report(outcomes: list[tuple[Dataset, RunOutcome]]) -> str:
     lines = ["# Assistant evaluation", ""]
@@ -16,6 +18,7 @@ def markdown_report(outcomes: list[tuple[Dataset, RunOutcome]]) -> str:
             f"## {dataset.name} (version {dataset.version})",
             "",
             f"- Review status: {dataset.review_status}",
+            *([f"- Language: {LANGUAGES[dataset.language]}"] if dataset.language != "en" else []),
             f"- Mode: {record.mode}, model `{record.model}`, commit `{record.git_sha}`",
             f"- Generated: {record.finished_at.isoformat(timespec='seconds')}",
             f"- Passed every repeat (pass^{record.repeats}): {summary['passed_cases']}/{summary['cases']} "

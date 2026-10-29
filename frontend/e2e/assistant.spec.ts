@@ -106,16 +106,19 @@ test('the launcher and open guide can be dragged without leaving the viewport', 
 })
 
 test('the guide animates out before restoring the launcher', async ({ page }) => {
+  // A fake clock, so a slow machine cannot run the 160 ms close animation out before it is checked.
+  await page.clock.install()
   await openPortal(page)
   await page.getByRole('button', { name: 'AI portal guide' }).click()
   const guide = page.getByRole('dialog', { name: 'Portal AI assistant' })
   await expect(guide).toBeVisible()
 
+  await page.clock.pauseAt(Date.now() + 60_000)
   await guide.getByRole('button', { name: 'Close assistant' }).click()
   await expect(guide).toHaveClass(/assistant-closing/)
-  await page.waitForTimeout(50)
   await expect(guide).toHaveCount(1)
-  await expect(guide).toHaveCount(0, { timeout: 1000 })
+  await page.clock.runFor(200)
+  await expect(guide).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'AI portal guide' })).toBeVisible()
 })
 
@@ -132,4 +135,41 @@ test('the launcher animation loads its player from the portal, not a CDN', async
   expect(response.status()).toBe(200)
   await page.waitForTimeout(500)
   expect(external).toEqual([])
+})
+
+test('the guide answers in Urdu, right to left, and remembers the choice', async ({ page }) => {
+  const languages: string[] = []
+  await page.route('**/api/assistant/chat', async (route) => {
+    languages.push(route.request().postDataJSON().language)
+    await route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        answer: 'پنجاب (Punjab) میں 30.5 ملین ایکڑ فصلیں ہیں۔',
+        sources: ['fact:0123456789ab'], source_names: ['Land Classification / Punjab'],
+        model: 'qwen', grounded: true, unchecked_numbers: [], tool_calls: 1,
+      }),
+    })
+  })
+  await openPortal(page)
+  await page.getByRole('button', { name: 'AI portal guide' }).click()
+  const guide = page.getByRole('dialog', { name: 'Portal AI assistant' })
+  await guide.getByRole('button', { name: 'Ask', exact: true }).click()
+
+  await guide.getByRole('button', { name: 'اردو' }).click()
+  await expect(guide.getByRole('button', { name: 'اردو' })).toHaveAttribute('aria-pressed', 'true')
+  await guide.getByRole('textbox', { name: 'پورٹل رہنما کے لیے سوال' }).fill('پنجاب میں کتنی فصلیں ہیں؟')
+  await guide.getByRole('button', { name: 'سوال بھیجیں' }).click()
+
+  const answer = guide.locator('.assistant-message.assistant .assistant-message-content')
+  await expect(answer).toContainText('30.5 ملین ایکڑ')
+  await expect(answer).toHaveAttribute('dir', 'rtl')
+  await expect(answer).toHaveAttribute('lang', 'ur')
+  await expect(guide.getByText('ذرائع: Land Classification / Punjab')).toBeVisible()
+  expect(languages).toEqual(['ur'])
+
+  await page.reload()
+  await page.getByRole('button', { name: 'AI portal guide' }).click()
+  await page.getByRole('dialog', { name: 'Portal AI assistant' }).getByRole('button', { name: 'Ask', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'اردو' })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('textbox', { name: 'پورٹل رہنما کے لیے سوال' })).toBeVisible()
 })

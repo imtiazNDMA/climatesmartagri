@@ -19,6 +19,12 @@ class GroundingScore:
         return not self.unsupported
 
 
+# Urdu answers may use Eastern Arabic-Indic (U+06F0) or Arabic-Indic (U+0660) digits with the Arabic decimal and
+# thousands separators; read as Western digits, so no figure escapes the check.
+_TO_WESTERN = str.maketrans(
+    {**{chr(0x06F0 + n): str(n) for n in range(10)}, **{chr(0x0660 + n): str(n) for n in range(10)},
+     "٫": ".", "٬": ","}
+)
 # Models often write a typographic minus (U+2212) for negative changes.
 _NUMBER = re.compile(r"(?<![\w.])[-+−]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\w)")
 # "1.", "2)" or "(3)" opening a line numbers a list; it is not a figure.
@@ -29,7 +35,7 @@ _TABLE_ORDINAL = re.compile(r"(?m)^[ \t]*\|[ \t]*\d{1,2}[ \t]*\|")
 
 def answer_numbers(answer: str) -> tuple[float, ...]:
     """Numbers a reader sees, excluding digits embedded in words such as CO2 or model names, and list numbering."""
-    text = _TABLE_ORDINAL.sub("|", _LIST_MARKER.sub("", answer))
+    text = _TABLE_ORDINAL.sub("|", _LIST_MARKER.sub("", answer.translate(_TO_WESTERN)))
     return tuple(float(match.group().replace(",", "").replace("−", "-")) for match in _NUMBER.finditer(text))
 
 
