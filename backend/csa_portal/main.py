@@ -27,6 +27,7 @@ from titiler.core.factory import TilerFactory  # noqa: E402
 from .catalogue import Layer, load_catalogue  # noqa: E402
 from .ai.agents.assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, CropClassifierRouter, add_crop_classification_routes  # noqa: E402
+from .crop_guidance import CropGuidance  # noqa: E402
 from .facts import Facts  # noqa: E402
 from .land_cover_mpc import (  # noqa: E402
     SUPPORTED_YEARS,
@@ -193,7 +194,7 @@ def create_app(
         CropClassifier(settings.crop_model_dir, ("Rice", "Maize")),
         CropClassifier(settings.five_crop_model_dir, ("Cotton", "Wheat", "Sugarcane")),
     ])
-    add_crop_classification_routes(app, classifier)
+    add_crop_classification_routes(app, classifier, CropGuidance(settings.crop_guidance_path))
     hazards = load_hazards(settings.hazard_products_path)
 
     # --- Land-cover rasters, served by TiTiler from converted (cloud-optimized) files.

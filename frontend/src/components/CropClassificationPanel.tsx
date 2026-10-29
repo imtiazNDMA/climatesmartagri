@@ -1,7 +1,7 @@
 import { AlertTriangle, Camera, ImagePlus, LoaderCircle, ScanSearch } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, classifyCropImage } from '../api/client'
-import type { Crop, CropClassificationResult } from '../api/types'
+import type { Crop, CropClassificationResult, CropGuidance } from '../api/types'
 
 const MAX_BYTES = 10 * 1024 * 1024
 const CROPS: Crop[] = ['Rice', 'Maize', 'Cotton', 'Wheat', 'Sugarcane']
@@ -109,6 +109,12 @@ export function CropClassificationPanel() {
 
       {result && (
         <section className="crop-results" aria-live="polite">
+          {result.needs_expert_review && (
+            <p className="crop-message crop-warning crop-review-first">
+              <AlertTriangle size={17} />
+              The result is uncertain. Ask an agronomist to inspect the crop before acting.
+            </p>
+          )}
           <div className="crop-results-head">
             <div>
               <span>Most likely</span>
@@ -133,16 +139,38 @@ export function CropClassificationPanel() {
               Confidence for this crop is not calibrated yet: read the percentages as rough.
             </p>
           )}
-          {result.needs_expert_review && (
-            <p className="crop-message crop-warning">
-              <AlertTriangle size={17} />
-              The result is uncertain. Ask an agronomist to inspect the crop before acting.
-            </p>
-          )}
         </section>
       )}
 
+      {result && <GuidanceSection guidance={result.guidance} possible={result.needs_expert_review} />}
+
       <p className="crop-disclaimer">This tool does not prescribe pesticides or replace field diagnosis.</p>
     </div>
+  )
+}
+
+function GuidanceSection({ guidance, possible }: { guidance: CropGuidance | null; possible: boolean }) {
+  if (!guidance) {
+    return <p className="crop-message crop-note">No guidance yet for this class.</p>
+  }
+  return (
+    <section className="crop-guidance" aria-label="Guidance">
+      <h4>{possible ? `If it is ${guidance.name.toLowerCase()}` : guidance.name}</h4>
+      <h5>What to look for</h5>
+      <ul>{guidance.symptoms.map((item) => <li key={item}>{item}</li>)}</ul>
+      {guidance.treatment_steps.length > 0 && (
+        <>
+          <h5>What to do</h5>
+          <ol>{guidance.treatment_steps.map((item) => <li key={item}>{item}</li>)}</ol>
+        </>
+      )}
+      <h5>Prevention</h5>
+      <ul>{guidance.prevention.map((item) => <li key={item}>{item}</li>)}</ul>
+      <p>
+        {guidance.reviewed
+          ? `From the project's treatment guide (${guidance.version}), reviewed by an agronomist.`
+          : `From the project's treatment guide (${guidance.version}). Treatment steps are held back until an agronomist has reviewed it.`}
+      </p>
+    </section>
   )
 }

@@ -100,7 +100,7 @@
       "order": 8,
       "status": "ready",
       "kind": "crop-classification",
-      "summary": "Classify Rice and Maize leaf images for common pests, diseases and healthy crops.",
+      "summary": "Classify rice, maize, cotton, wheat and sugarcane leaf images for common pests, diseases and healthy crops.",
       "place_levels": [
         "national"
       ]

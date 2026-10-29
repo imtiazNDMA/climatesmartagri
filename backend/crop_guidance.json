@@ -1,0 +1,842 @@
+{
+  "version": "draft-2026-10",
+  "source": "Dr. Aamir's treatment guide (treatment_guide.py), copied word for word",
+  "status": "review-pending",
+  "reviewer": null,
+  "reviewed_on": null,
+  "note": "Treatment steps name pesticide classes; the portal shows them only once an agronomist has reviewed this file and checked chemical measures against what is registered in Pakistan (#15).",
+  "classes": {
+    "cotton_american_bollworm": {
+      "aliases": [],
+      "name": "American Bollworm",
+      "type": "Pest",
+      "symptoms": [
+        "Round holes bored into squares, flowers, and bolls",
+        "Frass (excrement) visible near entry holes",
+        "Premature shedding of damaged squares/bolls"
+      ],
+      "treatment_steps": [
+        "Scout weekly for eggs and small larvae on terminals, squares, and bolls; larvae are easiest to control while young.",
+        "Use pheromone traps to monitor adult moth activity and time sprays to egg-hatch peaks.",
+        "Conserve natural enemies and consider a Bt-based biological insecticide as a first-line option before broad-spectrum chemicals.",
+        "If economic thresholds are exceeded, apply a labeled bollworm insecticide, rotating chemical classes to manage resistance (this pest is prone to developing resistance)."
+      ],
+      "prevention": [
+        "Where available, use Bt cotton varieties, which carry strong intrinsic resistance to bollworm.",
+        "Destroy crop residue after harvest to reduce overwintering pupae.",
+        "Avoid excessive nitrogen, which promotes lush growth attractive to egg-laying moths."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_anthracnose": {
+      "aliases": [],
+      "name": "Anthracnose",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Reddish-brown, sunken lesions on bolls, stems, and seedlings",
+        "Pink spore masses may appear on lesions in humid weather",
+        "Seedling damping-off in severe early infections"
+      ],
+      "treatment_steps": [
+        "Remove and destroy infected plant debris and bolls after harvest.",
+        "Apply a labeled fungicide (e.g. a strobilurin or copper-based product) at early symptom onset, especially during boll development in wet weather.",
+        "Improve field drainage and avoid overhead irrigation during boll set."
+      ],
+      "prevention": [
+        "Rotate with non-host crops.",
+        "Avoid dense planting that keeps the canopy humid."
+      ],
+      "chemical_prevention": [
+        "Use certified, fungicide-treated, disease-free seed."
+      ]
+    },
+    "cotton_aphid": {
+      "aliases": [],
+      "name": "Aphid infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Clusters of small insects on the underside of leaves and new growth",
+        "Curled, distorted leaves and sticky honeydew with sooty mould",
+        "Sticky lint contamination if aphids are present at boll opening"
+      ],
+      "treatment_steps": [
+        "Conserve natural predators (ladybird beetles, lacewings) which often control light aphid populations on their own.",
+        "Apply a labeled aphicide only if populations exceed the local economic threshold, prioritizing selective products that spare beneficial insects.",
+        "Avoid excess nitrogen, which promotes the lush new growth aphids prefer."
+      ],
+      "prevention": [
+        "Monitor regularly, especially after any broad-spectrum insecticide application that may have killed natural enemies and triggered a resurgence."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_bacterial_blight": {
+      "aliases": [],
+      "name": "Bacterial Blight",
+      "type": "Bacterial disease",
+      "symptoms": [
+        "Small, angular, water-soaked spots on leaves that turn dark brown/black and follow the veins",
+        "Black lesions on stems ('black arm') and bolls",
+        "Premature defoliation and boll rot in severe cases"
+      ],
+      "treatment_steps": [
+        "Avoid working in wet fields, since the bacteria spread readily via water and equipment.",
+        "Apply a copper-based bactericide at early symptom onset; regular fungicides will not work since this is bacterial.",
+        "Remove and destroy heavily infected plant debris after harvest."
+      ],
+      "prevention": [
+        "Use certified, acid-delinted, disease-free seed -- this disease is strongly seed-borne.",
+        "Plant resistant varieties where available.",
+        "Rotate with non-host crops for at least one season."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_boll_rot": {
+      "aliases": [],
+      "name": "Boll Rot",
+      "type": "Fungal/bacterial (secondary) disease complex",
+      "symptoms": [
+        "Discolored, decaying bolls that fail to open properly or open with rotted lint",
+        "Often follows insect damage (e.g. bollworm entry wounds) or prolonged wet weather",
+        "Foul odor and visible fungal growth on affected bolls in advanced stages"
+      ],
+      "treatment_steps": [
+        "Control boll-feeding insects (bollworm, stink bugs) promptly, since their wounds are the main entry point for boll-rot organisms.",
+        "Improve airflow through the canopy (avoid excessive nitrogen and overly dense planting) to reduce humidity around bolls.",
+        "Apply a labeled fungicide during boll development if wet weather and disease pressure are both high.",
+        "Remove and destroy severely rotted bolls to limit spore spread."
+      ],
+      "prevention": [
+        "Manage insect pests proactively rather than reactively.",
+        "Avoid excess irrigation/nitrogen late in the season.",
+        "Ensure good field drainage."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_healthy": {
+      "aliases": [],
+      "name": "Healthy",
+      "type": "No disease detected",
+      "symptoms": [
+        "No visible disease or pest symptoms."
+      ],
+      "treatment_steps": [
+        "No treatment needed. Continue routine scouting (roughly weekly, more often at squaring/boll stages).",
+        "Maintain your regular fertility and irrigation program."
+      ],
+      "prevention": [
+        "Keep monitoring for early signs of common cotton pests (thrips, aphids, bollworm, whitefly) and diseases (blight, wilt, anthracnose)."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_mealybug": {
+      "aliases": [],
+      "name": "Mealybug infestation",
+      "type": "Pest",
+      "symptoms": [
+        "White, waxy, cottony masses on stems, leaf axils, and bolls",
+        "Sticky honeydew and sooty mould on affected plant parts",
+        "Stunted growth and boll drop in heavy infestations"
+      ],
+      "treatment_steps": [
+        "Remove and destroy heavily infested plants/plant parts, especially early in an outbreak, to slow spread.",
+        "Conserve natural enemies (parasitic wasps, ladybird beetles), which are often the most effective long-term control.",
+        "Apply a labeled systemic insecticide if infestation is severe, since mealybugs' waxy coating resists many contact sprays.",
+        "Control ants in the field, as they protect mealybugs from predators in exchange for honeydew."
+      ],
+      "prevention": [
+        "Avoid moving infested plant material/equipment between fields.",
+        "Remove alternate weed hosts near field borders."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_pink_bollworm": {
+      "aliases": [],
+      "name": "Pink Bollworm",
+      "type": "Pest",
+      "symptoms": [
+        "Pink-colored larvae found inside bolls when opened",
+        "Damaged, discolored lint and stained/damaged seed inside affected bolls",
+        "Small, rosette-shaped ('rosetted') flowers caused by larvae feeding inside the bud",
+        "Premature boll opening or shedding"
+      ],
+      "treatment_steps": [
+        "Use pheromone traps to monitor adult moth activity and time control action to early egg-hatch -- larvae move inside the boll quickly, where sprays can no longer reach them.",
+        "Scout for rosetted flowers and damaged bolls regularly, removing and destroying them to reduce the next generation.",
+        "Apply a labeled insecticide timed at egg-hatch/before larvae enter bolls; it's largely ineffective once larvae are inside.",
+        "Destroy crop residue and any unopened bolls after the final harvest pick -- larvae overwinter in field trash and stored seed cotton."
+      ],
+      "prevention": [
+        "Where available, use Bt cotton varieties with activity against pink bollworm.",
+        "Avoid growing a ratoon/second cotton crop, which extends the pest's breeding season.",
+        "Keep a clean field break (no standing cotton residue) between seasons."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_red_cotton_bug": {
+      "aliases": [],
+      "name": "Red Cotton Bug",
+      "type": "Pest",
+      "symptoms": [
+        "Clusters of red-and-black bugs (adults and nymphs) on and around fallen bolls, loose seed, and at the base of plants",
+        "Staining and quality deterioration of lint and seed from feeding",
+        "Mostly a lint/seed-quality issue rather than major direct yield loss"
+      ],
+      "treatment_steps": [
+        "Collect and destroy fallen bolls, loose seed, and plant debris where the bugs cluster and breed -- sanitation is the most effective single control.",
+        "Conserve natural enemies where possible.",
+        "Apply a labeled insecticide only if populations are heavy and concentrated; this pest is often manageable through sanitation alone."
+      ],
+      "prevention": [
+        "Clear field trash and volunteer cotton plants promptly after harvest.",
+        "Avoid leaving picked seed cotton or fallen bolls lying in or near the field."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_thrips": {
+      "aliases": [],
+      "name": "Thrips infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Silvery streaking or stippling on leaves, especially the undersides",
+        "Curled, distorted young leaves and stunted seedling growth",
+        "Tiny slender insects visible when leaves are shaken over paper"
+      ],
+      "treatment_steps": [
+        "Scout seedlings closely in the first 3-4 weeks after emergence, when thrips damage is most yield-limiting.",
+        "Conserve natural enemies (minute pirate bugs, lacewings) by avoiding unnecessary broad-spectrum sprays.",
+        "Apply a labeled thrips insecticide if damage exceeds the local economic threshold, particularly at the seedling stage."
+      ],
+      "prevention": [
+        "Avoid planting adjacent to maturing small grains, which push thrips into cotton as they dry down."
+      ],
+      "chemical_prevention": [
+        "Consider an at-plant systemic insecticide seed treatment in fields with a history of heavy early thrips pressure."
+      ]
+    },
+    "cotton_whitefly": {
+      "aliases": [],
+      "name": "Whitefly infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Small white flying insects that scatter when plants are disturbed",
+        "Yellowing leaves, sticky honeydew, and sooty mould buildup",
+        "Whiteflies can also transmit viral diseases (e.g. leaf curl virus)"
+      ],
+      "treatment_steps": [
+        "Use yellow sticky traps to monitor adult populations.",
+        "Conserve natural enemies (parasitic wasps, predatory beetles) and avoid unnecessary broad-spectrum sprays that can trigger resurgence.",
+        "Apply a labeled insecticide targeted at whitefly nymphs/adults if populations exceed threshold, rotating modes of action to manage resistance."
+      ],
+      "prevention": [
+        "Remove weed hosts and volunteer cotton between seasons.",
+        "Avoid planting near other whitefly-prone crops when possible.",
+        "Use reflective or UV-blocking mulches in high-value plantings if locally practiced."
+      ],
+      "chemical_prevention": []
+    },
+    "cotton_wilt": {
+      "aliases": [],
+      "name": "Wilt (Fusarium/Verticillium)",
+      "type": "Fungal (soil-borne) disease",
+      "symptoms": [
+        "Yellowing and wilting of leaves, often starting on one side of the plant or lower leaves first",
+        "Vascular discoloration (brown streaking) visible when the stem is cut lengthwise",
+        "Stunted growth and eventual plant death in severe cases"
+      ],
+      "treatment_steps": [
+        "There is no effective in-season cure for vascular wilt -- management is primarily preventive and long-term.",
+        "Remove and destroy severely wilted plants to reduce soil inoculum buildup.",
+        "Improve field drainage, since waterlogged/compacted soils worsen wilt severity.",
+        "Avoid working in infected fields and then healthy fields without cleaning equipment, since soil-borne fungi spread via contaminated tools/machinery."
+      ],
+      "prevention": [
+        "Plant wilt-resistant/tolerant varieties -- this is the single most effective control.",
+        "Rotate with non-host crops (e.g. cereals) for several years in infected fields.",
+        "Maintain balanced soil fertility and avoid plant stress, which increases susceptibility."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_armyworm": {
+      "aliases": [
+        "MAIZE_PEST_002"
+      ],
+      "name": "Armyworm (Fall Armyworm)",
+      "type": "Pest",
+      "symptoms": [
+        "Ragged, window-pane feeding damage on young leaves, often in the whorl",
+        "Sawdust-like frass packed in the leaf whorl",
+        "Large numbers of caterpillars can strip a field rapidly, moving 'like an army'"
+      ],
+      "treatment_steps": [
+        "Scout the whorl of young plants regularly -- catching larvae while small (early instars) is far more effective than treating large larvae.",
+        "Handpick and destroy egg masses and young larvae in small plantings if feasible.",
+        "Conserve natural enemies (parasitic wasps, birds) where possible.",
+        "If populations exceed threshold, apply a labeled insecticide targeted at the whorl, timed for early larval stages; rotate modes of action since fall armyworm develops resistance quickly."
+      ],
+      "prevention": [
+        "Plant early within the recommended local window to reduce overlap with peak moth flights.",
+        "Where available, use Bt maize varieties with activity against fall armyworm.",
+        "Monitor with pheromone traps to catch outbreaks early."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_common_rust": {
+      "aliases": [
+        "MAIZE_DISEASE_001"
+      ],
+      "name": "Common Rust",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Small, round to elongated cinnamon-brown pustules scattered on both leaf surfaces",
+        "Pustules turn dark brown/black as they age",
+        "Severe infection causes leaf yellowing and premature death"
+      ],
+      "treatment_steps": [
+        "Scout regularly, especially in cool, humid weather which favors this fungus.",
+        "Apply a triazole or strobilurin-class fungicide if pustules are found before/around tasseling on a susceptible variety, since this is the period when yield loss risk is highest.",
+        "A single well-timed application is often sufficient; repeat only if disease pressure remains high afterward."
+      ],
+      "prevention": [
+        "Plant common-rust-resistant hybrids -- resistance is widely available and highly effective.",
+        "Avoid very early planting in cool, high-humidity regions where rust pressure is historically high."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_ear_rot": {
+      "aliases": [],
+      "name": "Ear Rot",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Moldy, discolored kernels on the ear (pink, white, grey, or black fungal growth depending on the fungus involved)",
+        "Husks may stick tightly to the ear or show premature drying",
+        "Potential mycotoxin contamination in badly rotted ears"
+      ],
+      "treatment_steps": [
+        "Harvest promptly at maturity and dry grain quickly -- these fungi thrive in damp, warm conditions, so slow drying makes rot worse.",
+        "Remove and discard visibly rotted ears/kernels rather than storing or feeding them.",
+        "If a labeled foliar fungicide is used, timing it around silking is most effective for reducing infection risk.",
+        "Segregate and test grain for mycotoxins before it enters food/feed channels if rot was significant."
+      ],
+      "prevention": [
+        "Use resistant hybrids where available.",
+        "Manage ear-feeding insects (e.g. earworm, borers), since insect wounds are a common entry point for these fungi.",
+        "Ensure good field drainage and avoid drought/heat stress during grain fill, which increases susceptibility.",
+        "Store harvested grain at low moisture in clean, dry conditions."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_fall_armyworm": {
+      "aliases": [
+        "MAIZE_PEST_005"
+      ],
+      "name": "Fall Armyworm",
+      "type": "Pest",
+      "symptoms": [
+        "Ragged, window-pane feeding damage on young leaves, often in the whorl",
+        "Sawdust-like frass packed in the leaf whorl",
+        "Large numbers of caterpillars can strip a field rapidly"
+      ],
+      "treatment_steps": [
+        "Scout the whorl of young plants regularly -- catching larvae while small (early instars) is far more effective than treating large larvae.",
+        "Handpick and destroy egg masses and young larvae in small plantings if feasible.",
+        "Conserve natural enemies (parasitic wasps, birds) where possible.",
+        "If populations exceed threshold, apply a labeled insecticide targeted at the whorl, timed for early larval stages; rotate modes of action since fall armyworm develops resistance quickly."
+      ],
+      "prevention": [
+        "Plant early within the recommended local window to reduce overlap with peak moth flights.",
+        "Where available, use Bt maize varieties with activity against fall armyworm.",
+        "Monitor with pheromone traps to catch outbreaks early."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_gray_leaf_spot": {
+      "aliases": [
+        "MAIZE_DISEASE_003"
+      ],
+      "name": "Gray Leaf Spot",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Narrow, rectangular tan-to-gray lesions running parallel to leaf veins",
+        "Lesions can coalesce and cause extensive leaf blighting, starting on lower leaves",
+        "Worse in continuous maize with reduced tillage (fungus survives on residue)"
+      ],
+      "treatment_steps": [
+        "Apply a triazole or strobilurin-class fungicide around tasseling if lesions are present on leaves near/above the ear leaf, since protecting the upper canopy is most important for yield.",
+        "Improve residue decomposition (light tillage) in high-pressure, continuous-maize fields.",
+        "Increase row spacing/reduce plant density slightly in chronically high-pressure fields to improve airflow."
+      ],
+      "prevention": [
+        "Plant resistant/tolerant hybrids -- this is the most cost-effective long-term control.",
+        "Rotate with a non-host crop (e.g. soybean, wheat) for at least one season.",
+        "Manage crop residue rather than leaving heavy surface trash in no-till continuous maize."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_healthy": {
+      "aliases": [
+        "MAIZE_HEALTHY"
+      ],
+      "name": "Healthy",
+      "type": "No disease detected",
+      "symptoms": [
+        "No visible disease or pest symptoms."
+      ],
+      "treatment_steps": [
+        "No treatment needed. Continue routine scouting through tasseling and grain fill.",
+        "Maintain your regular fertility and irrigation program."
+      ],
+      "prevention": [
+        "Keep monitoring for early signs of common maize issues (rust, gray leaf spot, armyworm/fall armyworm)."
+      ],
+      "chemical_prevention": []
+    },
+    "maize_stem_borer": {
+      "aliases": [],
+      "name": "Stem Borer",
+      "type": "Pest",
+      "symptoms": [
+        "Rows of small round holes across young leaves, from larvae feeding before the whorl unfurls",
+        "'Deadheart' -- a dead central shoot in young plants that pulls out easily",
+        "Tunnels visible inside the stem when split open; broken/lodged stems in older plants"
+      ],
+      "treatment_steps": [
+        "Scout the whorl of young plants regularly for pinhole feeding damage -- this is the easiest stage to catch it, before larvae bore into the stem.",
+        "Remove and destroy visibly infested/deadheart plants to reduce carryover.",
+        "Apply a labeled insecticide into the whorl if infestation is caught early; once larvae are inside the stem, sprays are far less effective.",
+        "Conserve natural enemies (parasitic wasps) where possible."
+      ],
+      "prevention": [
+        "Destroy old maize stalks/residue after harvest -- larvae overwinter inside old stems.",
+        "Where available, use Bt maize hybrids with activity against stem borers.",
+        "Avoid late or staggered planting, which extends the pest's breeding window."
+      ],
+      "chemical_prevention": []
+    },
+    "rice_bacterial_blight": {
+      "aliases": [
+        "RICE_DISEASE_001"
+      ],
+      "name": "Bacterial Leaf Blight",
+      "type": "Bacterial disease",
+      "symptoms": [
+        "Water-soaked streaks starting at leaf tips/margins that turn yellow then grey-white",
+        "Wavy lesion margins running along the veins",
+        "Milky bacterial ooze visible on cut leaves in early morning ('Kresek' wilting in seedlings)"
+      ],
+      "treatment_steps": [
+        "Drain standing water where possible -- the disease spreads readily through water and wind-driven rain.",
+        "Avoid working in or irrigating infected fields when foliage is wet, to reduce mechanical spread.",
+        "Apply a copper-based bactericide or a product specifically labeled for bacterial blight if pressure is high; fungicides are NOT effective since this is bacterial, not fungal.",
+        "Remove and destroy severely infected plants/tillers."
+      ],
+      "prevention": [
+        "Use resistant varieties -- this is the most effective long-term control for bacterial blight.",
+        "Avoid excess nitrogen, which increases susceptibility.",
+        "Use clean, pathogen-free seed and avoid clipping seedling tops before transplanting (a common infection entry point)."
+      ],
+      "chemical_prevention": []
+    },
+    "rice_blast": {
+      "aliases": [
+        "RICE_DISEASE_004",
+        "RICE_DISEASE_005"
+      ],
+      "name": "Rice Blast",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Diamond/spindle-shaped lesions with grey centers and brown margins on leaves",
+        "Neck/node infection causes the panicle to snap or fail to fill ('neck blast')",
+        "Rapid spread under warm, humid, cloudy conditions with heavy nitrogen use"
+      ],
+      "treatment_steps": [
+        "Drain and dry the field briefly if feasible, since blast favors continuously wet, humid canopies.",
+        "Apply a labeled fungicide (e.g. tricyclazole or strobilurin class) at first leaf symptoms, and again at booting/heading if neck blast risk is high.",
+        "Reduce nitrogen top-dressing; split nitrogen applications rather than one heavy dose.",
+        "Remove and destroy heavily infected plant debris after harvest."
+      ],
+      "prevention": [
+        "Use certified seed and blast-resistant varieties recommended for your area.",
+        "Avoid excessive seedling density and nitrogen.",
+        "Maintain balanced potassium and silicon nutrition, which strengthens plant resistance."
+      ],
+      "chemical_prevention": []
+    },
+    "rice_brown_spot": {
+      "aliases": [
+        "RICE_DISEASE_002"
+      ],
+      "name": "Brown Spot",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Small, round to oval brown lesions with a grey/white center on leaves and grains",
+        "Often associated with nutrient-poor or stressed soils (especially potassium deficiency)",
+        "Discolored, spotted grains at harvest ('dirty panicle')"
+      ],
+      "treatment_steps": [
+        "Correct soil fertility, especially potassium deficiency, which strongly predisposes rice to brown spot.",
+        "Apply a labeled fungicide (e.g. a triazole or mancozeb-class product) if disease pressure is high, particularly around flowering to protect grain quality.",
+        "Improve field drainage and avoid water stress."
+      ],
+      "prevention": [
+        "Use healthy, disease-free seed -- brown spot is significantly seed-borne.",
+        "Balance fertilization (N-P-K) rather than relying on nitrogen alone.",
+        "Practice crop rotation and residue management."
+      ],
+      "chemical_prevention": []
+    },
+    "rice_tungro": {
+      "aliases": [
+        "RICE_DISEASE_006"
+      ],
+      "name": "Tungro (viral disease)",
+      "type": "Viral disease (transmitted by green leafhoppers)",
+      "symptoms": [
+        "Yellow-orange leaf discoloration, starting at the tip",
+        "Stunted growth and reduced tillering",
+        "Delayed or incomplete flowering"
+      ],
+      "treatment_steps": [
+        "There is no curative treatment for a virus -- management focuses entirely on controlling the green leafhopper vector and removing infected plants.",
+        "Rogue out (remove) infected plants early to reduce the source of virus for leafhoppers to spread.",
+        "If leafhopper populations are high, apply a labeled insecticide targeted at the vector rather than the virus itself, following resistance-management rotation.",
+        "Avoid staggered planting dates in a local area, which lets leafhoppers move continuously between young and mature crops."
+      ],
+      "prevention": [
+        "Plant tungro-resistant/tolerant varieties where available.",
+        "Synchronize planting dates with neighboring farms to create a 'clean' break in host availability.",
+        "Avoid continuous rice cropping without a fallow period in high-incidence areas."
+      ],
+      "chemical_prevention": []
+    },
+    "sugarcane_healthy": {
+      "aliases": [],
+      "name": "Healthy",
+      "type": "No disease detected",
+      "symptoms": [
+        "No visible disease or pest symptoms."
+      ],
+      "treatment_steps": [
+        "No treatment needed. Continue routine monitoring (roughly weekly) so any new symptoms are caught early.",
+        "Maintain balanced fertilization and irrigation scheduling appropriate for your growth stage."
+      ],
+      "prevention": [
+        "Keep scouting regularly, since early detection is the biggest factor in successful disease/pest management.",
+        "Maintain field sanitation (clean equipment, certified planting material) to keep disease pressure low."
+      ],
+      "chemical_prevention": []
+    },
+    "sugarcane_mosaic": {
+      "aliases": [],
+      "name": "Mosaic",
+      "type": "Viral disease (aphid-transmitted)",
+      "symptoms": [
+        "Mottled light-green and dark-green patches on leaves (a mosaic pattern)",
+        "Most visible on younger, actively growing leaves",
+        "Stunted growth and reduced stalk/sugar yield in heavily infected plants"
+      ],
+      "treatment_steps": [
+        "There is no curative treatment for a virus -- management focuses on removing infected plants and controlling the aphid vector.",
+        "Rogue out and destroy clearly symptomatic clumps to reduce the source of virus for aphids to spread further.",
+        "If aphid populations are high, apply a labeled insecticide targeted at the vector, since aphids are what carry the virus between plants."
+      ],
+      "prevention": [
+        "Use certified, virus-indexed (virus-free) seed cane rather than setts taken from unverified stalks.",
+        "Plant mosaic-resistant/tolerant varieties where available.",
+        "Avoid propagating planting material from any stalk showing mosaic symptoms."
+      ],
+      "chemical_prevention": []
+    },
+    "sugarcane_red_rot": {
+      "aliases": [],
+      "name": "Red Rot",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Reddish discoloration inside the stalk with white cross-bands when cut open",
+        "Withering and drying of leaves, often starting with the top leaves",
+        "Sour, alcoholic smell from infected, rotting stalks"
+      ],
+      "treatment_steps": [
+        "Rogue out and destroy (burn, don't compost) severely infected clumps to reduce disease spread within the field.",
+        "Avoid using seed cane (setts) from infected fields for future planting -- this disease spreads heavily through infected planting material.",
+        "Improve field drainage, since waterlogging increases red rot severity.",
+        "Where infection is caught very early, a fungicidal sett (seed piece) treatment before planting can help reduce transmission in future crops."
+      ],
+      "prevention": [
+        "Plant certified, disease-free sett material, ideally from a resistant variety.",
+        "Rotate out of sugarcane for a season in fields with a history of severe red rot.",
+        "Avoid mechanical injury to stalks (from cultivation equipment, rodents) which creates entry points for the fungus."
+      ],
+      "chemical_prevention": []
+    },
+    "sugarcane_red_rust": {
+      "aliases": [],
+      "name": "Red Rust",
+      "type": "Fungal disease (rust)",
+      "symptoms": [
+        "Small, elongated orange-to-reddish-brown pustules, mainly on the leaf underside",
+        "Pustules rupture the leaf surface, releasing rust-colored spores that rub off on your hand",
+        "Heavy infection causes premature yellowing and drying of leaves, reducing photosynthesis"
+      ],
+      "treatment_steps": [
+        "Remove and destroy severely infected leaves/trash to reduce spore load in the field.",
+        "Apply a labeled triazole or strobilurin fungicide if pustules are widespread and warm, humid weather is likely to keep favoring spread.",
+        "Avoid dense planting and excess nitrogen, which keep the canopy humid and favor rust development."
+      ],
+      "prevention": [
+        "Plant rust-resistant varieties where available -- this is the most effective long-term control.",
+        "Ensure adequate row spacing for airflow through the canopy.",
+        "Maintain balanced fertilization rather than heavy nitrogen alone."
+      ],
+      "chemical_prevention": []
+    },
+    "sugarcane_yellow_rust": {
+      "aliases": [],
+      "name": "Yellow Rust",
+      "type": "Fungal disease (rust)",
+      "symptoms": [
+        "Small yellow-to-orange pustules on leaves, often clustered in streaks",
+        "Most damaging on younger leaves under warm, humid conditions",
+        "Premature yellowing and drying of heavily infected leaves"
+      ],
+      "treatment_steps": [
+        "Remove and destroy heavily infected leaves where practical.",
+        "Apply a labeled triazole or strobilurin fungicide if pustules are widespread and conditions remain favorable for spread.",
+        "Improve field drainage and avoid waterlogging, which stresses the crop and worsens disease severity."
+      ],
+      "prevention": [
+        "Plant rust-resistant varieties where available.",
+        "Maintain balanced fertilization; avoid excess nitrogen.",
+        "Avoid dense planting that keeps the canopy humid."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_aphid": {
+      "aliases": [],
+      "name": "Aphid infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Clusters of small green/black insects on leaves, stems, and ear heads",
+        "Curled, yellowing, or sticky (honeydew-covered) leaves",
+        "Sooty mould growing on honeydew residue"
+      ],
+      "treatment_steps": [
+        "Scout fields weekly from tillering through grain-fill; check the underside of leaves and ear heads.",
+        "Encourage natural predators (ladybird beetles, lacewings, parasitic wasps) by avoiding broad-spectrum insecticide sprays unless the economic threshold is exceeded.",
+        "If aphid counts exceed your region's action threshold, apply a labeled aphicide (e.g. a pyrethroid or neonicotinoid) at the recommended rate, ideally targeting early infestation.",
+        "Rotate insecticide modes of action between sprays to slow resistance buildup.",
+        "Remove volunteer wheat and grassy weeds near fields, which host aphids between seasons."
+      ],
+      "prevention": [
+        "Avoid excessive nitrogen fertilization, which promotes lush growth aphids favor.",
+        "Plant early where feasible so the crop outgrows peak aphid pressure.",
+        "Use aphid-tolerant varieties if available locally."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_black_rust": {
+      "aliases": [],
+      "name": "Black (Stem) Rust",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Elongated, reddish-brown to black pustules on stems, leaves, and leaf sheaths",
+        "Pustules rupture the epidermis and can be felt as raised, rough patches",
+        "Lodging (stem breakage) in severe infections"
+      ],
+      "treatment_steps": [
+        "Remove and destroy volunteer wheat and barberry (the alternate host) near fields where possible.",
+        "Apply a triazole or strobilurin-class foliar fungicide at first sign of pustules, and repeat per label interval if conditions stay warm and humid.",
+        "Prioritize spraying if disease is detected before flag-leaf emergence, since stem rust can cause major yield loss if it reaches the stem/head stage untreated.",
+        "Avoid dense planting and excess nitrogen, which increase canopy humidity."
+      ],
+      "prevention": [
+        "Plant resistant/tolerant wheat varieties recommended for your region.",
+        "Practice crop rotation with non-cereal crops.",
+        "Monitor regional rust forecasts/alerts if your agriculture department publishes them."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_brown_rust": {
+      "aliases": [],
+      "name": "Brown (Leaf) Rust",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Small, round to oval orange-brown pustules scattered on the upper leaf surface",
+        "Pustules are smaller and more randomly scattered than yellow rust's striped pattern",
+        "Premature yellowing and drying of leaves in heavy infections"
+      ],
+      "treatment_steps": [
+        "Scout regularly from stem elongation onward, especially in humid, mild weather (15-22°C).",
+        "Apply a triazole (e.g. propiconazole/tebuconazole-class) or strobilurin fungicide once pustules are found on the upper leaves, particularly if the flag leaf is still healthy and worth protecting.",
+        "A second spray may be needed 2-3 weeks later if conditions remain favorable for the fungus.",
+        "Destroy volunteer wheat plants that can carry the fungus between seasons."
+      ],
+      "prevention": [
+        "Choose leaf-rust resistant varieties where available.",
+        "Avoid late/very dense sowing which extends the favorable infection window."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_flag_smut": {
+      "aliases": [],
+      "name": "Flag Smut",
+      "type": "Fungal (soil/seed-borne) disease",
+      "symptoms": [
+        "Leaves show long, narrow, black/grey streaks running parallel to the veins",
+        "Streaks rupture to release black powdery spore masses",
+        "Twisted, stunted plants that often fail to produce a normal head"
+      ],
+      "treatment_steps": [
+        "Remove and destroy infected plants where feasible to reduce soil spore load.",
+        "Treat seed with a systemic fungicide seed treatment before sowing in future seasons -- this is the primary control point since the fungus is seed- and soil-borne.",
+        "Avoid using seed saved from an infected field."
+      ],
+      "prevention": [
+        "Rotate out of wheat for 2-3 years in fields with a history of flag smut.",
+        "Plant resistant varieties where available."
+      ],
+      "chemical_prevention": [
+        "Use certified, fungicide-treated seed."
+      ]
+    },
+    "wheat_healthy": {
+      "aliases": [],
+      "name": "Healthy",
+      "type": "No disease detected",
+      "symptoms": [
+        "No visible disease or pest symptoms."
+      ],
+      "treatment_steps": [
+        "No treatment needed. Continue routine scouting through stem elongation, flowering, and grain fill.",
+        "Maintain your regular fertility and irrigation program."
+      ],
+      "prevention": [
+        "Keep monitoring for early signs of common wheat rusts, mildew, and aphid/mite pressure."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_leaf_blight": {
+      "aliases": [],
+      "name": "Leaf Blight",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Irregular brown-to-tan lesions on leaves, often with yellow margins",
+        "Lesions may coalesce, causing large areas of leaf death",
+        "Reduced grain fill from loss of photosynthetic leaf area"
+      ],
+      "treatment_steps": [
+        "Remove and destroy infected crop debris after harvest rather than leaving it on the soil surface.",
+        "Apply a broad-spectrum foliar fungicide (triazole or strobilurin class) at early symptom onset, especially at flag-leaf stage when protecting the top leaves matters most.",
+        "Improve field drainage and avoid overhead irrigation late in the day, since prolonged leaf wetness favors the fungus."
+      ],
+      "prevention": [
+        "Rotate with non-cereal crops for at least one season.",
+        "Use certified, disease-free seed and resistant varieties where available.",
+        "Avoid excess nitrogen which creates a dense, humid canopy."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_mite": {
+      "aliases": [],
+      "name": "Mite infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Fine stippling or silvery/bronze discoloration on leaves",
+        "Leaves may curl or dry out under heavy infestation",
+        "Tiny moving specks visible on leaf undersides with a hand lens"
+      ],
+      "treatment_steps": [
+        "Confirm mites (not another cause of stippling) with a hand lens or by shaking leaves over white paper.",
+        "Encourage predatory mites and insects by minimizing unnecessary insecticide use, which can flare mite populations by killing natural enemies.",
+        "If populations are heavy, apply a labeled miticide; note that many general insecticides do NOT control mites effectively.",
+        "Manage field-edge grassy weeds that can harbor mites between seasons."
+      ],
+      "prevention": [
+        "Avoid moisture stress in the crop, since drought-stressed wheat is more susceptible to mite buildup.",
+        "Monitor closely during hot, dry spells when mite reproduction accelerates."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_powdery_mildew": {
+      "aliases": [],
+      "name": "Powdery Mildew",
+      "type": "Fungal disease",
+      "symptoms": [
+        "White to greyish powdery fungal growth on leaves, stems, and sometimes ear heads",
+        "Yellowing and premature death of affected leaves",
+        "Most common in dense canopies with poor air circulation"
+      ],
+      "treatment_steps": [
+        "Improve canopy airflow by avoiding overly dense seeding rates.",
+        "Apply a triazole or specific powdery-mildew-targeted fungicide once white patches are observed, particularly before flag-leaf infection.",
+        "Reduce nitrogen top-dressing if the canopy is unusually lush and dense."
+      ],
+      "prevention": [
+        "Plant resistant varieties where available -- powdery mildew resistance genes are common in modern wheat breeding.",
+        "Avoid continuous wheat-on-wheat cropping in high-pressure fields."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_scab": {
+      "aliases": [],
+      "name": "Scab / Fusarium Head Blight",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Bleached, tan spikelets on an otherwise green head (premature ripening in patches)",
+        "Pink or orange fungal growth at the base of infected spikelets in humid weather",
+        "Shriveled, discolored ('tombstone') kernels; potential mycotoxin (DON) contamination"
+      ],
+      "treatment_steps": [
+        "Apply a triazole fungicide labeled for Fusarium head blight timed at flowering (anthesis) -- this is the critical, narrow window for effective control; sprays before or well after flowering are far less effective.",
+        "Because scab-affected grain can carry mycotoxins, segregate and test harvested grain before it enters food/feed channels if infection was significant.",
+        "Rotate away from wheat/maize and manage residue, since the fungus survives on cereal stubble."
+      ],
+      "prevention": [
+        "Use scab-tolerant varieties where available.",
+        "Avoid planting wheat directly into maize or wheat stubble without tillage/residue management.",
+        "Monitor regional scab risk forecasts around flowering time if available."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_stem_fly": {
+      "aliases": [],
+      "name": "Stem Fly infestation",
+      "type": "Pest",
+      "symptoms": [
+        "Dead central shoot ('deadheart') that pulls out easily in young plants",
+        "White, chaffy, empty ear heads ('whiteheads') at later growth stages",
+        "Small maggots may be found inside affected stems"
+      ],
+      "treatment_steps": [
+        "Remove and destroy affected tillers (deadhearts/whiteheads) to reduce carryover of larvae.",
+        "If infestation is detected early (seedling stage), a labeled systemic insecticide seed treatment or early foliar spray can reduce damage.",
+        "Time sowing to avoid the fly's peak egg-laying period in your region if local extension guidance provides this window."
+      ],
+      "prevention": [
+        "Avoid very early or staggered sowing dates that overlap with fly activity peaks.",
+        "Destroy volunteer wheat and grassy weed hosts after harvest."
+      ],
+      "chemical_prevention": []
+    },
+    "wheat_yellow_rust": {
+      "aliases": [],
+      "name": "Yellow (Stripe) Rust",
+      "type": "Fungal disease",
+      "symptoms": [
+        "Bright yellow-orange pustules arranged in narrow stripes along the leaf veins",
+        "Stripes are a key distinguishing feature versus the scattered pustules of brown/black rust",
+        "Severe infection causes leaf yellowing, drying, and yield loss"
+      ],
+      "treatment_steps": [
+        "Scout fields regularly in cool, humid weather (10-15°C is highly favorable for this fungus).",
+        "Apply a triazole or strobilurin fungicide as soon as stripe symptoms are confirmed, prioritizing protection of the flag leaf.",
+        "A follow-up spray may be needed if cool, wet weather persists.",
+        "Destroy volunteer wheat that can carry the pathogen between seasons."
+      ],
+      "prevention": [
+        "Plant yellow-rust resistant varieties -- resistance can break down over time as new pathogen races emerge, so check current regional recommendations.",
+        "Avoid very early sowing in high-risk zones."
+      ],
+      "chemical_prevention": []
+    }
+  }
+}

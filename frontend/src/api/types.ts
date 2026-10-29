@@ -143,12 +143,26 @@ export interface CropPrediction {
   confidence: number
 }
 
+/** What to look for and how to prevent it; treatment steps stay empty until an agronomist reviews the guide. */
+export interface CropGuidance {
+  name: string
+  type: string
+  symptoms: string[]
+  prevention: string[]
+  treatment_steps: string[]
+  reviewed: boolean
+  version: string
+  source: string
+}
+
 export interface CropClassificationResult {
   predictions: CropPrediction[]
   needs_expert_review: boolean
   model: string
   /** False until the model's confidence is calibrated: its percentages are rough. */
   calibrated: boolean
+  /** For the most likely class; null when there is no guidance for it yet. */
+  guidance: CropGuidance | null
 }
 
 export interface HazardBand {
