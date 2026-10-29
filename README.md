@@ -1,0 +1,108 @@
+# Climate Smart Agriculture Portal
+
+A map-first portal for Pakistan's climate smart agriculture data, built for disaster management stakeholders.
+
+## Project structure
+
+- `backend/csa_portal/` - FastAPI application package.
+- `backend/scripts/` - repeatable data preparation and development scripts.
+- `backend/tests/` - backend unit and integration tests.
+- `frontend/src/` - React application.
+- `frontend/e2e/` - Playwright browser tests.
+- `data/` - raw source datasets; large raster sources are intentionally untracked.
+- `artifacts/analysis/` - notebooks and generated research outputs, not runtime assets.
+- `docs/` - architecture, plans, and contributor documentation.
+
+## Development
+
+Requires [uv](https://docs.astral.sh/uv/) and Node 22.12 or later.
+
+On Windows, double-click `start-portal.cmd`. It installs anything missing, starts the backend and frontend, and opens the portal. If the portal is already running it just opens it. Close the window to stop the portal.
+
+Or by hand:
+
+    uv sync
+    npm ci
+    npm --prefix frontend ci
+    npm run dev
+
+For crop-classification inference, install the optional ML runtime with `uv sync --group ml`. The deployment package is stored at `backend/models/crop-classification/improved-002`; `CSA_CROP_MODEL_DIR` can override it when testing another model.
+
+The portal opens in your browser. The backend runs on port 9988 and the frontend on 9080. The background map needs internet access.
+
+Copy `.env.example` to `.env` only when local overrides or PMD credentials are needed. Never commit `.env`.
+
+## Local AI portal guide
+
+The portal includes a grounded AI guide for overview, a map story tour with animated fly-to chapters, and question-answering flows. It connects from the FastAPI backend to LM Studio's OpenAI-compatible API; browsers never connect to LM Studio directly.
+
+1. Install LM Studio and download/load a Qwen instruct model.
+2. In LM Studio, start the local server on `127.0.0.1:1234`.
+3. Copy `.env.example` to `.env`. The configured model is `qwen/qwen3.8-27b`; change `CSA_LM_STUDIO_MODEL` only if LM Studio displays a different identifier.
+4. Restart the portal and open **AI portal guide** from the bottom of the left rail.
+
+Overview and tour content work without the model server. Chat returns a clear unavailable message until LM Studio and the configured Qwen model are running. Keep LM Studio bound to loopback unless the model server is separately authenticated and protected.
+
+## Quality checks
+
+Run the fast production-readiness checks:
+
+    npm run check
+
+Run the complete suite, including Playwright:
+
+    npm test
+
+This runs the backend tests (pytest), the frontend logic tests (Vitest) and the browser tests (Playwright). The first time, install the test browser with `npm --prefix frontend exec playwright install chromium`.
+
+## Evaluating the assistant
+
+The assistant is scored on two datasets in `backend/evaluations/`: `golden` (questions about each section, including ones about a different section, place or year than the one on screen) and `adversarial` (prompt injection, requests for official warnings, invented figures, off-topic requests).
+
+- `npm run eval:live` asks the configured LM Studio model every case three times, writes `docs/evaluations/assistant-live-baseline.md`, and keeps the run in the AI store (`CSA_AI_DB`).
+- `npm run eval:recorded` replays the recorded model turns (`backend/evaluations/cassettes/`) through the real tools and scorers, and fails when a dataset's pass rate falls below `backend/evaluations/baseline.json`. `npm run check` and CI run it.
+
+CI has no model, so it only replays recorded turns: it catches changes to tools, facts, the agent loop and the scorers, not changes in how the model answers. After changing a prompt or a model, run `uv run python backend/scripts/evaluate.py --mode live --record`, then `uv run python backend/scripts/evaluate.py --write-baseline backend/evaluations/baseline.json`, and commit the new cassettes and baseline with the change.
+
+After changing a case's view or expected tools, run `uv run python backend/scripts/fill_eval_facts.py` to refresh the numbers its answer may quote.
+
+## Production build
+
+    npm run build
+    npm run start:api
+    npm run start:web
+
+The API command binds to port 9988 and the preview server to port 9080, both on all network interfaces (`0.0.0.0`), so other machines on the same network can open the portal at `http://<this-machine's-IP>:9080`. The preview server proxies `/api` according to `CSA_BACKEND_URL` at build/server startup. `npm run dev` binds the same way. On Windows, allow inbound access to Node.js/Python the first time Windows Firewall asks. For a public deployment, place both services behind a reverse proxy with TLS and route `/api` to the FastAPI service.
+
+`backend/catalogue.json` describes every section and layer; the frontend builds its interface from it. `backend/boundaries/` and `backend/data/` are generated by `uv run python backend/scripts/prepare_data.py`. Re-run it after changing source data, then restart the API.
+
+## Land-cover rasters
+
+The four land-cover rasters in `data/geospatial/rasters` are served by [TiTiler](https://developmentseed.org/titiler/), which runs inside the backend. They must first be converted to Cloud-Optimized GeoTIFFs:
+
+    uv run python backend/scripts/prepare_rasters.py
+
+This writes `backend/rasters/` (not kept in git; about 1 GB in total) and takes a long time for the 10 m files. A layer shows as "Data not loaded yet" until its file is converted. Restart the portal after converting.
+
+## Settings
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CSA_CATALOGUE_PATH` | `backend/catalogue.json` | Catalogue file |
+| `CSA_BOUNDARIES_DIR` | `backend/boundaries` | Boundary GeoJSON folder |
+| `CSA_BASEMAP_STYLE_URL` | OpenFreeMap Positron | Background map style |
+| `CSA_DATA_DIR` | `backend/data` | Prepared section data |
+| `CSA_RASTERS_DIR` | `backend/rasters` | Converted land-cover rasters |
+| `CSA_FORECAST_LAYERS_PATH` | `backend/forecast_layers.json` | Forecast layer registry |
+| `CSA_FORECAST_DIR` | `backend/forecast` | Forecast cache |
+| `CSA_CROP_MODEL_DIR` | `backend/models/crop-classification/improved-002` | Crop-classification deployment package (`model.ts`, `label_map.json`, `portal_inference.py`) |
+| `CSA_HAZARD_PRODUCTS` | `backend/hazard_products.json` | Hazard guidance products (thresholds, units, severity bands) |
+| `CSA_HAZARD_MODELS` | `backend/hazard_models.json` | Forecast-derived hazard models (rolling windows over real values, e.g. frost degree-hours) |
+| `CSA_LM_STUDIO_URL` | `http://127.0.0.1:1234` | LM Studio OpenAI-compatible server |
+| `CSA_LM_STUDIO_MODEL` | `qwen/qwen3.8-27b` | Exact loaded Qwen model identifier |
+| `CSA_LM_STUDIO_API_KEY` | empty | Optional LM Studio API key |
+| `CSA_LM_STUDIO_TIMEOUT` | `60` | Local generation timeout in seconds |
+| `CSA_PMD_URL` | empty | PMD service URL |
+| `CSA_PMD_USER` | empty | PMD username |
+| `CSA_PMD_PASS` | empty | PMD password |
+| `CSA_PMD_CERT_SHA256` | empty | Trusted PMD certificate fingerprint |

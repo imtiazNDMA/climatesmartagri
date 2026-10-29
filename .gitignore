@@ -1,10 +1,70 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 build/
 dist/
 wheels/
-*.egg-info
+*.egg-info/
 
 # Virtual environments
-.venv
+.venv/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+*.log
+
+# Converted rasters (large; rebuilt by backend/scripts/prepare_rasters.py)
+backend/rasters/
+
+# Credentials for outside services
+.env
+.env.*
+!.env.example
+\#*PMD Monitor*.txt
+
+# Forecast rasters fetched from PMD on demand (a cache; safe to delete)
+backend/forecast/
+
+# The AI store: traces and evaluation results (CSA_AI_DB), with SQLite's WAL files.
+backend/ai.db*
+
+# Browser automation logs
+.playwright-mcp/
+
+# Local editor and agent state
+.idea/
+.remember/
+.superpowers/
+.DS_Store
+Thumbs.db
+*.sw?
+
+# New raw vector deliveries require review before they are committed.
+data/geospatial/vectors/Join_Irrigated.*
+data/geospatial/vectors/sajid(2oct)/
+
+# Source rasters and their archives: several gigabytes, far over GitHub's 100 MB file limit.
+# They stay on disk here and are read by backend/scripts/prepare_rasters.py.
+data/geospatial/rasters/
+data/archives/
+
+# Separate AI project (crop-disease datasets, models, slides): about 2.4 GB, kept on disk only.
+/Aamir Ai  Project/
+
+# Cached source items for the annual land-classification statistics (large; refetched by backend/scripts/prepare_land_cover_stats.py)
+backend/cache/
+
+# Service-account keys and credentials: never commit them (this repo is public).
+.service_account.txt
+csa_earthengine_key.json
+*service_account*.json
+
+# Rebuilt by ml/crop-disease/package_model.py; 61 MB, too large for git.
+backend/models/crop-classification/five-crop-001/model.ts

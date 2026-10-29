@@ -1,0 +1,1635 @@
+{
+  "bbox": [
+    55,
+    18,
+    85,
+    42
+  ],
+  "models": [
+    {
+      "id": "cma-gfs",
+      "label": "CMA-GFS",
+      "source": "GRAPES"
+    },
+    {
+      "id": "cma-gowfs",
+      "label": "CMA-GOWFS",
+      "source": "GDFS"
+    },
+    {
+      "id": "pmd-icon",
+      "label": "PMD-ICON",
+      "source": "ICON"
+    },
+    {
+      "id": "pmd-wrf",
+      "label": "PMD-WRF",
+      "source": "WRFPRS"
+    },
+    {
+      "id": "ecmwf-ifs",
+      "label": "ECMWF-IFS",
+      "source": "D1D"
+    },
+    {
+      "id": "fengqing",
+      "label": "FENGQING",
+      "source": "NMCFENGQING"
+    },
+    {
+      "id": "pangu",
+      "label": "PANGU",
+      "source": "NMCPANGU"
+    },
+    {
+      "id": "fengshun",
+      "label": "FENGSHUN",
+      "source": "FENGSHUN15"
+    }
+  ],
+  "groups": [
+    {
+      "id": "precipitation",
+      "title": "Precipitation"
+    },
+    {
+      "id": "dynamics",
+      "title": "Wind and dynamics"
+    },
+    {
+      "id": "thermodynamics",
+      "title": "Temperature and stability"
+    },
+    {
+      "id": "moisture",
+      "title": "Moisture and cloud"
+    },
+    {
+      "id": "pressure",
+      "title": "Pressure"
+    },
+    {
+      "id": "outlook",
+      "title": "Climate outlook (FENGSHUN)"
+    }
+  ],
+  "layers": [
+    {
+      "id": "rain-3h",
+      "title": "3-hour precipitation",
+      "group": "precipitation",
+      "code": "HOURTPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 25,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        2.5,
+        5,
+        10,
+        25
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rain-6h",
+      "title": "6-hour precipitation",
+      "group": "precipitation",
+      "code": "SIXTPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 50,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        10,
+        25,
+        50
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rain-12h",
+      "title": "12-hour precipitation",
+      "group": "precipitation",
+      "code": "TWELVETPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 75,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        10,
+        25,
+        75
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rain-24h",
+      "title": "24-hour precipitation",
+      "group": "precipitation",
+      "code": "DAYTPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 150,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        15,
+        50,
+        150
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rain-7d",
+      "title": "7-day precipitation",
+      "group": "precipitation",
+      "code": "7DAYSTPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 300,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        5,
+        25,
+        50,
+        100,
+        300
+      ],
+      "levels": {
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rain-total",
+      "title": "Precipitation since the run began",
+      "group": "precipitation",
+      "code": "TPE",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 300,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        5,
+        25,
+        50,
+        100,
+        300
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rainfall-6h",
+      "title": "6-hour rainfall",
+      "group": "precipitation",
+      "code": "R06",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 50,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        10,
+        25,
+        50
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "snowfall-6h",
+      "title": "6-hour snowfall",
+      "group": "precipitation",
+      "code": "S06",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 25,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        0.5,
+        1,
+        2.5,
+        5,
+        25
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "sleet-6h",
+      "title": "6-hour sleet",
+      "group": "precipitation",
+      "code": "RS06",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 25,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        0.5,
+        1,
+        2.5,
+        5,
+        25
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rainfall-12h",
+      "title": "12-hour rainfall",
+      "group": "precipitation",
+      "code": "R12",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 75,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        10,
+        25,
+        75
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "snowfall-12h",
+      "title": "12-hour snowfall",
+      "group": "precipitation",
+      "code": "S12",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 40,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        0.5,
+        1,
+        5,
+        10,
+        40
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "sleet-12h",
+      "title": "12-hour sleet",
+      "group": "precipitation",
+      "code": "RS12",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 40,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        0.5,
+        1,
+        5,
+        10,
+        40
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "rainfall-24h",
+      "title": "24-hour rainfall",
+      "group": "precipitation",
+      "code": "R24",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 150,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        5,
+        15,
+        50,
+        150
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "snowfall-24h",
+      "title": "24-hour snowfall",
+      "group": "precipitation",
+      "code": "S24",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 50,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        2.5,
+        5,
+        10,
+        50
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "sleet-24h",
+      "title": "24-hour sleet",
+      "group": "precipitation",
+      "code": "RS24",
+      "unit": "mm",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 50,
+      "hide_below": 0.1,
+      "stops": [
+        0,
+        1,
+        2.5,
+        5,
+        10,
+        50
+      ],
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "precipitation-type",
+      "title": "Precipitation type",
+      "group": "precipitation",
+      "code": "PTYPE",
+      "unit": "WMO type code",
+      "colours": [
+        "#d4e4f4",
+        "#b3d1ea",
+        "#9ecae1",
+        "#6baed6",
+        "#3182bd",
+        "#08519c"
+      ],
+      "min": 0,
+      "max": 12,
+      "hide_below": 0.5,
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "wind",
+      "title": "Wind speed",
+      "group": "dynamics",
+      "code": "UV",
+      "unit": "m/s",
+      "colours": [
+        "#f7fcf0",
+        "#ccebc5",
+        "#7bccc4",
+        "#2b8cbe",
+        "#084081",
+        "#4d004b"
+      ],
+      "min": 0,
+      "max": 20,
+      "wind": true,
+      "ranges": {
+        "925": {
+          "min": 0,
+          "max": 25
+        },
+        "850": {
+          "min": 0,
+          "max": 25
+        },
+        "700": {
+          "min": 0,
+          "max": 35
+        },
+        "500": {
+          "min": 0,
+          "max": 45
+        },
+        "200": {
+          "min": 0,
+          "max": 70
+        }
+      },
+      "ignore_above": 200,
+      "levels": {
+        "cma-gfs": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "ecmwf-ifs": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "fengqing": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "pangu": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ]
+      }
+    },
+    {
+      "id": "geopotential-height",
+      "title": "Geopotential height",
+      "group": "dynamics",
+      "code": "GPH",
+      "unit": "gpm",
+      "colours": [
+        "#3b4cc0",
+        "#8db0fe",
+        "#dddddd",
+        "#f4987a",
+        "#b40426"
+      ],
+      "min": 5400,
+      "max": 6000,
+      "ranges": {
+        "200": {
+          "min": 11800,
+          "max": 12600
+        },
+        "500": {
+          "min": 5400,
+          "max": 6000
+        },
+        "700": {
+          "min": 2950,
+          "max": 3300
+        },
+        "850": {
+          "min": 1350,
+          "max": 1650
+        },
+        "925": {
+          "min": 600,
+          "max": 950
+        }
+      },
+      "levels": {
+        "cma-gfs": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "pmd-wrf": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "ecmwf-ifs": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "fengqing": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "pangu": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ]
+      }
+    },
+    {
+      "id": "vertical-velocity",
+      "title": "Vertical velocity",
+      "group": "dynamics",
+      "code": "VVM",
+      "unit": "Pa/s",
+      "colours": [
+        "#2166ac",
+        "#67a9cf",
+        "#f7f7f7",
+        "#ef8a62",
+        "#b2182b"
+      ],
+      "min": -4,
+      "max": 4,
+      "levels": {
+        "pmd-wrf": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "ecmwf-ifs": [
+          700,
+          850
+        ]
+      }
+    },
+    {
+      "id": "max-wind-10m",
+      "title": "Maximum 10 m wind speed",
+      "group": "dynamics",
+      "code": "VMAX10M",
+      "unit": "m/s",
+      "colours": [
+        "#f7fcf0",
+        "#ccebc5",
+        "#7bccc4",
+        "#2b8cbe",
+        "#084081",
+        "#4d004b"
+      ],
+      "min": 0,
+      "max": 30,
+      "levels": {}
+    },
+    {
+      "id": "gust",
+      "title": "Wind gust",
+      "group": "dynamics",
+      "code": "GUST",
+      "unit": "m/s",
+      "colours": [
+        "#f7fcf0",
+        "#ccebc5",
+        "#7bccc4",
+        "#2b8cbe",
+        "#084081",
+        "#4d004b"
+      ],
+      "min": 0,
+      "max": 35,
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "temperature",
+      "title": "Temperature",
+      "group": "thermodynamics",
+      "code": "TEM",
+      "unit": "°C",
+      "colours": [
+        "#313695",
+        "#4575b4",
+        "#abd9e9",
+        "#ffffbf",
+        "#fdae61",
+        "#d73027",
+        "#a50026"
+      ],
+      "min": -30,
+      "max": 50,
+      "ranges": {
+        "925": {
+          "min": -10,
+          "max": 40
+        },
+        "850": {
+          "min": -15,
+          "max": 35
+        },
+        "700": {
+          "min": -25,
+          "max": 20
+        },
+        "500": {
+          "min": -45,
+          "max": 0
+        },
+        "200": {
+          "min": -70,
+          "max": -40
+        }
+      },
+      "levels": {
+        "cma-gfs": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "ecmwf-ifs": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "fengqing": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "pangu": [
+          0,
+          200,
+          500,
+          700,
+          850,
+          925
+        ]
+      }
+    },
+    {
+      "id": "temperature-max",
+      "title": "Maximum 2 m temperature",
+      "group": "thermodynamics",
+      "code": "TMAX2M",
+      "unit": "°C",
+      "colours": [
+        "#313695",
+        "#4575b4",
+        "#abd9e9",
+        "#ffffbf",
+        "#fdae61",
+        "#d73027",
+        "#a50026"
+      ],
+      "min": -25,
+      "max": 50,
+      "levels": {
+        "cma-gowfs": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "temperature-min",
+      "title": "Minimum 2 m temperature",
+      "group": "thermodynamics",
+      "code": "TMIN2M",
+      "unit": "°C",
+      "colours": [
+        "#313695",
+        "#4575b4",
+        "#abd9e9",
+        "#ffffbf",
+        "#fdae61",
+        "#d73027",
+        "#a50026"
+      ],
+      "min": -30,
+      "max": 40,
+      "levels": {
+        "cma-gowfs": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "dew-point",
+      "title": "Dew point",
+      "group": "thermodynamics",
+      "code": "DPT",
+      "unit": "°C",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": -35,
+      "max": 30,
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "cape",
+      "title": "CAPE",
+      "group": "thermodynamics",
+      "code": "CAPE",
+      "unit": "J/kg",
+      "colours": [
+        "#ffffcc",
+        "#fed976",
+        "#fd8d3c",
+        "#e31a1c",
+        "#800026"
+      ],
+      "min": 0,
+      "max": 5000,
+      "hide_below": 50,
+      "stops": [
+        0,
+        250,
+        1000,
+        2500,
+        5000
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "temperature-change-24h",
+      "title": "24-hour temperature change",
+      "group": "thermodynamics",
+      "code": "TC24H",
+      "unit": "°C",
+      "colours": [
+        "#2166ac",
+        "#67a9cf",
+        "#f7f7f7",
+        "#ef8a62",
+        "#b2182b"
+      ],
+      "min": -8,
+      "max": 8,
+      "levels": {
+        "ecmwf-ifs": [
+          850
+        ],
+        "fengqing": [
+          850
+        ],
+        "pangu": [
+          850
+        ]
+      }
+    },
+    {
+      "id": "thickness",
+      "title": "Thickness",
+      "group": "thermodynamics",
+      "code": "THICK",
+      "unit": "dam",
+      "colours": [
+        "#313695",
+        "#4575b4",
+        "#abd9e9",
+        "#ffffbf",
+        "#fdae61",
+        "#d73027",
+        "#a50026"
+      ],
+      "min": 520,
+      "max": 600,
+      "model_ranges": {
+        "ecmwf-ifs": {
+          "min": 300,
+          "max": 500
+        }
+      },
+      "levels": {
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ],
+        "pangu": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "cin",
+      "title": "CIN",
+      "group": "thermodynamics",
+      "code": "CIN",
+      "unit": "J/kg",
+      "colours": [
+        "#ffffcc",
+        "#fed976",
+        "#fd8d3c",
+        "#e31a1c",
+        "#800026"
+      ],
+      "min": 0,
+      "max": 500,
+      "levels": {}
+    },
+    {
+      "id": "theta-se",
+      "title": "Theta-se",
+      "group": "thermodynamics",
+      "code": "EPOTEM",
+      "unit": "K",
+      "colours": [
+        "#313695",
+        "#4575b4",
+        "#abd9e9",
+        "#ffffbf",
+        "#fdae61",
+        "#d73027",
+        "#a50026"
+      ],
+      "min": 300,
+      "max": 380,
+      "levels": {}
+    },
+    {
+      "id": "relative-humidity",
+      "title": "Relative humidity",
+      "group": "moisture",
+      "code": "RHU",
+      "unit": "%",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": 0,
+      "max": 100,
+      "levels": {
+        "cma-gfs": [
+          0,
+          500,
+          700,
+          850
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "ecmwf-ifs": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ]
+      }
+    },
+    {
+      "id": "relative-humidity-max",
+      "title": "Maximum relative humidity",
+      "group": "moisture",
+      "code": "RHUMAX",
+      "unit": "%",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": 0,
+      "max": 100,
+      "levels": {
+        "cma-gowfs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "relative-humidity-min",
+      "title": "Minimum relative humidity",
+      "group": "moisture",
+      "code": "RHUMIN",
+      "unit": "%",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": 0,
+      "max": 100,
+      "levels": {
+        "cma-gowfs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "specific-humidity",
+      "title": "Specific humidity",
+      "group": "moisture",
+      "code": "SHU",
+      "unit": "g/kg",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f6e8c3",
+        "#c7eae5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": 0,
+      "max": 25,
+      "model_factors": {
+        "ecmwf-ifs": 1000
+      },
+      "ranges": {
+        "200": {
+          "min": 0,
+          "max": 0.1
+        },
+        "500": {
+          "min": 0,
+          "max": 5
+        },
+        "700": {
+          "min": 0,
+          "max": 12
+        },
+        "850": {
+          "min": 0,
+          "max": 18
+        },
+        "925": {
+          "min": 0,
+          "max": 20
+        }
+      },
+      "levels": {
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          200,
+          500,
+          700,
+          850,
+          925
+        ],
+        "fengqing": [
+          500,
+          700,
+          850,
+          925
+        ],
+        "pangu": [
+          500,
+          700,
+          850,
+          925
+        ]
+      }
+    },
+    {
+      "id": "cloud-total",
+      "title": "Total cloud cover",
+      "group": "moisture",
+      "code": "TCC",
+      "unit": "%",
+      "colours": [
+        "#e6e6e6",
+        "#bdbdbd",
+        "#8c8c8c",
+        "#525252"
+      ],
+      "min": 0,
+      "max": 100,
+      "hide_below": 5,
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "cloud-high",
+      "title": "High cloud cover",
+      "group": "moisture",
+      "code": "HCC",
+      "unit": "%",
+      "colours": [
+        "#e6e6e6",
+        "#bdbdbd",
+        "#8c8c8c",
+        "#525252"
+      ],
+      "min": 0,
+      "max": 100,
+      "hide_below": 5,
+      "levels": {
+        "cma-gfs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "cloud-low",
+      "title": "Low cloud cover",
+      "group": "moisture",
+      "code": "LCC",
+      "unit": "%",
+      "colours": [
+        "#e6e6e6",
+        "#bdbdbd",
+        "#8c8c8c",
+        "#525252"
+      ],
+      "min": 0,
+      "max": 100,
+      "hide_below": 5,
+      "model_factors": {
+        "pmd-wrf": 100
+      },
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "visibility",
+      "title": "Visibility",
+      "group": "moisture",
+      "code": "VIS",
+      "unit": "km",
+      "colours": [
+        "#4d004b",
+        "#88419d",
+        "#8c96c6",
+        "#bfd3e6",
+        "#f7fcfd"
+      ],
+      "min": 0,
+      "max": 30,
+      "stops": [
+        0,
+        1,
+        5,
+        10,
+        30
+      ],
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "precipitable-water",
+      "title": "Precipitable water",
+      "group": "moisture",
+      "code": "PWAT",
+      "unit": "mm",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 70,
+      "levels": {
+        "cma-gfs": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "vapour-transport",
+      "title": "Integrated vapour transport",
+      "group": "moisture",
+      "code": "IVT",
+      "unit": "",
+      "colours": [
+        "#cfe1f2",
+        "#9ecae1",
+        "#4292c6",
+        "#2171b5",
+        "#08306b",
+        "#54278f"
+      ],
+      "min": 0,
+      "max": 100,
+      "levels": {}
+    },
+    {
+      "id": "sea-level-pressure",
+      "title": "Mean sea level pressure",
+      "group": "pressure",
+      "code": "SSP",
+      "unit": "hPa",
+      "colours": [
+        "#3b4cc0",
+        "#8db0fe",
+        "#dddddd",
+        "#f4987a",
+        "#b40426"
+      ],
+      "min": 985,
+      "max": 1045,
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "pmd-icon": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ],
+        "ecmwf-ifs": [
+          0
+        ],
+        "fengqing": [
+          0
+        ],
+        "pangu": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "surface-pressure",
+      "title": "Surface pressure",
+      "group": "pressure",
+      "code": "PRS",
+      "unit": "hPa",
+      "colours": [
+        "#3b4cc0",
+        "#8db0fe",
+        "#dddddd",
+        "#f4987a",
+        "#b40426"
+      ],
+      "min": 400,
+      "max": 1040,
+      "levels": {
+        "cma-gfs": [
+          0
+        ],
+        "cma-gowfs": [
+          0
+        ],
+        "pmd-wrf": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "temperature-anomaly",
+      "title": "2 m temperature anomaly",
+      "group": "outlook",
+      "code": "T2M-ANOM",
+      "unit": "°C",
+      "colours": [
+        "#2166ac",
+        "#67a9cf",
+        "#f7f7f7",
+        "#ef8a62",
+        "#b2182b"
+      ],
+      "min": -3,
+      "max": 3,
+      "levels": {
+        "fengshun": [
+          2
+        ]
+      }
+    },
+    {
+      "id": "temperature-max-anomaly",
+      "title": "Maximum 2 m temperature anomaly",
+      "group": "outlook",
+      "code": "T2M-MAX-ANOM",
+      "unit": "°C",
+      "colours": [
+        "#2166ac",
+        "#67a9cf",
+        "#f7f7f7",
+        "#ef8a62",
+        "#b2182b"
+      ],
+      "min": -3,
+      "max": 3,
+      "levels": {
+        "fengshun": [
+          2
+        ]
+      }
+    },
+    {
+      "id": "temperature-min-anomaly",
+      "title": "Minimum 2 m temperature anomaly",
+      "group": "outlook",
+      "code": "T2M-MIN-ANOM",
+      "unit": "°C",
+      "colours": [
+        "#2166ac",
+        "#67a9cf",
+        "#f7f7f7",
+        "#ef8a62",
+        "#b2182b"
+      ],
+      "min": -3,
+      "max": 3,
+      "levels": {
+        "fengshun": [
+          2
+        ]
+      }
+    },
+    {
+      "id": "precipitation-anomaly",
+      "title": "Precipitation anomaly",
+      "group": "outlook",
+      "code": "TP-ANOM",
+      "unit": "mm/day",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f5f5f5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": -2,
+      "max": 2,
+      "levels": {
+        "fengshun": [
+          0
+        ]
+      }
+    },
+    {
+      "id": "precipitation-anomaly-percent",
+      "title": "Precipitation anomaly, percent of normal",
+      "group": "outlook",
+      "code": "TP-ANOM-PERCENT",
+      "unit": "%",
+      "colours": [
+        "#8c510a",
+        "#d8b365",
+        "#f5f5f5",
+        "#5ab4ac",
+        "#01665e"
+      ],
+      "min": -100,
+      "max": 300,
+      "stops": [
+        -100,
+        -50,
+        0,
+        100,
+        300
+      ],
+      "levels": {
+        "fengshun": [
+          0
+        ]
+      }
+    }
+  ]
+}

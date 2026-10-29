@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "337647064",
+        "name": "find_place",
+        "arguments": {
+          "name": "Punjab"
+        }
+      }
+    ],
+    "input_tokens": 3718,
+    "output_tokens": 81
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "618720243",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "p-punjab"
+        }
+      }
+    ],
+    "input_tokens": 3835,
+    "output_tokens": 103
+  },
+  {
+    "text": "According to the **Land Classification** section of the portal, in 2023 land classified as **crops** covered **60.3%** of Punjab's classified land — about **30.5 million acres**. The classification covers 100% of Punjab's land area (~50.6 million acres), so that share applies to the whole province.\n\nCrops was the most widespread land class in Punjab in both 2017 and 2023.",
+    "tool_calls": [],
+    "input_tokens": 15199,
+    "output_tokens": 247
+  }
+]

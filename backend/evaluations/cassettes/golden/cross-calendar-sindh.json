@@ -1,0 +1,36 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "885965031",
+        "name": "find_place",
+        "arguments": {
+          "name": "Sindh"
+        }
+      }
+    ],
+    "input_tokens": 1818,
+    "output_tokens": 67
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "844996538",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "p-sindh"
+        }
+      }
+    ],
+    "input_tokens": 1932,
+    "output_tokens": 45
+  },
+  {
+    "text": "In the **Climate‑smart crop calendar** section, wheat in **Sindh** is shown as:\n\n- **Traditional sowing window:** November–December (harvest Mar–Apr)\n- **Climate‑adjusted recommendation:** **November–early December** (harvest Mar–Apr)\n\nThe portal advises sowing **earlier** than the traditional window because warmer winter/spring conditions raise the risk of heat stress during grain filling, so delayed sowing should be avoided.\n\nNote: this is portal reference guidance, not an official warning or professional agronomic advice.",
+    "tool_calls": [],
+    "input_tokens": 3600,
+    "output_tokens": 255
+  }
+]

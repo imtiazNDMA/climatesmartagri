@@ -1,0 +1,1123 @@
+{
+ "places": {
+  "PK": {
+   "name": "Pakistan",
+   "level": "national",
+   "parent_id": null,
+   "equipped": 16725843,
+   "groundwater": 5172552.49,
+   "surface": 11553290.51,
+   "irrigated": 13378476,
+   "districts_reported": 112
+  },
+  "p-balochistan": {
+   "name": "Balochistan",
+   "level": "province",
+   "parent_id": "PK",
+   "equipped": 1173099,
+   "groundwater": 490000,
+   "surface": 683099,
+   "irrigated": 757077,
+   "districts_reported": 26
+  },
+  "p-gilgit-baltistan": {
+   "name": "Gilgit Baltistan",
+   "level": "province",
+   "parent_id": "PK",
+   "equipped": 90464,
+   "groundwater": 0,
+   "surface": 90464,
+   "irrigated": 90464,
+   "districts_reported": 5
+  },
+  "p-khyber-pakhtunkhwa": {
+   "name": "Khyber Pakhtunkhwa",
+   "level": "province",
+   "parent_id": "PK",
+   "equipped": 959691,
+   "groundwater": 168899.59,
+   "surface": 790791.41,
+   "irrigated": 959691,
+   "districts_reported": 30
+  },
+  "p-punjab": {
+   "name": "Punjab",
+   "level": "province",
+   "parent_id": "PK",
+   "equipped": 9133000,
+   "groundwater": 4293258.34,
+   "surface": 4839741.66,
+   "irrigated": 9133000,
+   "districts_reported": 35
+  },
+  "p-sindh": {
+   "name": "Sindh",
+   "level": "province",
+   "parent_id": "PK",
+   "equipped": 5369589,
+   "groundwater": 220394.56,
+   "surface": 5149194.44,
+   "irrigated": 2438244,
+   "districts_reported": 16
+  },
+  "d-balochistan-awaran": {
+   "name": "Awaran",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 61698.3,
+   "groundwater": 10204.3,
+   "surface": 51494,
+   "irrigated": 57932,
+   "districts_reported": 1
+  },
+  "d-balochistan-barkhan": {
+   "name": "Barkhan",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 26148.85,
+   "groundwater": 23703.85,
+   "surface": 2445,
+   "irrigated": 7192,
+   "districts_reported": 1
+  },
+  "d-balochistan-kachhi": {
+   "name": "Kachhi",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 28421.6,
+   "groundwater": 5921.6,
+   "surface": 22500,
+   "irrigated": 26236,
+   "districts_reported": 1
+  },
+  "d-balochistan-chagai": {
+   "name": "Chagai",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 20463.08,
+   "groundwater": 20063.08,
+   "surface": 400,
+   "irrigated": 13058,
+   "districts_reported": 1
+  },
+  "d-balochistan-dera-bugti": {
+   "name": "Dera Bugti",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 7715.72,
+   "groundwater": 6501.72,
+   "surface": 1214,
+   "irrigated": 588,
+   "districts_reported": 1
+  },
+  "d-balochistan-gwadar": {
+   "name": "Gwadar",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 323.34,
+   "groundwater": 323.34,
+   "surface": 0,
+   "irrigated": 204,
+   "districts_reported": 1
+  },
+  "d-balochistan-jaffarabad": {
+   "name": "Jaffarabad",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 238554.75,
+   "groundwater": 554.75,
+   "surface": 238000,
+   "irrigated": 189377,
+   "districts_reported": 1
+  },
+  "d-balochistan-jhal-magsi": {
+   "name": "Jhal Magsi",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 30043.22,
+   "groundwater": 3043.22,
+   "surface": 27000,
+   "irrigated": 28920,
+   "districts_reported": 1
+  },
+  "d-balochistan-kalat": {
+   "name": "Kalat",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 51248.18,
+   "groundwater": 51248.18,
+   "surface": 0,
+   "irrigated": 32333,
+   "districts_reported": 1
+  },
+  "d-balochistan-kech": {
+   "name": "Kech",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 55396.48,
+   "groundwater": 35396.48,
+   "surface": 20000,
+   "irrigated": 42332,
+   "districts_reported": 1
+  },
+  "d-balochistan-kharan": {
+   "name": "Kharan",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 8527.36,
+   "groundwater": 8527.36,
+   "surface": 0,
+   "irrigated": 5380,
+   "districts_reported": 1
+  },
+  "d-balochistan-khuzdar": {
+   "name": "Khuzdar",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 190342.66,
+   "groundwater": 51704.66,
+   "surface": 138638,
+   "irrigated": 0,
+   "districts_reported": 1
+  },
+  "d-balochistan-killa-abdullah": {
+   "name": "Killa Abdullah",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 26049.16,
+   "groundwater": 23523.16,
+   "surface": 2526,
+   "irrigated": 17367,
+   "districts_reported": 1
+  },
+  "d-balochistan-killa-saifullah": {
+   "name": "Killa Saifullah",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 32080.64,
+   "groundwater": 32080.64,
+   "surface": 0,
+   "irrigated": 20240,
+   "districts_reported": 1
+  },
+  "d-balochistan-kohlu": {
+   "name": "Kohlu",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 4897.69,
+   "groundwater": 4897.69,
+   "surface": 0,
+   "irrigated": 3090,
+   "districts_reported": 1
+  },
+  "d-balochistan-lasbela": {
+   "name": "Lasbela",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 16841.47,
+   "groundwater": 16341.47,
+   "surface": 500,
+   "irrigated": 10810,
+   "districts_reported": 1
+  },
+  "d-balochistan-loralai": {
+   "name": "Loralai",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 42935.95,
+   "groundwater": 41035.95,
+   "surface": 1900,
+   "irrigated": 27790,
+   "districts_reported": 1
+  },
+  "d-balochistan-mastung": {
+   "name": "Mastung",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 52468.64,
+   "groundwater": 52468.64,
+   "surface": 0,
+   "irrigated": 33103,
+   "districts_reported": 1
+  },
+  "d-balochistan-musakhel": {
+   "name": "Musakhel",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 5652.15,
+   "groundwater": 5652.15,
+   "surface": 0,
+   "irrigated": 3566,
+   "districts_reported": 1
+  },
+  "d-balochistan-nasirabad": {
+   "name": "Nasirabad",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 134313.2,
+   "groundwater": 507.2,
+   "surface": 133806,
+   "irrigated": 134126,
+   "districts_reported": 1
+  },
+  "d-balochistan-panjgur": {
+   "name": "Panjgur",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 18788.46,
+   "groundwater": 9722.46,
+   "surface": 9066,
+   "irrigated": 15200,
+   "districts_reported": 1
+  },
+  "d-balochistan-pishin": {
+   "name": "Pishin",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 41526.89,
+   "groundwater": 38694.89,
+   "surface": 2832,
+   "irrigated": 27245,
+   "districts_reported": 1
+  },
+  "d-balochistan-quetta": {
+   "name": "Quetta",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 19238.87,
+   "groundwater": 19238.87,
+   "surface": 0,
+   "irrigated": 12138,
+   "districts_reported": 1
+  },
+  "d-balochistan-sibi": {
+   "name": "Sibi",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 23477.52,
+   "groundwater": 3477.52,
+   "surface": 20000,
+   "irrigated": 22194,
+   "districts_reported": 1
+  },
+  "d-balochistan-zhob": {
+   "name": "Zhob",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 30123.07,
+   "groundwater": 19345.07,
+   "surface": 10778,
+   "irrigated": 22983,
+   "districts_reported": 1
+  },
+  "d-balochistan-ziarat": {
+   "name": "Ziarat",
+   "level": "district",
+   "parent_id": "p-balochistan",
+   "equipped": 5821.75,
+   "groundwater": 5821.75,
+   "surface": 0,
+   "irrigated": 3673,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-abbottabad": {
+   "name": "Abbottabad",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 7075,
+   "groundwater": 58,
+   "surface": 7017,
+   "irrigated": 7075,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-bajaur": {
+   "name": "Bajaur",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 20060,
+   "groundwater": 12931.05,
+   "surface": 7128.95,
+   "irrigated": 20060,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-bannu": {
+   "name": "Bannu",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 52025,
+   "groundwater": 1845.24,
+   "surface": 50179.76,
+   "irrigated": 52025,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-batagram": {
+   "name": "Batagram",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 4269,
+   "groundwater": 0,
+   "surface": 4269,
+   "irrigated": 4269,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-buner": {
+   "name": "Buner",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 14218,
+   "groundwater": 6787.69,
+   "surface": 7430.31,
+   "irrigated": 14218,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-charsadda": {
+   "name": "Charsadda",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 66650,
+   "groundwater": 951.49,
+   "surface": 65698.51,
+   "irrigated": 66650,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-dera-ismail-khan": {
+   "name": "Dera Ismail Khan",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 146864,
+   "groundwater": 15607.21,
+   "surface": 131256.79,
+   "irrigated": 146864,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-hangu": {
+   "name": "Hangu",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 5475,
+   "groundwater": 5376.31,
+   "surface": 98.69,
+   "irrigated": 5475,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-haripur": {
+   "name": "Haripur",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 32939,
+   "groundwater": 7275,
+   "surface": 25664,
+   "irrigated": 32939,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-karak": {
+   "name": "Karak",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 1928,
+   "groundwater": 1928,
+   "surface": 0,
+   "irrigated": 1928,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-khyber": {
+   "name": "Khyber",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 11100,
+   "groundwater": 1989.93,
+   "surface": 9110.07,
+   "irrigated": 11100,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-kohat": {
+   "name": "Kohat",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 15935,
+   "groundwater": 6894.46,
+   "surface": 9040.54,
+   "irrigated": 15935,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-kurram": {
+   "name": "Kurram",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 11686,
+   "groundwater": 307.5,
+   "surface": 11378.5,
+   "irrigated": 11686,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-lakki-marwat": {
+   "name": "Lakki Marwat",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 36300,
+   "groundwater": 701,
+   "surface": 35599,
+   "irrigated": 36300,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-malakand": {
+   "name": "Malakand",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 35645,
+   "groundwater": 2456.02,
+   "surface": 33188.98,
+   "irrigated": 35645,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-mansehra": {
+   "name": "Mansehra",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 16960,
+   "groundwater": 6,
+   "surface": 16954,
+   "irrigated": 16960,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-mardan": {
+   "name": "Mardan",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 79538,
+   "groundwater": 3527.9,
+   "surface": 76010.1,
+   "irrigated": 79538,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-mohmand": {
+   "name": "Mohmand",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 6925,
+   "groundwater": 1424.52,
+   "surface": 5500.48,
+   "irrigated": 6925,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-north-waziristan": {
+   "name": "North Waziristan",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 14189,
+   "groundwater": 3993.28,
+   "surface": 10195.72,
+   "irrigated": 14189,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-nowshera": {
+   "name": "Nowshera",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 24897,
+   "groundwater": 3970.13,
+   "surface": 20926.87,
+   "irrigated": 24897,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-orakzai": {
+   "name": "Orakzai",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 2210,
+   "groundwater": 429.72,
+   "surface": 1780.28,
+   "irrigated": 2210,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-peshawar": {
+   "name": "Peshawar",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 78366,
+   "groundwater": 6949.89,
+   "surface": 71416.11,
+   "irrigated": 78366,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-shangla": {
+   "name": "Shangla",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 3071,
+   "groundwater": 0,
+   "surface": 3071,
+   "irrigated": 3071,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-south-waziristan": {
+   "name": "South Waziristan",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 6530,
+   "groundwater": 1696.79,
+   "surface": 4833.21,
+   "irrigated": 6530,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-swabi": {
+   "name": "Swabi",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 49642,
+   "groundwater": 46037.7,
+   "surface": 3604.3,
+   "irrigated": 49642,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-swat": {
+   "name": "Swat",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 92285,
+   "groundwater": 32484.04,
+   "surface": 59800.96,
+   "irrigated": 92285,
+   "districts_reported": 1
+  },
+  "d-khyber-pakhtunkhwa-tank": {
+   "name": "Tank",
+   "level": "district",
+   "parent_id": "p-khyber-pakhtunkhwa",
+   "equipped": 12692,
+   "groundwater": 469,
+   "surface": 12223,
+   "irrigated": 12692,
+   "districts_reported": 1
+  },
+  "d-gilgit-baltistan-diamir": {
+   "name": "Diamir",
+   "level": "district",
+   "parent_id": "p-gilgit-baltistan",
+   "equipped": 32000,
+   "groundwater": 0,
+   "surface": 32000,
+   "irrigated": 32000,
+   "districts_reported": 1
+  },
+  "d-gilgit-baltistan-ghizer": {
+   "name": "Ghizer",
+   "level": "district",
+   "parent_id": "p-gilgit-baltistan",
+   "equipped": 7896,
+   "groundwater": 0,
+   "surface": 7896,
+   "irrigated": 7896,
+   "districts_reported": 1
+  },
+  "d-gilgit-baltistan-gilgit": {
+   "name": "Gilgit",
+   "level": "district",
+   "parent_id": "p-gilgit-baltistan",
+   "equipped": 18073,
+   "groundwater": 0,
+   "surface": 18073,
+   "irrigated": 18073,
+   "districts_reported": 1
+  },
+  "d-gilgit-baltistan-skardu": {
+   "name": "Skardu",
+   "level": "district",
+   "parent_id": "p-gilgit-baltistan",
+   "equipped": 20859,
+   "groundwater": 0,
+   "surface": 20859,
+   "irrigated": 20859,
+   "districts_reported": 1
+  },
+  "d-punjab-attock": {
+   "name": "Attock",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 27000,
+   "groundwater": 22810.34,
+   "surface": 4189.66,
+   "irrigated": 27000,
+   "districts_reported": 1
+  },
+  "d-punjab-bahawalnagar": {
+   "name": "Bahawalnagar",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 525000,
+   "groundwater": 109200,
+   "surface": 415800,
+   "irrigated": 525000,
+   "districts_reported": 1
+  },
+  "d-punjab-bahawalpur": {
+   "name": "Bahawalpur",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 368000,
+   "groundwater": 147634.22,
+   "surface": 220365.78,
+   "irrigated": 368000,
+   "districts_reported": 1
+  },
+  "d-punjab-bhakkar": {
+   "name": "Bhakkar",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 274000,
+   "groundwater": 151558.58,
+   "surface": 122441.42,
+   "irrigated": 274000,
+   "districts_reported": 1
+  },
+  "d-punjab-chakwal": {
+   "name": "Chakwal",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 9000,
+   "groundwater": 7000,
+   "surface": 2000,
+   "irrigated": 9000,
+   "districts_reported": 1
+  },
+  "d-punjab-dera-ghazi-khan": {
+   "name": "Dera Ghazi Khan",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 251000,
+   "groundwater": 113247.04,
+   "surface": 137752.96,
+   "irrigated": 251000,
+   "districts_reported": 1
+  },
+  "d-punjab-faisalabad": {
+   "name": "Faisalabad",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 513000,
+   "groundwater": 90306.21,
+   "surface": 422693.79,
+   "irrigated": 513000,
+   "districts_reported": 1
+  },
+  "d-punjab-gujrat": {
+   "name": "Gujrat",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 99000,
+   "groundwater": 70377.55,
+   "surface": 28622.45,
+   "irrigated": 99000,
+   "districts_reported": 1
+  },
+  "d-punjab-gujranwala": {
+   "name": "Gujranwala",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 285000,
+   "groundwater": 193579.96,
+   "surface": 91420.04,
+   "irrigated": 285000,
+   "districts_reported": 1
+  },
+  "d-punjab-hafizabad": {
+   "name": "Hafizabad",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 153000,
+   "groundwater": 96868.42,
+   "surface": 56131.58,
+   "irrigated": 153000,
+   "districts_reported": 1
+  },
+  "d-federal-capital-islamabad": {
+   "name": "Islamabad",
+   "level": "district",
+   "parent_id": "p-federal-capital",
+   "equipped": 0,
+   "groundwater": 0,
+   "surface": 0,
+   "irrigated": 0,
+   "districts_reported": 1
+  },
+  "d-punjab-jhang": {
+   "name": "Jhang",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 582000,
+   "groundwater": 353161.97,
+   "surface": 228838.03,
+   "irrigated": 582000,
+   "districts_reported": 1
+  },
+  "d-punjab-jhelum": {
+   "name": "Jhelum",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 24000,
+   "groundwater": 24000,
+   "surface": 0,
+   "irrigated": 24000,
+   "districts_reported": 1
+  },
+  "d-punjab-kasur": {
+   "name": "Kasur",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 329000,
+   "groundwater": 131600,
+   "surface": 197400,
+   "irrigated": 329000,
+   "districts_reported": 1
+  },
+  "d-punjab-khanewal": {
+   "name": "Khanewal",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 349000,
+   "groundwater": 174186.71,
+   "surface": 174813.29,
+   "irrigated": 349000,
+   "districts_reported": 1
+  },
+  "d-punjab-khushab": {
+   "name": "Khushab",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 112000,
+   "groundwater": 30425.2,
+   "surface": 81574.8,
+   "irrigated": 112000,
+   "districts_reported": 1
+  },
+  "d-punjab-lahore": {
+   "name": "Lahore",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 100000,
+   "groundwater": 42977.53,
+   "surface": 57022.47,
+   "irrigated": 100000,
+   "districts_reported": 1
+  },
+  "d-punjab-layyah": {
+   "name": "Layyah",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 297000,
+   "groundwater": 182857.33,
+   "surface": 114142.67,
+   "irrigated": 297000,
+   "districts_reported": 1
+  },
+  "d-punjab-lodhran": {
+   "name": "Lodhran",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 238000,
+   "groundwater": 115351.42,
+   "surface": 122648.58,
+   "irrigated": 238000,
+   "districts_reported": 1
+  },
+  "d-punjab-mianwali": {
+   "name": "Mianwali",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 188000,
+   "groundwater": 100836.36,
+   "surface": 87163.64,
+   "irrigated": 188000,
+   "districts_reported": 1
+  },
+  "d-punjab-mandi-bahauddin": {
+   "name": "Mandi Bahauddin",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 160000,
+   "groundwater": 88753.8,
+   "surface": 71246.2,
+   "irrigated": 160000,
+   "districts_reported": 1
+  },
+  "d-punjab-multan": {
+   "name": "Multan",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 236000,
+   "groundwater": 129475.69,
+   "surface": 106524.31,
+   "irrigated": 236000,
+   "districts_reported": 1
+  },
+  "d-punjab-muzaffargarh": {
+   "name": "Muzaffargarh",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 389000,
+   "groundwater": 206187.98,
+   "surface": 182812.02,
+   "irrigated": 389000,
+   "districts_reported": 1
+  },
+  "d-punjab-narowal": {
+   "name": "Narowal",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 98000,
+   "groundwater": 93153.85,
+   "surface": 4846.15,
+   "irrigated": 98000,
+   "districts_reported": 1
+  },
+  "d-punjab-okara": {
+   "name": "Okara",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 337000,
+   "groundwater": 159309.09,
+   "surface": 177690.91,
+   "irrigated": 337000,
+   "districts_reported": 1
+  },
+  "d-punjab-pakpattan": {
+   "name": "Pakpattan",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 241000,
+   "groundwater": 130775.19,
+   "surface": 110224.81,
+   "irrigated": 241000,
+   "districts_reported": 1
+  },
+  "d-punjab-rahim-yar-khan": {
+   "name": "Rahim Yar Khan",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 576000,
+   "groundwater": 145642.59,
+   "surface": 430357.41,
+   "irrigated": 576000,
+   "districts_reported": 1
+  },
+  "d-punjab-rajanpur": {
+   "name": "Rajanpur",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 252000,
+   "groundwater": 146792.08,
+   "surface": 105207.92,
+   "irrigated": 252000,
+   "districts_reported": 1
+  },
+  "d-punjab-rawalpindi": {
+   "name": "Rawalpindi",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 11000,
+   "groundwater": 7464.29,
+   "surface": 3535.71,
+   "irrigated": 11000,
+   "districts_reported": 1
+  },
+  "d-punjab-sahiwal": {
+   "name": "Sahiwal",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 257000,
+   "groundwater": 117037.56,
+   "surface": 139962.44,
+   "irrigated": 257000,
+   "districts_reported": 1
+  },
+  "d-punjab-sargodha": {
+   "name": "Sargodha",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 486000,
+   "groundwater": 175673.39,
+   "surface": 310326.61,
+   "irrigated": 486000,
+   "districts_reported": 1
+  },
+  "d-punjab-sialkot": {
+   "name": "Sialkot",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 218000,
+   "groundwater": 209323.38,
+   "surface": 8676.62,
+   "irrigated": 218000,
+   "districts_reported": 1
+  },
+  "d-punjab-toba-tek-singh": {
+   "name": "Toba Tek Singh",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 252000,
+   "groundwater": 56991.83,
+   "surface": 195008.17,
+   "irrigated": 252000,
+   "districts_reported": 1
+  },
+  "d-punjab-vehari": {
+   "name": "Vehari",
+   "level": "district",
+   "parent_id": "p-punjab",
+   "equipped": 383000,
+   "groundwater": 199629.72,
+   "surface": 183370.28,
+   "irrigated": 383000,
+   "districts_reported": 1
+  },
+  "d-sindh-badin": {
+   "name": "Badin",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 454222,
+   "groundwater": 228.47,
+   "surface": 453993.53,
+   "irrigated": 198810,
+   "districts_reported": 1
+  },
+  "d-sindh-dadu": {
+   "name": "Dadu",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 380341,
+   "groundwater": 43384.9,
+   "surface": 336956.1,
+   "irrigated": 123610,
+   "districts_reported": 1
+  },
+  "d-sindh-ghotki": {
+   "name": "Ghotki",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 207510,
+   "groundwater": 4378.13,
+   "surface": 203131.87,
+   "irrigated": 154040,
+   "districts_reported": 1
+  },
+  "d-sindh-hyderabad": {
+   "name": "Hyderabad",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 390986,
+   "groundwater": 35773.94,
+   "surface": 355212.06,
+   "irrigated": 219680,
+   "districts_reported": 1
+  },
+  "d-sindh-jacobabad": {
+   "name": "Jacobabad",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 358967,
+   "groundwater": 9525.82,
+   "surface": 349441.18,
+   "irrigated": 126240,
+   "districts_reported": 1
+  },
+  "d-sindh-khairpur": {
+   "name": "Khairpur",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 290665,
+   "groundwater": 4879.2,
+   "surface": 285785.8,
+   "irrigated": 214460,
+   "districts_reported": 1
+  },
+  "d-sindh-larkana": {
+   "name": "Larkana",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 386275,
+   "groundwater": 1382.45,
+   "surface": 384892.55,
+   "irrigated": 195590,
+   "districts_reported": 1
+  },
+  "d-sindh-naushahro-feroze": {
+   "name": "Naushahro Feroze",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 218296,
+   "groundwater": 10170.41,
+   "surface": 208125.59,
+   "irrigated": 134149,
+   "districts_reported": 1
+  },
+  "d-sindh-shaheed-benazir-abad": {
+   "name": "Shaheed Benazir Abad",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 263150,
+   "groundwater": 822.7,
+   "surface": 262327.3,
+   "irrigated": 127945,
+   "districts_reported": 1
+  },
+  "d-sindh-sanghar": {
+   "name": "Sanghar",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 455237,
+   "groundwater": 8521.47,
+   "surface": 446715.53,
+   "irrigated": 203005,
+   "districts_reported": 1
+  },
+  "d-sindh-shikarpur": {
+   "name": "Shikarpur",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 192747,
+   "groundwater": 417.22,
+   "surface": 192329.78,
+   "irrigated": 92395,
+   "districts_reported": 1
+  },
+  "d-sindh-sukkur": {
+   "name": "Sukkur",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 145469,
+   "groundwater": 15791.07,
+   "surface": 129677.93,
+   "irrigated": 87515,
+   "districts_reported": 1
+  },
+  "d-sindh-tharparkar": {
+   "name": "Tharparkar",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 673000,
+   "groundwater": 0,
+   "surface": 673000,
+   "irrigated": 223005,
+   "districts_reported": 1
+  },
+  "d-sindh-thatta": {
+   "name": "Thatta",
+   "level": "district",
+   "parent_id": "p-sindh",
+   "equipped": 376320,
+   "groundwater": 17084.55,
+   "surface": 359235.45,
+   "irrigated": 143175,
+   "districts_reported": 1
+  }
+ },
+ "unmatched": [
+  "Chitral (Khyber Pakhtunkhwa)",
+  "Dir (Khyber Pakhtunkhwa)",
+  "Kohistan (Khyber Pakhtunkhwa)",
+  "Gahkuch (Gilgit Baltistan)",
+  "Sheikhupura (Nankana) (Punjab)",
+  "Karachi (Sindh)",
+  "Mirpurkhas and Umerkot (Sindh)"
+ ]
+}

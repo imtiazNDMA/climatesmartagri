@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "id": "PK1", "name": "Alpha", "parent_id": "PK" },
+      "geometry": { "type": "Polygon", "coordinates": [[[66, 26], [70, 26], [70, 30], [66, 30], [66, 26]]] }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "PK2", "name": "Beta", "parent_id": "PK" },
+      "geometry": { "type": "Polygon", "coordinates": [[[70, 26], [74, 26], [74, 30], [70, 30], [70, 26]]] }
+    }
+  ]
+}

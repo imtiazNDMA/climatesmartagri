@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Punjab – Land Classification (2023)\n\n**What the portal shows**\n\nThe Land Classification section (section id `land-cover`) reports each year's net class areas for Punjab, drawn from Impact Observatory's 10 m annual land-use/land-cover product (io-lulc-annual-v02, Microsoft Planetary Computer), measured on its 80 m overview grid. The classification covers essentially all of Punjab's land: 50.62 million acres classified out of 50.61 million acres total (100 %).\n\n**2023 class areas**\n\n| Class | Area (million acres) | Share of classified land |\n|---|---|---|\n| **Crops** (most widespread) | 30.53 | 60.3 % |\n| Built area | 3.82 | 7.6 % |\n| Trees | 0.60 | 1.2 % |\n| Rangeland, bare ground, etc. | remainder | – |\n\nCrops was the most widespread class in both 2017 and 2023.\n\n**Net class-area changes (not",
+    "tool_calls": [],
+    "input_tokens": 4721,
+    "output_tokens": 700
+  }
+]

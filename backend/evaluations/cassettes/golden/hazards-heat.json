@@ -1,0 +1,8 @@
+[
+  {
+    "text": "In the **Hazards** section, the **Heat stress** guidance covers high daytime temperatures that can stress crops and livestock, with the note that crop stage and humidity alter the impacts.\n\nKey details:\n- **Forecast layer used:** Maximum 2 m temperature (`temperature-max`), in °C, flagged when values are **above** the threshold.\n- **Risk bands:**\n  - **Advisory – Elevated heat:** above 35 °C (yellow)\n  - **Watch – High heat:** above 40 °C (orange)\n  - **Severe – Severe heat:** above 45 °C (red)\n- **District ranking:** a district is flagged when it reaches the 90th percentile for this hazard.\n\n**Disclaimer:** This is model-derived agricultural guidance, not an official warning.",
+    "tool_calls": [],
+    "input_tokens": 10541,
+    "output_tokens": 213
+  }
+]

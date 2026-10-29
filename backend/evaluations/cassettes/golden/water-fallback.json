@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Crop Water Balance – National (Pakistan), 2035\n\nThe **Crop water balance** section of the portal only provides data at the **national level** (its supported place level is \"national\"), so there isn't a Lahore-specific water-balance figure in the portal. Here is what the section shows for **Pakistan in 2035**:\n\n| Metric | Value |\n|---|---|\n| Water available | 108.0 |\n| Water crops need @ 35 % irrigation efficiency | 140.6 |\n| Water crops need @ 50 % efficiency | 98.42 |\n| Water crops need @ 70 % efficiency | 70.3 |\n| **Shortfall @ 35 % efficiency** | **32.6** |\n| Water to spare @ 50 % efficiency | 9.58 |\n| Water to spare @ 70 % efficiency | 37.7 |\n\n### What the numbers mean (in plain terms)\n\n- **Irrigation",
+    "tool_calls": [],
+    "input_tokens": 1694,
+    "output_tokens": 700
+  }
+]

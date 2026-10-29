@@ -1,0 +1,26 @@
+{
+  "package_version": "five-crop-001",
+  "format": "TorchScript",
+  "model_file": "model.ts",
+  "registered_model": "crop-disease v1 (alias candidate)",
+  "model": "convnext_nano",
+  "checkpoint_sha256": "605bb5bea11bc68bdbabfa6fd5024bf858bb111e00c49c10a0d82c7e8f5d1c5e",
+  "model_ts_sha256": "2e3c490b896665fd1f4404e71c389e5ace9e99fac6893bc9c5472ccdd315e8a9",
+  "checkpoint_epoch": 19,
+  "val_macro_f1": 0.9064,
+  "inputs": {
+    "images": "float32[N,3,224,224], resized to 224x224, ImageNet normalized",
+    "crop_indices": "int64[N], Cotton=0, Maize=1, Rice=2, Sugarcane=3, Wheat=4"
+  },
+  "output": "float32[N,37] probabilities; other crops' classes are zero",
+  "confidence_calibrated": true,
+  "temperature": 1.3257,
+  "review_threshold": 0.55,
+  "calibration": {
+    "fitted_on": "val",
+    "val_ece_before": 0.0121,
+    "val_ece_after": 0.0066,
+    "target_accuracy_above_threshold": 0.98,
+    "val_coverage_above_threshold": 0.9849
+  }
+}

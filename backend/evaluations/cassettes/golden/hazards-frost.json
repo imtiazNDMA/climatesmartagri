@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Frost Risk — Hazards section\n\n**Frost risk** in the portal measures **frost severity in degree-hours (°C·h)**: the accumulated amount of cold below 0 °C over the last 24 hours. In plain terms, the deeper and longer the temperature stays below freezing, the higher the number, and the greater the potential damage to sensitive crops — especially in exposed or low-lying fields.\n\n### Severity bands (thresholds are \"above\" the value)\n\n| Band | Label | Threshold | Colour |\n|---|---|---|---|\n| Advisory | Light frost | ≥ 3 °C·h | Yellow |\n| Watch | Moderate frost | ≥ 12 °C·h | Orange |\n| Severe | Severe frost | ≥ 24 °C·h | Red |\n\n### How to read it\n- A value of, say, 15 °C·h means the air was on average about 1.5 °C below 0 °C for roughly 10 hours (or some equivalent combination of depth × duration) over the past day.\n- The higher the value, the more likely frost will injure tender plant tissue, delay emergence, or damage fruit and flowers.\n\n### Where to find it\n- **Portal section:** *Hazards* (section ID `hazards`)\n- **Underlying forecast layer:** `frost-degree-hours`, available from several models (CMA-GFS, CMA-GOWFS, PMD-WRF, FENGQING, PANGU).\n- You can view it at national, provincial, or district level.\n\n> ⚠️ **Disclaimer:** This is model-derived agricultural guidance. It is **not an official warning**. Always check with your local meteorological department for operational alerts.",
+    "tool_calls": [],
+    "input_tokens": 10540,
+    "output_tokens": 627
+  }
+]

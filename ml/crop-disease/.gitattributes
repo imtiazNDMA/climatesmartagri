@@ -1,0 +1,2 @@
+# The manifest is compared byte for byte with a rebuild, so its line endings must not change on checkout.
+data/manifest.csv text eol=lf

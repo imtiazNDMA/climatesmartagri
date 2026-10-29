@@ -1,0 +1,59 @@
+{
+  "sections": [
+    {
+      "id": "alpha-section", "title": "Alpha section", "icon": "trees", "order": 1,
+      "status": "ready", "place_levels": ["national", "province", "district"],
+      "years": { "first": 2000, "last": 2010 }
+    },
+    {
+      "id": "beta-section", "title": "Beta section", "icon": "droplets", "order": 2,
+      "status": "ready", "place_levels": ["national"]
+    },
+    {
+      "id": "later-section", "title": "Later section", "icon": "cloud-lightning", "order": 3,
+      "status": "coming-soon", "summary": "Will show things later.",
+      "place_levels": ["national"]
+    },
+    {
+      "id": "empty-section", "title": "Empty section", "icon": "wheat", "order": 4,
+      "status": "no-data", "place_levels": ["national"]
+    },
+    {
+      "id": "bare-section", "title": "Bare section", "icon": "waves", "order": 5,
+      "status": "no-data", "place_levels": ["national"]
+    }
+  ],
+  "layers": [
+    { "id": "provinces", "title": "Provinces", "kind": "boundary", "status": "ready" },
+    { "id": "districts", "title": "Districts", "kind": "boundary", "status": "ready" },
+    {
+      "id": "fake-yearly", "section_id": "alpha-section", "title": "Fake yearly",
+      "kind": "raster", "status": "ready", "default_opacity": 0.8,
+      "years": { "first": 2000, "last": 2010 },
+      "legend": { "type": "classes", "items": [{ "colour": "#2e7d32", "label": "Yearly class" }] }
+    },
+    {
+      "id": "fake-static", "section_id": "beta-section", "title": "Fake static",
+      "kind": "raster", "status": "ready",
+      "legend": { "type": "ramp", "colours": ["#ffffff", "#1565c0"], "min": 0, "max": 100, "unit": "%" }
+    },
+    {
+      "id": "fake-shapes", "section_id": "beta-section", "title": "Fake shapes",
+      "kind": "geojson", "status": "ready", "property": "kind", "default_opacity": 0.7,
+      "legend": { "type": "classes", "items": [
+        { "colour": "#2a78d6", "label": "Kind A", "value": "a" },
+        { "colour": "#eb6834", "label": "Kind B", "value": "b" }
+      ] }
+    },
+    {
+      "id": "fake-empty", "section_id": "empty-section", "title": "Fake empty",
+      "kind": "raster", "status": "no-data",
+      "legend": { "type": "classes", "items": [{ "colour": "#9e9e9e", "label": "Empty class" }] }
+    },
+    {
+      "id": "fake-later", "section_id": "later-section", "title": "Fake later",
+      "kind": "raster", "status": "no-data",
+      "legend": { "type": "classes", "items": [{ "colour": "#9e9e9e", "label": "Later class" }] }
+    }
+  ]
+}

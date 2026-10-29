@@ -1,0 +1,611 @@
+{
+  "sections": [
+    {
+      "id": "land-cover",
+      "title": "Land Classification",
+      "icon": "trees",
+      "order": 1,
+      "status": "ready",
+      "place_levels": [
+        "national",
+        "province",
+        "district"
+      ],
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [2017, 2018, 2019, 2020, 2021, 2022, 2023]
+      }
+    },
+    {
+      "id": "irrigation",
+      "title": "Climate Smart Irrigation Practices",
+      "icon": "droplets",
+      "order": 2,
+      "status": "ready",
+      "place_levels": [
+        "national",
+        "province",
+        "district"
+      ]
+    },
+    {
+      "id": "emissions",
+      "title": "Greenhouse-gas emissions",
+      "icon": "factory",
+      "order": 3,
+      "status": "ready",
+      "place_levels": [
+        "national"
+      ],
+      "years": {
+        "first": 1994,
+        "last": 2025
+      }
+    },
+    {
+      "id": "water-balance",
+      "title": "Crop water balance",
+      "icon": "waves",
+      "order": 4,
+      "status": "ready",
+      "place_levels": [
+        "national"
+      ],
+      "years": {
+        "first": 2026,
+        "last": 2047
+      }
+    },
+    {
+      "id": "food-security",
+      "title": "Food security projections",
+      "icon": "wheat",
+      "order": 5,
+      "status": "ready",
+      "place_levels": [
+        "national"
+      ],
+      "years": {
+        "first": 2026,
+        "last": 2047
+      }
+    },
+    {
+      "id": "climate-calendar",
+      "title": "Climate-smart crop calendar",
+      "icon": "calendar-days",
+      "order": 6,
+      "status": "ready",
+      "place_levels": [
+        "national",
+        "province"
+      ]
+    },
+    {
+      "id": "forecast",
+      "title": "Weather forecast",
+      "icon": "cloud-sun",
+      "order": 7,
+      "status": "ready",
+      "kind": "forecast",
+      "place_levels": [
+        "national"
+      ]
+    },
+    {
+      "id": "crop-classification",
+      "title": "AI Crop Disease and Pest Detector",
+      "icon": "scan-search",
+      "order": 8,
+      "status": "ready",
+      "kind": "crop-classification",
+      "summary": "Classify rice, maize, cotton, wheat and sugarcane leaf images for common pests, diseases and healthy crops.",
+      "place_levels": [
+        "national"
+      ]
+    },
+    {
+      "id": "hazards",
+      "title": "Hazards",
+      "icon": "cloud-lightning",
+      "order": 9,
+      "status": "ready",
+      "kind": "hazards",
+      "summary": "Forecast guidance for frost, heat stress, heavy rain, strong wind and low visibility.",
+      "place_levels": [
+        "national",
+        "province",
+        "district"
+      ]
+    },
+    {
+      "id": "exposure",
+      "title": "Exposure and vulnerability",
+      "icon": "users",
+      "order": 10,
+      "status": "coming-soon",
+      "summary": "Population and cropland at risk, with a district risk ranking.",
+      "place_levels": [
+        "national",
+        "province",
+        "district"
+      ]
+    }
+  ],
+  "layers": [
+    {
+      "id": "provinces",
+      "title": "Provinces",
+      "kind": "boundary",
+      "status": "ready"
+    },
+    {
+      "id": "districts",
+      "title": "Districts",
+      "kind": "boundary",
+      "status": "ready"
+    },
+    {
+      "id": "annual-land-cover",
+      "section_id": "land-cover",
+      "title": "Annual land classification",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {"colour": "#419bdf", "label": "Water", "value": "1"},
+          {"colour": "#397d49", "label": "Trees", "value": "2"},
+          {"colour": "#7a87c6", "label": "Flooded vegetation", "value": "4"},
+          {"colour": "#e49635", "label": "Crops", "value": "5"},
+          {"colour": "#c4281b", "label": "Built area", "value": "7"},
+          {"colour": "#a59b8f", "label": "Bare ground", "value": "8"},
+          {"colour": "#a8ebff", "label": "Snow/ice", "value": "9"},
+          {"colour": "#616161", "label": "Clouds", "value": "10"},
+          {"colour": "#e3e2c3", "label": "Rangeland", "value": "11"}
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [2017, 2018, 2019, 2020, 2021, 2022, 2023]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "trees",
+      "section_id": "land-cover",
+      "title": "Trees",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#397d49",
+            "label": "Trees",
+            "value": "2"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "rangeland",
+      "section_id": "land-cover",
+      "title": "Rangeland",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#e3e2c3",
+            "label": "Rangeland",
+            "value": "11"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "bare-ground",
+      "section_id": "land-cover",
+      "title": "Bare ground",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#a59b8f",
+            "label": "Bare ground",
+            "value": "8"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "crops",
+      "section_id": "land-cover",
+      "title": "Crops",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#e49635",
+            "label": "Crops",
+            "value": "5"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "built-area",
+      "section_id": "land-cover",
+      "title": "Built area",
+      "kind": "raster",
+      "status": "ready",
+      "tile_source": "mpc",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#c4281b",
+            "label": "Built area",
+            "value": "7"
+          }
+        ]
+      },
+      "years": {
+        "first": 2017,
+        "last": 2023,
+        "available": [
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023
+        ]
+      },
+      "product": {
+        "provider": "Esri / Impact Observatory",
+        "collection": "io-lulc-annual-v02",
+        "version": "v02",
+        "resolution_metres": 10,
+        "area_unit": "hectares",
+        "nodata_value": "0"
+      },
+      "max_zoom": 14
+    },
+    {
+      "id": "irrigated-rainfed",
+      "section_id": "land-cover",
+      "title": "Irrigated and rainfed cropland",
+      "kind": "raster",
+      "status": "ready",
+      "default_opacity": 0.85,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#2a78d6",
+            "label": "Irrigated cropland",
+            "value": "2"
+          },
+          {
+            "colour": "#eda100",
+            "label": "Rainfed cropland",
+            "value": "3"
+          }
+        ]
+      },
+      "source": "irrigated-rainfed.tif",
+      "max_zoom": 13
+    },
+    {
+      "id": "irrigation-practice",
+      "section_id": "irrigation",
+      "title": "Recommended irrigation practice (tehsil)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "practice",
+      "default_opacity": 0.75,
+      "legend": {
+        "type": "classes",
+        "items": [
+          {
+            "colour": "#2a78d6",
+            "label": "Drip, Sprinkler",
+            "value": "Drip, SP"
+          },
+          {
+            "colour": "#eb6834",
+            "label": "Sprinkler",
+            "value": "SP"
+          },
+          {
+            "colour": "#1baf7a",
+            "label": "Alternate wetting and drying, Drip, Sprinkler",
+            "value": "AWD, Drip, SP"
+          },
+          {
+            "colour": "#eda100",
+            "label": "Alternate wetting and drying, Sprinkler",
+            "value": "AWD, SP"
+          },
+          {
+            "colour": "#e87ba4",
+            "label": "Drip",
+            "value": "Drip"
+          },
+          {
+            "colour": "#008300",
+            "label": "Flood irrigation",
+            "value": "FI"
+          },
+          {
+            "colour": "#4a3aa7",
+            "label": "Alternate wetting and drying, Drip",
+            "value": "AWD, Drip"
+          }
+        ]
+      }
+    },
+    {
+      "id": "surface-water-area",
+      "section_id": "irrigation",
+      "title": "Surface water irrigation (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#fff5f0",
+          "#fcbba1",
+          "#fb6a4a",
+          "#cb181d",
+          "#67000d"
+        ],
+        "min": 0,
+        "max": 1.7,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
+      }
+    },
+    {
+      "id": "groundwater-area",
+      "section_id": "irrigation",
+      "title": "Groundwater irrigation (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#f7fcf5",
+          "#c7e9c0",
+          "#74c476",
+          "#238b45",
+          "#00441b"
+        ],
+        "min": 0,
+        "max": 0.9,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
+      }
+    },
+    {
+      "id": "irrigation-balance",
+      "section_id": "irrigation",
+      "title": "Irrigation balance (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#3b4cc0",
+          "#8db0fe",
+          "#dddcdc",
+          "#f4987a",
+          "#b40426"
+        ],
+        "min": -0.52,
+        "max": 1.7,
+        "unit": "million acres",
+        "mid": 0,
+        "min_label": "More groundwater",
+        "max_label": "More surface water"
+      }
+    },
+    {
+      "id": "irrigated-share",
+      "section_id": "irrigation",
+      "title": "Share of equipped area irrigated (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#b7d3f6",
+          "#6da7ec",
+          "#2a78d6",
+          "#184f95",
+          "#0d366b"
+        ],
+        "min": 0,
+        "max": 100,
+        "unit": "%",
+        "min_label": "Lower share",
+        "max_label": "Higher share"
+      }
+    },
+    {
+      "id": "equipped-area",
+      "section_id": "irrigation",
+      "title": "Area equipped for irrigation (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#b7d3f6",
+          "#6da7ec",
+          "#2a78d6",
+          "#184f95",
+          "#0d366b"
+        ],
+        "min": 0,
+        "max": 1.7,
+        "unit": "million acres",
+        "min_label": "Less land",
+        "max_label": "More land"
+      }
+    },
+    {
+      "id": "groundwater-share",
+      "section_id": "irrigation",
+      "title": "Share equipped with groundwater (district)",
+      "kind": "geojson",
+      "status": "ready",
+      "property": "value",
+      "default_opacity": 0.8,
+      "legend": {
+        "type": "ramp",
+        "colours": [
+          "#b7d3f6",
+          "#6da7ec",
+          "#2a78d6",
+          "#184f95",
+          "#0d366b"
+        ],
+        "min": 0,
+        "max": 100,
+        "unit": "%",
+        "min_label": "Lower share",
+        "max_label": "Higher share"
+      }
+    }
+  ]
+}

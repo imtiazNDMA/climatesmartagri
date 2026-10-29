@@ -1,0 +1,8 @@
+[
+  {
+    "text": "## Greenhouse-gas emissions – Pakistan, 1994\n\nThe **Greenhouse-gas emissions** section (national level, 1994–2025) provides the following figures for **1994**:\n\n| Gas | Value |\n|---|---|\n| **Total emissions** | 177.84 MtCO₂e |\n| Carbon dioxide (CO₂) | 94.57 MtCO₂e |\n| Methane (CH₄) | 72.27 MtCO₂e |\n| Nitrous oxide (N₂O) | 11.0 MtCO₂e |\n\n**Key context from the section's charts:**\n\n- CO₂ made up **53 %** of total emissions in 1994.\n- Emissions grew **3.2×** between 1994 and 2025.\n- Nitrous oxide was the fastest-growing gas, reaching **9.9×** its 1994 level by 2025.\n\n> **Note:** This section is available at the **national** level only (no district breakdown) and covers 1994 through 2025. You can change the year in the portal to see values for any other year in that range.",
+    "tool_calls": [],
+    "input_tokens": 1622,
+    "output_tokens": 537
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "evaluation_label": "STRICT INTERNAL HOLDOUT - SAME-CLASS dHash<=3 GROUPED; NOT AN INDEPENDENT EXTERNAL OR PAKISTAN FIELD TEST",
+  "holdout_status": "internal_repartition_created_after_original_test_inspection",
+  "checkpoint": "experiments\\improved_002_strict_cropaware\\checkpoints\\best_model.pt",
+  "checkpoint_epoch": 8,
+  "checkpoint_validation_macro_f1": 0.7100070772631077,
+  "selection_set": "strict validation only",
+  "test_images": 13476,
+  "num_classes": 39,
+  "test_loss": 0.7819823401375531,
+  "top1_accuracy": 0.7638765212229148,
+  "top3_accuracy": 0.9188186405461561,
+  "top5_accuracy": 0.9553279905016325,
+  "macro_precision": 0.7015959525240921,
+  "macro_recall": 0.7276780056263511,
+  "macro_f1": 0.7097275324107811,
+  "weighted_f1": 0.7613692537608294,
+  "evaluation_seconds": 985.1235139369965,
+  "strict_group_definition": "original provenance groups unioned with same-canonical-class dHash pairs at distance <= 3",
+  "known_strong_pairs_crossing_splits": 0,
+  "interpretation": "This is a stricter internal development holdout. It is not independent because the source corpus and the earlier test analysis informed model development. A geographically independent Pakistan field dataset remains required."
+}

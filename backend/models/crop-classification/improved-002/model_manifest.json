@@ -1,0 +1,48 @@
+{
+  "package": "agriculture_portal/improved_002",
+  "source_checkpoint": "experiments\\improved_002_strict_cropaware\\checkpoints\\best_model.pt",
+  "checkpoint_epoch": 8,
+  "validation_macro_f1": 0.7100070772631077,
+  "files": {
+    "model.ts": {
+      "bytes": 9062098,
+      "sha256": "eba85438e5f8985c47851b5eaa122a39d74935f11e26de93f7579261d7be6166"
+    },
+    "model_bundle.pt": {
+      "bytes": 9344011,
+      "sha256": "b71ef3d82cac8d2500314b61766b1c21868665a306abdf7f4697fe1357a598d4"
+    },
+    "label_map.json": {
+      "bytes": 11955,
+      "sha256": "cd5ccbcd93acc4958a811a40a5137c62eeb4ebb709a492f49faac66094f58f57"
+    },
+    "portal_inference.py": {
+      "bytes": 3674,
+      "sha256": "59bd2c6fb062962c84a3ad648f51220266a917ff3548d36a9e2b2c18d87acdc4"
+    },
+    "training_summary.json": {
+      "bytes": 1411,
+      "sha256": "66f3d5652117ae9ecef96ebd28fc4d8e3d26bbee389f8d577a81c425fff6f04e"
+    },
+    "evaluation_summary.json": {
+      "bytes": 1256,
+      "sha256": "30354212c293cab82fe5649dc2a88538d73ee011d37fbaac8ff1ac9f2ce78192"
+    },
+    "inference_config.json": {
+      "bytes": 801,
+      "sha256": "7be8abc8072acc6ad0672617185dfdecfacfe1fb69949e9b191aa27b7187a954"
+    },
+    "README.md": {
+      "bytes": 9710,
+      "sha256": "c9a1fdab95f81efa028e847c82db67cf1559d102b586702a706aa95598a3e89e"
+    },
+    "requirements.txt": {
+      "bytes": 104,
+      "sha256": "e2ee98bfe374eb14727ab87795330c7f8dedc169e20a8f725be14d777adce854"
+    },
+    "run_sample_check.py": {
+      "bytes": 1302,
+      "sha256": "f9f32582b9ec4a60d9c7efa05c5073accb910b477086d753e7d091c03f92b023"
+    }
+  }
+}

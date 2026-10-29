@@ -1,0 +1,8 @@
+[
+  {
+    "text": "Yes. The **Climate Smart Irrigation Practices** section is marked **ready** and supports the **district** level, which is exactly Faisalabad's level. The portal already shows Faisalabad-specific data in this section, including:\n\n- **Land equipped for irrigation:** 1.27 million acres\n- **Groundwater share:** 17.6 % (0.22 million acres)\n- **Surface-water share:** 82.4 % (1.04 million acres)\n- **Share of equipped land actually irrigated:** 100 %\n- A chart noting that **sprinkler irrigation is recommended in all 6 tehsils** of Faisalabad\n\nSo the section is fully functional for Faisalabad and is displaying district-level figures right now.",
+    "tool_calls": [],
+    "input_tokens": 1703,
+    "output_tokens": 306
+  }
+]

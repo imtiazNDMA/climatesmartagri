@@ -1,0 +1,736 @@
+{
+ "records": [
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Wheat",
+   "traditional": {
+    "text": "Oct\u2013Dec sowing \u2192 Mar\u2013Apr harvest",
+    "sowing": [
+     [
+      9.0,
+      12.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Oct\u2013Nov sowing \u2192 Mar\u2013Apr harvest",
+    "sowing": [
+     [
+      9.0,
+      11.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "reason": "Rising temperatures and terminal heat during grain filling can reduce yield; timely sowing helps the crop mature before severe spring heat.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Rice",
+   "traditional": {
+    "text": "May\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "May\u2013Jun \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Earlier establishment can reduce exposure to late-season heat and improve synchronization with water availability.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Cotton",
+   "traditional": {
+    "text": "Apr\u2013Jun \u2192 Sep\u2013Nov",
+    "sowing": [
+     [
+      3.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      11.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Apr\u2013May \u2192 Aug\u2013Oct/Nov",
+    "sowing": [
+     [
+      3.0,
+      5.0
+     ]
+    ],
+    "harvest": [
+     [
+      7.0,
+      11.0
+     ]
+    ]
+   },
+   "reason": "High temperature and water stress during flowering/boll development can affect yield; timely sowing reduces heat exposure.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Maize \u2013 Spring",
+   "traditional": {
+    "text": "Jan\u2013Feb \u2192 May\u2013Jun",
+    "sowing": [
+     [
+      0.0,
+      2.0
+     ]
+    ],
+    "harvest": [
+     [
+      4.0,
+      6.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Jan\u2013Feb \u2192 May\u2013Jun",
+    "sowing": [
+     [
+      0.0,
+      2.0
+     ]
+    ],
+    "harvest": [
+     [
+      4.0,
+      6.0
+     ]
+    ]
+   },
+   "reason": "Increasing spring temperatures can expose grain filling to heat; timely sowing helps avoid the hottest period.",
+   "changed": false,
+   "sown_earlier": false
+  },
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Maize \u2013 Kharif",
+   "traditional": {
+    "text": "Jun\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Jun\u2013early Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      6.5
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Increasing heat and rainfall variability during reproductive stages require better synchronization with available moisture.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-punjab",
+   "province": "Punjab",
+   "crop": "Sugarcane",
+   "traditional": {
+    "text": "Feb\u2013Mar / Sep\u2013Oct",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ],
+     [
+      8.0,
+      10.0
+     ]
+    ],
+    "harvest": []
+   },
+   "adjusted": {
+    "text": "Feb\u2013Mar / Sep\u2013Oct",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ],
+     [
+      8.0,
+      10.0
+     ]
+    ],
+    "harvest": []
+   },
+   "reason": "Calendar remains broadly similar, but higher temperatures and water demand require efficient irrigation and heat management.",
+   "changed": false,
+   "sown_earlier": false
+  },
+  {
+   "province_id": "p-sindh",
+   "province": "Sindh",
+   "crop": "Wheat",
+   "traditional": {
+    "text": "Nov\u2013Dec \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      10.0,
+      12.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Nov\u2013early Dec \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      10.0,
+      11.5
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "reason": "Warmer winter/spring conditions increase the risk of heat during grain filling; avoid delayed sowing.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-sindh",
+   "province": "Sindh",
+   "crop": "Rice",
+   "traditional": {
+    "text": "Jun\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Jun \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Earlier establishment improves water-use planning and reduces exposure to late-season heat/rainfall variability.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-sindh",
+   "province": "Sindh",
+   "crop": "Cotton",
+   "traditional": {
+    "text": "Apr\u2013Jun \u2192 Sep\u2013Nov",
+    "sowing": [
+     [
+      3.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      11.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Apr\u2013May \u2192 Aug\u2013Oct/Nov",
+    "sowing": [
+     [
+      3.0,
+      5.0
+     ]
+    ],
+    "harvest": [
+     [
+      7.0,
+      11.0
+     ]
+    ]
+   },
+   "reason": "Extreme heat and water stress can affect flowering and boll development; earlier sowing reduces exposure.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-sindh",
+   "province": "Sindh",
+   "crop": "Maize",
+   "traditional": {
+    "text": "Jun\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Jun\u2013early Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      5.0,
+      6.5
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Avoid reproductive/grain-filling stages during periods of extreme heat and moisture stress.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-sindh",
+   "province": "Sindh",
+   "crop": "Sugarcane",
+   "traditional": {
+    "text": "Feb\u2013Mar / Sep\u2013Oct",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ],
+     [
+      8.0,
+      10.0
+     ]
+    ],
+    "harvest": []
+   },
+   "adjusted": {
+    "text": "Feb\u2013Mar / Sep\u2013Oct",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ],
+     [
+      8.0,
+      10.0
+     ]
+    ],
+    "harvest": []
+   },
+   "reason": "Very high-water requirement makes water-use efficiency more important under increasing heat and water stress.",
+   "changed": false,
+   "sown_earlier": false
+  },
+  {
+   "province_id": "p-khyber-pakhtunkhwa",
+   "province": "Khyber Pakhtunkhwa",
+   "crop": "Wheat",
+   "traditional": {
+    "text": "Oct\u2013Dec \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      9.0,
+      12.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Oct\u2013Nov \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      9.0,
+      11.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "reason": "Warmer spring conditions can accelerate maturity and increase terminal heat; timely sowing protects grain filling.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-khyber-pakhtunkhwa",
+   "province": "Khyber Pakhtunkhwa",
+   "crop": "Maize",
+   "traditional": {
+    "text": "Feb\u2013Apr / Jun\u2013Jul",
+    "sowing": [
+     [
+      1.0,
+      4.0
+     ],
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": []
+   },
+   "adjusted": {
+    "text": "Feb\u2013Mar / Jun\u2013Jul",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ],
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": []
+   },
+   "reason": "Temperature variability and heat during reproductive stages can reduce grain formation.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-khyber-pakhtunkhwa",
+   "province": "Khyber Pakhtunkhwa",
+   "crop": "Rice",
+   "traditional": {
+    "text": "May\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "May\u2013Jun \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Better synchronization with rainfall and irrigation while reducing exposure to late-season climatic variability.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-khyber-pakhtunkhwa",
+   "province": "Khyber Pakhtunkhwa",
+   "crop": "Tobacco",
+   "traditional": {
+    "text": "Feb\u2013Mar \u2192 May\u2013Jun",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ]
+    ],
+    "harvest": [
+     [
+      4.0,
+      6.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Feb\u2013Mar \u2192 May\u2013Jun",
+    "sowing": [
+     [
+      1.0,
+      3.0
+     ]
+    ],
+    "harvest": [
+     [
+      4.0,
+      6.0
+     ]
+    ]
+   },
+   "reason": "Calendar largely retained; emphasis shifts toward heat, moisture and disease management.",
+   "changed": false,
+   "sown_earlier": false
+  },
+  {
+   "province_id": "p-balochistan",
+   "province": "Balochistan",
+   "crop": "Wheat",
+   "traditional": {
+    "text": "Oct\u2013Dec \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      9.0,
+      12.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Oct\u2013Nov \u2192 Mar\u2013Apr",
+    "sowing": [
+     [
+      9.0,
+      11.0
+     ]
+    ],
+    "harvest": [
+     [
+      2.0,
+      4.0
+     ]
+    ]
+   },
+   "reason": "Increasing temperature and rainfall uncertainty make timely establishment important, particularly where moisture is limited.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-balochistan",
+   "province": "Balochistan",
+   "crop": "Rice",
+   "traditional": {
+    "text": "May\u2013Jul \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      7.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "May\u2013Jun \u2192 Sep\u2013Oct",
+    "sowing": [
+     [
+      4.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "Limited water availability requires synchronization with irrigation supply; mainly applicable to irrigated areas.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-balochistan",
+   "province": "Balochistan",
+   "crop": "Cotton",
+   "traditional": {
+    "text": "Apr\u2013Jun \u2192 Sep\u2013Nov",
+    "sowing": [
+     [
+      3.0,
+      6.0
+     ]
+    ],
+    "harvest": [
+     [
+      8.0,
+      11.0
+     ]
+    ]
+   },
+   "adjusted": {
+    "text": "Apr\u2013May \u2192 Aug\u2013Oct",
+    "sowing": [
+     [
+      3.0,
+      5.0
+     ]
+    ],
+    "harvest": [
+     [
+      7.0,
+      10.0
+     ]
+    ]
+   },
+   "reason": "High temperatures and water scarcity increase crop stress; earlier establishment can reduce exposure during critical stages.",
+   "changed": true,
+   "sown_earlier": true
+  },
+  {
+   "province_id": "p-balochistan",
+   "province": "Balochistan",
+   "crop": "Maize",
+   "traditional": {
+    "text": "Mar\u2013Apr / Jun\u2013Jul",
+    "sowing": [
+     [
+      2.0,
+      4.0
+     ],
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": []
+   },
+   "adjusted": {
+    "text": "Mar\u2013Apr / Jun\u2013Jul",
+    "sowing": [
+     [
+      2.0,
+      4.0
+     ],
+     [
+      5.0,
+      7.0
+     ]
+    ],
+    "harvest": []
+   },
+   "reason": "Climate variability is high; adjustment should be location-specific and linked to rainfall/soil moisture.",
+   "changed": false,
+   "sown_earlier": false
+  },
+  {
+   "province_id": "p-balochistan",
+   "province": "Balochistan",
+   "crop": "Orchards",
+   "traditional": {
+    "text": "Traditional regional schedule",
+    "sowing": [],
+    "harvest": []
+   },
+   "adjusted": {
+    "text": "Climate-risk adjusted",
+    "sowing": [],
+    "harvest": []
+   },
+   "reason": "Warmer winters may affect chilling requirements, flowering and fruit development; orchard management needs location-specific adjustment.",
+   "changed": true,
+   "sown_earlier": false
+  }
+ ]
+}

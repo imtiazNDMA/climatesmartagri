@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "722736393",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "emissions",
+          "place_id": "d-punjab-faisalabad",
+          "year": 2025
+        }
+      }
+    ],
+    "input_tokens": 1634,
+    "output_tokens": 356
+  },
+  {
+    "text": "## Greenhouse-gas emissions – Faisalabad\n\nThe **Greenhouse-gas emissions** section of the portal is available at **national level only** (Pakistan). It does not provide district-level figures for Faisalabad.\n\n### What the portal does show (Pakistan, 2025)\n\n| Gas | Emissions | Share of total |\n|---|---|---|\n| **Total** | **572.45 MtCO₂e** | 100 % |\n| Carbon dioxide (CO₂) | 281.61 MtCO₂e | 49.2 % |\n| Methane (CH₄) | 181.50 MtCO₂e | 31.7 % |\n| Nitrous oxide (N₂O) | 109.34 MtCO₂e | 19.1 % |\n\n**Key trends (1994 → 2025):**\n- Total emissions grew **3.2×**.\n- Nitrous oxide grew fastest: **9.9×** its 1994 level.\n- CO₂ grew **3.0×**; methane **2.5×**.\n\n### Why no Faisalabad figure?\nThe section's supported place level is listed as **national** only. To see district-level data for Faisalabad you would need a section that supports the district level (e.g., Land Classification, Crop water balance, or the upcoming Exposure & vulnerability section).\n\nIf you'd like, I can pull a different section's facts for Faisalabad instead.",
+    "tool_calls": [],
+    "input_tokens": 11101,
+    "output_tokens": 529
+  }
+]

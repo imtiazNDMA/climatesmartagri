@@ -1,0 +1,265 @@
+{
+  "num_classes": 37,
+  "ordering_rule": "training class order",
+  "classes": [
+    {
+      "label_index": 0,
+      "canonical_class_id": "cotton_american_bollworm",
+      "canonical_class": "American bollworm (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 1,
+      "canonical_class_id": "cotton_anthracnose",
+      "canonical_class": "Anthracnose (cotton)",
+      "crop": "Cotton",
+      "category": "disease"
+    },
+    {
+      "label_index": 2,
+      "canonical_class_id": "cotton_aphid",
+      "canonical_class": "Aphid (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 3,
+      "canonical_class_id": "cotton_bacterial_blight",
+      "canonical_class": "Bacterial blight (cotton)",
+      "crop": "Cotton",
+      "category": "disease"
+    },
+    {
+      "label_index": 4,
+      "canonical_class_id": "cotton_healthy",
+      "canonical_class": "Healthy (cotton)",
+      "crop": "Cotton",
+      "category": "healthy"
+    },
+    {
+      "label_index": 5,
+      "canonical_class_id": "cotton_mealybug",
+      "canonical_class": "Mealybug (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 6,
+      "canonical_class_id": "cotton_red_cotton_bug",
+      "canonical_class": "Red cotton bug (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 7,
+      "canonical_class_id": "cotton_thrips",
+      "canonical_class": "Thrips (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 8,
+      "canonical_class_id": "cotton_whitefly",
+      "canonical_class": "Whitefly (cotton)",
+      "crop": "Cotton",
+      "category": "pest"
+    },
+    {
+      "label_index": 9,
+      "canonical_class_id": "cotton_wilt",
+      "canonical_class": "Wilt (cotton)",
+      "crop": "Cotton",
+      "category": "disease"
+    },
+    {
+      "label_index": 10,
+      "canonical_class_id": "maize_armyworm",
+      "canonical_class": "Armyworm (maize)",
+      "crop": "Maize",
+      "category": "pest"
+    },
+    {
+      "label_index": 11,
+      "canonical_class_id": "maize_common_rust",
+      "canonical_class": "Common rust (maize)",
+      "crop": "Maize",
+      "category": "disease"
+    },
+    {
+      "label_index": 12,
+      "canonical_class_id": "maize_ear_rot",
+      "canonical_class": "Ear rot (maize)",
+      "crop": "Maize",
+      "category": "disease"
+    },
+    {
+      "label_index": 13,
+      "canonical_class_id": "maize_fall_armyworm",
+      "canonical_class": "Fall armyworm (maize)",
+      "crop": "Maize",
+      "category": "pest"
+    },
+    {
+      "label_index": 14,
+      "canonical_class_id": "maize_gray_leaf_spot",
+      "canonical_class": "Gray leaf spot (maize)",
+      "crop": "Maize",
+      "category": "disease"
+    },
+    {
+      "label_index": 15,
+      "canonical_class_id": "maize_healthy",
+      "canonical_class": "Healthy (maize)",
+      "crop": "Maize",
+      "category": "healthy"
+    },
+    {
+      "label_index": 16,
+      "canonical_class_id": "maize_stem_borer",
+      "canonical_class": "Stem borer (maize)",
+      "crop": "Maize",
+      "category": "pest"
+    },
+    {
+      "label_index": 17,
+      "canonical_class_id": "rice_bacterial_blight",
+      "canonical_class": "Bacterial blight (rice)",
+      "crop": "Rice",
+      "category": "disease"
+    },
+    {
+      "label_index": 18,
+      "canonical_class_id": "rice_blast",
+      "canonical_class": "Blast (rice)",
+      "crop": "Rice",
+      "category": "disease"
+    },
+    {
+      "label_index": 19,
+      "canonical_class_id": "rice_brown_spot",
+      "canonical_class": "Brown spot (rice)",
+      "crop": "Rice",
+      "category": "disease"
+    },
+    {
+      "label_index": 20,
+      "canonical_class_id": "rice_tungro",
+      "canonical_class": "Tungro (rice)",
+      "crop": "Rice",
+      "category": "disease"
+    },
+    {
+      "label_index": 21,
+      "canonical_class_id": "sugarcane_healthy",
+      "canonical_class": "Healthy (sugarcane)",
+      "crop": "Sugarcane",
+      "category": "healthy"
+    },
+    {
+      "label_index": 22,
+      "canonical_class_id": "sugarcane_mosaic",
+      "canonical_class": "Mosaic (sugarcane)",
+      "crop": "Sugarcane",
+      "category": "disease"
+    },
+    {
+      "label_index": 23,
+      "canonical_class_id": "sugarcane_red_rot",
+      "canonical_class": "Red rot (sugarcane)",
+      "crop": "Sugarcane",
+      "category": "disease"
+    },
+    {
+      "label_index": 24,
+      "canonical_class_id": "sugarcane_red_rust",
+      "canonical_class": "Red rust (sugarcane)",
+      "crop": "Sugarcane",
+      "category": "disease"
+    },
+    {
+      "label_index": 25,
+      "canonical_class_id": "sugarcane_yellow_rust",
+      "canonical_class": "Yellow rust (sugarcane)",
+      "crop": "Sugarcane",
+      "category": "disease"
+    },
+    {
+      "label_index": 26,
+      "canonical_class_id": "wheat_aphid",
+      "canonical_class": "Aphid (wheat)",
+      "crop": "Wheat",
+      "category": "pest"
+    },
+    {
+      "label_index": 27,
+      "canonical_class_id": "wheat_black_rust",
+      "canonical_class": "Black rust (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 28,
+      "canonical_class_id": "wheat_brown_rust",
+      "canonical_class": "Brown rust (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 29,
+      "canonical_class_id": "wheat_flag_smut",
+      "canonical_class": "Flag smut (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 30,
+      "canonical_class_id": "wheat_healthy",
+      "canonical_class": "Healthy (wheat)",
+      "crop": "Wheat",
+      "category": "healthy"
+    },
+    {
+      "label_index": 31,
+      "canonical_class_id": "wheat_leaf_blight",
+      "canonical_class": "Leaf blight (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 32,
+      "canonical_class_id": "wheat_mite",
+      "canonical_class": "Mite (wheat)",
+      "crop": "Wheat",
+      "category": "pest"
+    },
+    {
+      "label_index": 33,
+      "canonical_class_id": "wheat_powdery_mildew",
+      "canonical_class": "Powdery mildew (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 34,
+      "canonical_class_id": "wheat_scab",
+      "canonical_class": "Scab (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    },
+    {
+      "label_index": 35,
+      "canonical_class_id": "wheat_stem_fly",
+      "canonical_class": "Stem fly (wheat)",
+      "crop": "Wheat",
+      "category": "pest"
+    },
+    {
+      "label_index": 36,
+      "canonical_class_id": "wheat_yellow_rust",
+      "canonical_class": "Yellow rust (wheat)",
+      "crop": "Wheat",
+      "category": "disease"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "package_version": "improved_002",
+  "format": "TorchScript",
+  "model_file": "model.ts",
+  "inputs": {
+    "images": "float32[N,3,224,224], ImageNet normalized",
+    "crop_indices": "int64[N], Rice=0 and Maize=1"
+  },
+  "output": "float32[N,39] probabilities; invalid crop classes are zero",
+  "crop_is_required": true,
+  "checkpoint_policy": "best validation macro F1 across all 10 epochs",
+  "strict_split_definition": "original provenance groups unioned with same-canonical-class dHash pairs at distance <= 3",
+  "limitations": [
+    "Internal development data only; not an independent Pakistan field test.",
+    "Only Rice and Maize are supported.",
+    "Predictions require the portal to supply the crop.",
+    "Confidence values have not been externally calibrated."
+  ]
+}

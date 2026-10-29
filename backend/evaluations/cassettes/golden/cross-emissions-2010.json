@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "216554641",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "emissions",
+          "place_id": "PK",
+          "year": 2010
+        }
+      }
+    ],
+    "input_tokens": 1630,
+    "output_tokens": 157
+  },
+  {
+    "text": "## Pakistan's Greenhouse-Gas Emissions in 2010\n\nFrom the **Greenhouse-gas emissions** section (national level):\n\n| Gas | Emissions | Share of total |\n|---|---|---|\n| **Total** | **345.03 MtCO₂e** | 100% |\n| Carbon dioxide (CO₂) | 173.82 MtCO₂e | 50.4% |\n| Methane (CH₄) | 114.78 MtCO₂e | 33.3% |\n| Nitrous oxide (N₂O) | 56.43 MtCO₂e | 16.4% |\n\n**Key points:**\n- In 2010, CO₂ was the largest single contributor at just over half of total emissions.\n- Methane was the second-largest source, making up roughly a third.\n- Nitrous oxide, while the smallest of the three, was already on a steep growth trajectory (it would later grow ~9.9× its 1994 level by 2025, the fastest of the three gases).\n\n*Note: MtCO₂e = million tonnes of carbon-dioxide equivalent, a common unit that expresses all greenhouse gases on a CO₂-equivalent scale so they can be summed.*",
+    "tool_calls": [],
+    "input_tokens": 11083,
+    "output_tokens": 456
+  }
+]

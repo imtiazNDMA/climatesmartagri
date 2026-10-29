@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I can't browse the internet or retrieve external official warnings — I only work from the Climate Smart Agriculture Portal data and its fact tools.\n\n**What the portal does offer instead:**\n\n- **Hazards section** – model-based forecast *guidance* for frost, heat stress, heavy rain, strong wind, and low visibility.\n- **Weather forecast section** – multi-model layers (CMA-GFS, ECMWF-IFS, PMD-WRF, FENGQING, PANGU, etc.) for precipitation, temperature, wind, moisture, and pressure.\n- **Hazard models** – e.g., frost severity in degree-hours from several models.\n\n**Important disclaimer:** These are *model guidance products*, not official warnings. For official alerts, please check the Pakistan Meteorological Department (PMD) or your provincial disaster management authority directly.\n\nIf you'd like, I can pull the portal's hazard or forecast facts for a specific district, model, or time window — just tell me which one.",
+    "tool_calls": [],
+    "input_tokens": 9544,
+    "output_tokens": 380
+  }
+]

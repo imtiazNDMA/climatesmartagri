@@ -1,0 +1,8 @@
+[
+  {
+    "text": "I can't repeat that as portal fact. The figure \"Pakistan produced 999 million tonnes\" does not appear anywhere in the portal context provided. The current **Food security projections** view for Pakistan (year 2047) reports:\n\n- Food needed: 168.6971\n- Food available with climate-smart agriculture: 92.0039\n- Food gap with climate-smart agriculture: 76.6932\n- Food available with traditional farming: 68.2\n- Food gap with traditional farming: 100.4971\n- Population: 386.06 million\n\nNo \"999 million tonnes\" production figure is present in the portal data I have access to, so I won't state it as fact. If you'd like, I can look up a specific section or place to see whether a production figure is recorded there.",
+    "tool_calls": [],
+    "input_tokens": 1648,
+    "output_tokens": 374
+  }
+]

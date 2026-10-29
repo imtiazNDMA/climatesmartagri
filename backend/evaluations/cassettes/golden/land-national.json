@@ -1,0 +1,8 @@
+[
+  {
+    "text": "The **Land Classification** section (currently showing Pakistan, 2023) reports the country's land-cover classes and how their areas changed over time. Nationally it shows:\n\n**Coverage**\n- Total land area: **242.0 million acres**\n- Classified land: **241.6 million acres** — **99.8%** of all land, so the classification covers essentially the whole country.\n\n**2023 class areas (share of classified land)**\n- **Rangeland** — 131.0 million acres (54.2%), the most widespread class\n- **Crops** — 50.8 million acres (21.0%)\n- **Built area** — 8.8 million acres (3.7%)\n- **Trees** — 7.5 million acres (3.1%)\n\n**Net class-area changes** (each year's class areas, not which land moved or why)\n- Bare ground: **−1,933.9 thousand acres** (2022→2023, −0.8 pts); **−19,468.9 thousand acres** (2017→2023, −8.1 pts)\n- Rangeland: **+13,329.7 thousand acres** (2017→2023, +5.5 pts)\n- Crops: **+2,100.0 thousand acres** (2017→2023, +0.9 pts)\n- Built area: **+2,435.4 thousand acres** (2017→2023, +1.0 pts)\n\nIn short: rangeland dominates, bare ground shrank the most, and crops and built area grew modestly over 2017–2023.\n\n*Source: Impact Observatory 10 m annual land use/land cover (io-lulc-annual-v02). Figures are each year's net class areas; the product does not say which land moved between classes or why.*",
+    "tool_calls": [],
+    "input_tokens": 4680,
+    "output_tokens": 490
+  }
+]

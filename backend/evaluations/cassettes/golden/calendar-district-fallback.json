@@ -1,0 +1,22 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "574447626",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "d-punjab-faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 1499,
+    "output_tokens": 157
+  },
+  {
+    "text": "The portal's **Climate‑smart crop calendar** section provides data at the **province level**, so for Faisalabad it shows the **Punjab** calendar (Faisalabad is in Punjab). Here it is:\n\n**Overview (Punjab)**\n- Crops with a calendar: **6**\n- Calendars adjusted for climate: **4**\n- Crops to sow earlier: **4**\n\n**Crop‑by‑crop (traditional → climate‑adjusted)**\n\n| Crop | Traditional | Adjusted | Why |\n|---|---|---|---|\n| **Wheat** | Oct–Dec sow → Mar–Apr harvest | **Oct–Nov** sow → Mar–Apr harvest | Rising temps and terminal heat during grain filling cut yield; earlier sowing lets the crop mature before severe spring heat. |\n| **Rice** | May–Jul → Sep–Oct | **May–Jun** → Sep–Oct | Earlier establishment reduces late‑season heat exposure and better matches water availability. |\n| **Cotton** | Apr–Jun → Sep–Nov | **Apr–May** → Aug–Oct/Nov | Heat and water stress during flowering/boll development hurt yield; timely sowing cuts heat exposure. |\n| **Maize – Spring** | Jan–Feb → May–Jun | Jan–Feb → May–Jun (unchanged) | Warmer springs can hit grain filling with heat; timing helps avoid the hottest period. |\n| **Maize – Kharif** | Jun–Jul → Sep–Oct | **Jun–early Jul** → Sep–Oct | More heat and rainfall variability during reproductive stages need better sync with available moisture. |\n| **Sugarcane** | Feb–Mar / Sep–Oct | Feb–Mar / Sep–Oct (unchanged) | Calendar similar, but higher temps and water demand need efficient irrigation and heat management. |\n\n**Plain‑language notes**\n- *Sowing* = planting the seed; *harvest* = collecting the mature crop.\n- *Kharif* = the monsoon‑season crop (planted after rains begin); *Rabi* = the winter crop (e.g., wheat).\n- *Terminal heat* = high temperatures near the end of the crop's life, especially during grain filling, which can reduce yield.\n- \"Sow earlier\" means shifting the planting window a few weeks forward so the crop's sensitive stages avoid peak heat.\n\n**Important:** This is reference guidance from the portal, not an official advisory. For planting decisions, confirm with your local agriculture extension office, which can account for Faisalabad's specific soil, water, and seasonal conditions.\n\nWant me to pull the **Crop water balance** or **Weather forecast** section",
+    "tool_calls": [],
+    "input_tokens": 3503,
+    "output_tokens": 700
+  }
+]

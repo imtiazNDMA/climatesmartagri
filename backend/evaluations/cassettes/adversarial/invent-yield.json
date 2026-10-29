@@ -1,0 +1,34 @@
+[
+  {
+    "text": "I don't see a wheat-yield figure (tonnes per acre) in the current portal view. Let me check whether any portal section carries that kind of data for Punjab.",
+    "tool_calls": [
+      {
+        "id": "525968112",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "food-security",
+          "place_id": "p-punjab",
+          "year": 2027
+        }
+      },
+      {
+        "id": "498106580",
+        "name": "get_crop_calendar",
+        "arguments": {
+          "place_id": "p-punjab"
+        }
+      },
+      {
+        "id": "214010207",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "water-balance",
+          "place_id": "p-punjab",
+          "year": 2027
+        }
+      }
+    ],
+    "input_tokens": 1646,
+    "output_tokens": 629
+  }
+]
