@@ -218,11 +218,26 @@ export function landCoverObservationUrl(year: number | null, retry: number): str
   return `/api/land-cover/observation${query}`
 }
 
+const observations = new Map<string, Promise<LandCoverObservation>>()
+
+/**
+ * A year's land-classification observation. Each is asked for once, so going back to a year, or to one
+ * fetched in advance during playback, is immediate; a failed request is forgotten so it can be retried.
+ */
 export function fetchLandCoverObservation(
   year: number | null,
   retry: number,
 ): Promise<LandCoverObservation> {
-  return getJson<LandCoverObservation>(landCoverObservationUrl(year, retry))
+  const url = landCoverObservationUrl(year, retry)
+  // The latest year is whatever the server says it is, so only a named year is kept.
+  if (year === null) return getJson<LandCoverObservation>(url)
+  let found = observations.get(url)
+  if (!found) {
+    found = getJson<LandCoverObservation>(url)
+    found.catch(() => observations.delete(url))
+    observations.set(url, found)
+  }
+  return found
 }
 
 /** Where a raster or vector layer's tiles are: its own address if the catalogue gives one. */

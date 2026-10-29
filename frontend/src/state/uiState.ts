@@ -16,6 +16,10 @@ export interface UiStore {
   forecastLoading: boolean
   /** The irrigation efficiency the water charts are set to, in percent; null until the reader sets one. */
   efficiency: number | null
+  /** True while the time slider is playing through the years. */
+  playing: boolean
+  /** Annual layers still drawing the year asked for: playback waits for them. */
+  yearLoading: Record<string, boolean>
   addNotice(text: string): void
   dismissNotice(id: number): void
   setLayerError(id: string): void
@@ -25,6 +29,8 @@ export interface UiStore {
   setBackendLost(lost: boolean): void
   setForecastLoading(loading: boolean): void
   setEfficiency(efficiency: number): void
+  setPlaying(playing: boolean): void
+  setYearLoading(id: string, loading: boolean): void
 }
 
 function without<T>(record: Record<string, T>, key: string): Record<string, T> {
@@ -42,6 +48,8 @@ export function createUiStore(): StoreApi<UiStore> {
     backendLost: false,
     forecastLoading: false,
     efficiency: null,
+    playing: false,
+    yearLoading: {},
     addNotice: (text) =>
       set((s) => (s.notices.some((n) => n.text === text) ? s : { notices: [...s.notices, { id: nextId++, text }] })),
     dismissNotice: (id) => set((s) => ({ notices: s.notices.filter((n) => n.id !== id) })),
@@ -61,6 +69,12 @@ export function createUiStore(): StoreApi<UiStore> {
     setBackendLost: (lost) => set((s) => (s.backendLost === lost ? s : { backendLost: lost })),
     setForecastLoading: (loading) => set((s) => (s.forecastLoading === loading ? s : { forecastLoading: loading })),
     setEfficiency: (efficiency) => set((s) => (s.efficiency === efficiency ? s : { efficiency })),
+    setPlaying: (playing) => set((s) => (s.playing === playing ? s : { playing })),
+    setYearLoading: (id, loading) =>
+      set((s) => {
+        if (Boolean(s.yearLoading[id]) === loading) return s
+        return { yearLoading: loading ? { ...s.yearLoading, [id]: true } : without(s.yearLoading, id) }
+      }),
   }))
 }
 

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { forecastTileUrl, layerGeojsonUrl, layerTileUrl } from '../api/client'
-import { COUNTRY_ID, type Layer } from '../api/types'
+import { COUNTRY_ID, type LandCoverObservation, type Layer } from '../api/types'
 import type { ForecastTimesState } from '../data/useForecastTimes'
 import type { DistrictRiskState } from '../data/useDistrictRisk'
 import type { LandCoverObservationState } from '../data/useLandCoverObservation'
@@ -18,9 +18,9 @@ import { clipTemplate, registerClipProtocol } from '../map/clipTiles'
 import { extremeColours, fillColour, glowStrength, shapeColour } from '../map/layerStyle'
 import { tooltipTable } from '../map/tooltip'
 import { DEFAULT_RISK_COLOURS, districtRiskColour, districtRiskOpacity } from '../map/districtRisk'
-import { clickTarget, effectiveYear } from '../state/selectors'
+import { clickTarget, effectiveYear, nextObservation, timeObservations } from '../state/selectors'
 import { uiStore, useUi } from '../state/uiState'
-import { useView, viewStore } from '../state/viewState'
+import { emptyView, useView, viewStore } from '../state/viewState'
 import { MapPopup, type PopupBlock } from './MapPopup'
 
 // MapLibre looks for its worker beside its own module, which a bundler moves; point it at the bundled copy.
@@ -299,6 +299,43 @@ function addDataLayer(
   return true
 }
 
+/** How long one year of an annual layer takes to blend into the next. */
+const YEAR_FADE_MS = 600
+
+/** A raster layer whose picture changes with the year: its years blend into each other rather than swap. */
+function isAnnualRaster(layer: Layer): boolean {
+  if (layer.kind !== 'raster') return false
+  if (layer.tile_source === 'mpc') return true
+  return Boolean(layer.years) && layer.years!.first !== layer.years!.last
+}
+
+/**
+ * The tiles an annual layer shows in a year: an address, null when that year has nothing to draw, or
+ * undefined while the observation it is drawn from is still on its way.
+ */
+function annualTiles(
+  layer: Layer,
+  year: number | null,
+  retry: number,
+  observation: LandCoverObservation | null | undefined,
+): string | null | undefined {
+  if (layer.tile_source !== 'mpc') return `${window.location.origin}${layerTileUrl(layer, year, retry)}`
+  if (!observation || observation.year !== year) return undefined
+  const template = observation.tiles[layer.id]
+  // Its tiles cover whole item footprints, so each is cut to the country's outline.
+  return template ? clipTemplate(template) : null
+}
+
+/** An annual layer on the map, and what playback is waiting on before it moves to the next year. */
+interface AnnualLayer {
+  frames: ForecastFrames
+  retry: number
+  /** Its observation for the year on show has not arrived. */
+  waiting: boolean
+  /** A frame is loading its tiles. */
+  loading: boolean
+}
+
 function removeDataLayer(map: MapLibreMap, layerId: string) {
   const id = dataId(layerId)
   for (const part of [glowId(layerId), edgeId(layerId), pulseId(layerId), washId(layerId), id]) {
@@ -332,6 +369,7 @@ export function MapView({
   const container = useRef<HTMLDivElement>(null)
   const mapRef = useRef<MapLibreMap | null>(null)
   const built = useRef(new Map<string, string>())
+  const annual = useRef(new Map<string, AnnualLayer>())
   const framesRef = useRef<ForecastFrames | null>(null)
   const shownForecast = useRef<string | null>(null)
   const frameChoice = useRef<string | null>(null)
@@ -343,7 +381,9 @@ export function MapView({
   const layers = useView((s) => s.layers)
   const place = useView((s) => s.place)
   const year = useView((s) => s.year)
+  const section = useView((s) => s.section)
   const retryCounts = useUi((s) => s.retryCounts)
+  const playing = useUi((s) => s.playing)
   const forecast = useView((s) => s.forecast)
   const forecastRun =
     forecastTimes.status === 'ready' ? runOf(forecastTimes.times, forecast?.time ?? null) : null
@@ -352,6 +392,7 @@ export function MapView({
     let cancelled = false
     let map: MapLibreMap | null = null
     const builtLayers = built.current
+    const annualLayers = annual.current
     const riskSet = riskDistricts.current
     const country = data.places.find((p) => p.id === COUNTRY_ID)
 
@@ -391,16 +432,24 @@ export function MapView({
       })
       // A frame whose tiles were all in hand already reports no further progress; idle catches it.
       created.on('idle', () => {
-        if (!cancelled) framesRef.current?.settle()
+        if (cancelled) return
+        framesRef.current?.settle()
+        for (const entry of annualLayers.values()) entry.frames.settle()
       })
       created.on('sourcedata', (event) => {
         if (!cancelled && event.sourceId === 'districts' && event.isSourceLoaded) setBoundariesDrawn(true)
         if (!cancelled && ForecastFrames.owns(event.sourceId)) framesRef.current?.settle()
+        if (cancelled) return
+        for (const entry of annualLayers.values()) if (entry.frames.ownsSource(event.sourceId)) entry.frames.settle()
       })
       // Best effort: flag a layer whose tiles start failing after its first check passed.
       created.on('error', (event) => {
         const sourceId = (event as { sourceId?: string }).sourceId
-        if (sourceId?.startsWith('data-')) uiStore.getState().setLayerError(sourceId.slice(5))
+        const annualOwner = [...annualLayers].find(([, entry]) => entry.frames.ownsSource(sourceId))
+        if (annualOwner) {
+          // A year loaded in advance that fails is not the year on show failing.
+          if (annualOwner[1].frames.shows(sourceId)) uiStore.getState().setLayerError(annualOwner[0])
+        } else if (sourceId?.startsWith('data-')) uiStore.getState().setLayerError(sourceId.slice(5))
         if (framesRef.current?.shows(sourceId)) {
           uiStore.getState().setLayerError(FORECAST_ID)
           uiStore.getState().setForecastLoading(false)
@@ -413,6 +462,8 @@ export function MapView({
       map?.remove()
       mapRef.current = null
       builtLayers.clear()
+      for (const id of annualLayers.keys()) uiStore.getState().setYearLoading(id, false)
+      annualLayers.clear()
       framesRef.current = null
       shownForecast.current = null
       frameChoice.current = null
@@ -490,8 +541,20 @@ export function MapView({
     const wanted = new Map<string, string>()
     for (const active of layers) {
       const layer = data.catalogue.layers.find((l) => l.id === active.id)
-      if (layer) wanted.set(layer.id, `${effectiveYear(layer.years, year) ?? ''}|${retryCounts[layer.id] ?? 0}`)
+      if (layer && !isAnnualRaster(layer)) wanted.set(layer.id, `${effectiveYear(layer.years, year) ?? ''}|${retryCounts[layer.id] ?? 0}`)
     }
+    // Annual layers taken off the list leave the map at once.
+    const on = new Set(layers.map((active) => active.id))
+    for (const [id, entry] of [...annual.current]) {
+      if (on.has(id)) continue
+      entry.frames.dispose()
+      annual.current.delete(id)
+      uiStore.getState().setYearLoading(id, false)
+    }
+    // During playback the year after this one loads out of sight, so the next step can blend in at once.
+    const upcoming = playing
+      ? nextObservation(timeObservations({ ...emptyView, section, layers }, data.catalogue), year)
+      : null
     for (const [id, key] of [...built.current]) {
       if (wanted.get(id) !== key) {
         removeDataLayer(map, id)
@@ -504,6 +567,10 @@ export function MapView({
     for (const active of [...layers].reverse()) {
       const layer = data.catalogue.layers.find((l) => l.id === active.id)
       if (!layer) continue
+      if (isAnnualRaster(layer)) {
+        showAnnual(map, layer, active)
+        continue
+      }
       if (!built.current.has(layer.id)) {
         const added = addDataLayer(
           map, layer, effectiveYear(layer.years, year), retryCounts[layer.id] ?? 0, landCover,
@@ -524,7 +591,57 @@ export function MapView({
         map.setLayoutProperty(part, 'visibility', active.hidden ? 'none' : 'visible')
       }
     }
-  }, [ready, layers, year, retryCounts, data, landCover])
+
+    /** Blend an annual layer to the year on show, keeping the year before on screen until it has loaded. */
+    function showAnnual(map: MapLibreMap, layer: Layer, active: { id: string; opacity: number; hidden?: boolean }) {
+      const shown = effectiveYear(layer.years, year)
+      const retry = retryCounts[layer.id] ?? 0
+      const observation = landCover.status === 'ready' ? landCover.data : null
+      const tiles = annualTiles(layer, shown, retry, observation)
+      let entry = annual.current.get(layer.id)
+      // A retry starts the layer afresh.
+      if (entry && entry.retry !== retry) {
+        entry.frames.dispose()
+        annual.current.delete(layer.id)
+        entry = undefined
+      }
+      if (!entry) {
+        // Nothing to place until its first observation is known.
+        if (tiles === undefined) {
+          uiStore.getState().setYearLoading(layer.id, landCover.status === 'loading')
+          return
+        }
+        const mpc = layer.tile_source === 'mpc'
+        const created = { retry, waiting: false, loading: false } as AnnualLayer
+        created.frames = new ForecastFrames(map as unknown as FrameMap, {
+          prefix: `${dataId(layer.id)}@`,
+          opacity: active.opacity,
+          fadeMs: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : YEAR_FADE_MS,
+          // Beyond the data's own detail the map stretches tiles, and outside its extent it asks for none.
+          maxzoom: layer.max_zoom ?? 22,
+          bounds: (mpc ? observation?.bounds : layer.bounds) ?? undefined,
+          attribution: mpc ? observation?.attribution : undefined,
+          anchor: () => boundaryAnchor(map),
+          onLoading: (loading) => {
+            created.loading = loading
+            uiStore.getState().setYearLoading(layer.id, created.waiting || loading)
+          },
+        })
+        entry = created
+        annual.current.set(layer.id, entry)
+      }
+      // Until this year's observation arrives the year before stays up; a failed one holds nothing back.
+      entry.waiting = tiles === undefined && landCover.status === 'loading'
+      if (tiles !== undefined) entry.frames.show(tiles)
+      const ahead = upcoming === null ? null : effectiveYear(layer.years, upcoming)
+      const aheadTiles = ahead !== null && ahead !== shown ? annualTiles(layer, ahead, retry, landCover.next) : null
+      entry.frames.preload(aheadTiles ?? null)
+      entry.frames.setOpacity(active.opacity)
+      entry.frames.setVisible(!active.hidden)
+      entry.frames.restack()
+      uiStore.getState().setYearLoading(layer.id, entry.waiting || entry.loading)
+    }
+  }, [ready, layers, year, retryCounts, data, landCover, playing, section])
 
   // Keep the forecast in step with the chosen layer, model, level and time, blending from one time to the next.
   useEffect(() => {

@@ -1,7 +1,8 @@
 /**
- * The forecast on the map as a sequence of frames, one per time. A new frame is added invisibly,
- * loads its tiles, and only then fades in while the one before fades out, so stepping through times
- * blends one field into the next and the map is never left blank between them.
+ * A raster layer on the map as a sequence of frames, one per time: the forecast's hours, or an annual
+ * layer's years. A new frame is added invisibly, loads its tiles, and only then fades in while the one
+ * before fades out, so stepping through times blends one picture into the next and the map is never
+ * left blank between them.
  */
 
 /** The part of the map the frames need. MapLibre's map fits it. */
@@ -13,6 +14,7 @@ export interface FrameMap {
   getLayer(id: string): unknown
   getSource(id: string): unknown
   setPaintProperty(layerId: string, name: string, value: unknown): unknown
+  setLayoutProperty(layerId: string, name: string, value: unknown): unknown
   moveLayer(id: string, beforeId?: string): unknown
   isSourceLoaded(id: string): boolean
 }
@@ -25,6 +27,10 @@ export interface FrameOptions {
   /** West, south, east, north: no tiles are asked for outside it. */
   bounds?: [number, number, number, number]
   maxzoom: number
+  /** Credit for the imagery, shown by the map. */
+  attribution?: string
+  /** What every frame's source and layer id starts with. */
+  prefix?: string
   /** The layer frames are placed under. */
   anchor(): string | undefined
   /** Told when a frame starts loading and when the map has caught up. */
@@ -46,17 +52,52 @@ export class ForecastFrames {
   /** A frame loaded out of sight because it is likely to be asked for next. */
   private ahead: Frame | null = null
   private count = 0
+  private visible = true
   private readonly map: FrameMap
   private readonly options: FrameOptions
+  private readonly prefix: string
 
   constructor(map: FrameMap, options: FrameOptions) {
     this.map = map
-    this.options = options
+    this.options = { ...options }
+    this.prefix = options.prefix ?? FRAME_PREFIX
   }
 
-  /** True for a source that belongs to a frame. */
+  /** True for a source that belongs to a forecast frame. */
   static owns(sourceId: string | undefined): boolean {
     return sourceId !== undefined && sourceId.startsWith(FRAME_PREFIX)
+  }
+
+  /** True for a source that belongs to one of these frames. */
+  ownsSource(sourceId: string | undefined): boolean {
+    return sourceId !== undefined && sourceId.startsWith(this.prefix)
+  }
+
+  /** How opaque the frame on screen is; changed at once, not blended. */
+  setOpacity(opacity: number): void {
+    if (opacity === this.options.opacity) return
+    this.options.opacity = opacity
+    const front = this.front
+    if (!front || !this.map.getLayer(front.id)) return
+    this.map.setPaintProperty(front.id, 'raster-opacity-transition', { duration: 0, delay: 0 })
+    this.map.setPaintProperty(front.id, 'raster-opacity', opacity)
+    this.map.setPaintProperty(front.id, 'raster-opacity-transition', { duration: this.options.fadeMs, delay: 0 })
+  }
+
+  /** Hide or show the frames. A hidden layer loads no tiles, so one loaded in advance stays visible, at nothing. */
+  setVisible(visible: boolean): void {
+    if (visible === this.visible) return
+    this.visible = visible
+    for (const frame of [this.front, this.pending]) {
+      if (frame && this.map.getLayer(frame.id)) this.map.setLayoutProperty(frame.id, 'visibility', visible ? 'visible' : 'none')
+    }
+  }
+
+  /** Take every frame off the map at once. */
+  dispose(): void {
+    for (const frame of [this.front, this.pending, this.ahead]) if (frame) this.remove(frame.id)
+    if (this.pending) this.options.onLoading(false)
+    this.front = this.pending = this.ahead = null
   }
 
   /** True for the source of the frame on screen or on its way there, not one only loaded in advance. */
@@ -107,13 +148,15 @@ export class ForecastFrames {
 
   /** Put a frame on the map with nothing of it showing yet. */
   private add(tiles: string): Frame {
-    const id = `${FRAME_PREFIX}${++this.count}`
+    const id = `${this.prefix}${++this.count}`
     this.map.addSource(id, {
       type: 'raster', tiles: [tiles], tileSize: 256, maxzoom: this.options.maxzoom, bounds: this.options.bounds,
+      ...(this.options.attribution ? { attribution: this.options.attribution } : {}),
     })
     this.map.addLayer(
       {
         id, type: 'raster', source: id,
+        layout: { visibility: 'visible' },
         paint: {
           'raster-opacity': 0,
           'raster-opacity-transition': { duration: this.options.fadeMs, delay: 0 },
@@ -130,6 +173,7 @@ export class ForecastFrames {
   settle(): void {
     const next = this.pending
     if (!next || !this.map.getSource(next.id) || !this.map.isSourceLoaded(next.id)) return
+    if (!this.visible) this.map.setLayoutProperty(next.id, 'visibility', 'none')
     this.map.setPaintProperty(next.id, 'raster-opacity', this.options.opacity)
     if (this.front) this.retire(this.front)
     this.front = next
