@@ -83,18 +83,18 @@ class CropClassifier:
         finally:
             self._inference_slots.release()
         confidence = predictions[0].confidence if predictions else 0
+        config = self._config()
         return ClassificationResult(
             predictions=predictions,
-            needs_expert_review=confidence < self.review_threshold,
+            needs_expert_review=confidence < config.get("review_threshold", self.review_threshold),
             model=self.package_dir.name,
-            calibrated=self._calibrated(),
+            calibrated=config.get("confidence_calibrated") is True,
         )
 
-    def _calibrated(self) -> bool:
+    def _config(self) -> dict[str, Any]:
+        """The package's inference_config.json; a calibrated package also sets its own review threshold."""
         config = self.package_dir / "inference_config.json"
-        if not config.is_file():
-            return False
-        return json.loads(config.read_text(encoding="utf-8")).get("confidence_calibrated") is True
+        return json.loads(config.read_text(encoding="utf-8")) if config.is_file() else {}
 
 
 class CropClassifierRouter:

@@ -83,12 +83,17 @@ def test_predict_reports_unconfigured_model(settings, tmp_path):
     assert (response.status_code, response.json()["detail"]["reason"]) == (503, "classifier-unavailable")
 
 
-def package(directory, calibrated=None):
+def package(directory, calibrated=None, review_threshold=None):
     directory.mkdir()
     for name in ("model.ts", "label_map.json", "portal_inference.py"):
         (directory / name).write_text("", encoding="utf-8")
+    config = {}
     if calibrated is not None:
-        (directory / "inference_config.json").write_text(json.dumps({"confidence_calibrated": calibrated}))
+        config["confidence_calibrated"] = calibrated
+    if review_threshold is not None:
+        config["review_threshold"] = review_threshold
+    if config:
+        (directory / "inference_config.json").write_text(json.dumps(config))
     return directory
 
 
@@ -138,3 +143,12 @@ def test_a_crop_whose_package_is_missing_is_unavailable_while_others_work(settin
 
     assert status["crops"] == ["Rice", "Maize"]
     assert (response.status_code, response.json()["detail"]["reason"]) == (503, "classifier-unavailable")
+
+
+def test_a_calibrated_package_sets_its_own_review_threshold(tmp_path):
+    lenient = loaded(CropClassifier(package(tmp_path / "lenient", calibrated=True, review_threshold=0.45), ("Wheat",)), "Wheat")
+    default = loaded(CropClassifier(package(tmp_path / "default"), ("Wheat",)), "Wheat")
+
+    # FakePredictor answers with confidence 0.5: above 0.45, below the 0.65 default.
+    assert lenient.classify(image_bytes(), "Wheat", 1).needs_expert_review is False
+    assert default.classify(image_bytes(), "Wheat", 1).needs_expert_review is True
