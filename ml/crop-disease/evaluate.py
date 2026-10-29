@@ -43,7 +43,11 @@ def main() -> None:
         ManifestDataset(args.data_dir, index, transform), batch_size=args.batch_size,
         num_workers=args.workers, pin_memory=device.type == "cuda",
     )
-    model = build_model(saved["model_name"], len(saved["class_names"]), pretrained=False)
+    if saved.get("layout") == "backbone-head":
+        from autoresearch.train import build_model as build_backbone_head
+        model = build_backbone_head(len(saved["class_names"]), saved["model_name"], pretrained=False)
+    else:
+        model = build_model(saved["model_name"], len(saved["class_names"]), pretrained=False)
     model.load_state_dict(saved["model_state"])
     model.to(device)
     result, _, y_true, y_pred = evaluate_torch(model, loader, saved["class_names"], device)
