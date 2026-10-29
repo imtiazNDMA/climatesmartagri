@@ -461,209 +461,12 @@ def _crop_calendar(data: dict[str, Any]) -> SectionDataProvider:
     return provider
 
 
-# Land-cover classes: label, and the colour its map layer uses, so charts and map agree.
-LAND_COVER = {
-    "forest": ("Forest", "#2e7d32"),
-    "shrub": ("Shrub land", "#9ccc65"),
-    "bare": ("Others", "#bcaaa4"),
-    "irrigated": ("Irrigated cropland", "#2a78d6"),
-    "rainfed": ("Rainfed cropland", "#eda100"),
-}
-
 HECTARES_TO_ACRES = 2.47105
 MILLION = 1_000_000
 
 
 def _million_acres(hectares: float) -> float:
     return hectares * HECTARES_TO_ACRES / MILLION
-
-
-NOT_MAPPED = ("Not mapped", "#d9d8d2")
-# A place counts towards a headline about its group only if it holds at least this share of the group's total,
-# so a very small territory with an extreme share does not become the story.
-HEADLINE_FLOOR = 2.0
-
-
-def _squares(parts: list[tuple[str, str, float]]) -> list[dict[str, Any]]:
-    """A hundred squares shared out between the parts by their percentages, largest first.
-
-    What the parts leave uncovered becomes "Not mapped". Parts that overlap and add up to more than the
-    whole are scaled back to fit, and keep their true percentage beside the squares.
-    """
-    total = sum(share for _, _, share in parts)
-    scale = 100 / total if total > 100 else 1.0
-    cells = [
-        {"label": label, "colour": colour, "share": share, "exact": share * scale}
-        for label, colour, share in sorted(parts, key=lambda part: part[2], reverse=True)
-    ]
-    if total < 99.5:
-        cells.append({"label": NOT_MAPPED[0], "colour": NOT_MAPPED[1], "share": round(100 - total, 1), "exact": 100 - total})
-    for cell in cells:
-        cell["squares"] = int(cell["exact"])
-    # The squares left over after rounding down go to the parts that lost the most.
-    spare = 100 - sum(cell["squares"] for cell in cells)
-    for cell in sorted(cells, key=lambda c: c["exact"] - c["squares"], reverse=True)[:spare]:
-        cell["squares"] += 1
-    return [{k: v for k, v in cell.items() if k != "exact"} for cell in cells]
-
-
-def _and(names: list[str]) -> str:
-    return names[0] if len(names) == 1 else f"{', '.join(names[:-1])} and {names[-1]}"
-
-
-def _land_cover(data: dict[str, Any]) -> SectionDataProvider:
-    places = data["places"]
-    classes = [c for c in LAND_COVER if c in data["classes"]]
-    missing = [LAND_COVER[c][0] for c in LAND_COVER if c not in data["classes"]]
-
-    def group(place_id: str, entry: dict[str, Any]) -> tuple[str, str, list[tuple[str, dict[str, Any]]]]:
-        """The places a chart compares: the provinces for the country, otherwise the districts of the
-        province in question. With them, that whole's name and what its parts are called."""
-        if entry["level"] == "national":
-            scope, level = COUNTRY_ID, "province"
-        else:
-            scope, level = (place_id if entry["level"] == "province" else entry["parent_id"]), "district"
-        rows = [(pid, p) for pid, p in places.items() if p["level"] == level and p["parent_id"] == scope]
-        return places.get(scope, {}).get("name", "its province"), level, rows
-
-    def shown_rows(rows: list, place_id: str) -> tuple[list, int | None]:
-        """The largest rows that fit, always with the selected place among them, and where it sits."""
-        selected = next((n for n, row in enumerate(rows) if row[0] == place_id), None)
-        shown = rows[:RANKING_LIMIT]
-        if selected is not None and selected >= RANKING_LIMIT:
-            shown[-1] = rows[selected]
-            selected = RANKING_LIMIT - 1
-        return shown, selected
-
-    def cover_squares(entry: dict[str, Any], measured: list[str]) -> dict[str, Any]:
-        shares = {c: _share(entry[c], entry["area_ha"]) or 0 for c in measured}
-        # The strip and bars show the proportions; the headline carries no percentages.
-        return {
-            "id": "land-cover-shares", "title": f"How {entry['name']}'s land is classified", "kind": "shares",
-            "unit": "%", "time": False,
-            "categories": [], "series": [],
-            "cells": _squares([(LAND_COVER[c][0], LAND_COVER[c][1], shares[c]) for c in measured]),
-        }
-
-    def rain_dependence(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
-        """Cropland in each place of the group, split into irrigated and rainfed: how much is farmed,
-        and how much of it waits on rain."""
-        whole, level, rows = group(place_id, entry)
-        rows = [
-            (pid, p, p["irrigated"] + p["rainfed"]) for pid, p in rows
-            if p.get("irrigated") is not None and p.get("rainfed") is not None and p["irrigated"] + p["rainfed"] > 0
-        ]
-        if not rows:
-            return None
-        rows.sort(key=lambda row: row[2], reverse=True)
-        total = sum(row[2] for row in rows)
-        shown, selected = shown_rows(rows, place_id)
-        rainfed = [_share(p["rainfed"], crop) or 0 for _, p, crop in shown]
-        if selected is not None:
-            title = f"{_pct(rainfed[selected])}% of {entry['name']}'s cropland depends on rain"
-            highlights = [selected]
-        else:
-            weighty = [n for n, (_, _, crop) in enumerate(shown) if crop / total * 100 >= HEADLINE_FLOOR]
-            ranked = sorted(weighty or range(len(shown)), key=lambda n: rainfed[n], reverse=True)
-            mostly = [n for n in ranked if rainfed[n] > 50][:2]
-            if len(mostly) == 2:
-                title = f"{_and([shown[n][1]['name'] for n in mostly])} farm mostly on rain"
-                highlights = mostly
-            else:
-                lead = ranked[0]
-                verb = "farms mostly on rain" if rainfed[lead] > 50 else "depends most on rain"
-                title = f"{shown[lead][1]['name']} {verb}: {_pct(rainfed[lead])}% of its cropland is rainfed"
-                highlights = [lead]
-        return {
-            "id": "land-cover-cropland", "title": title, "kind": "bar", "unit": "million acres", "time": False,
-            "categories": [p["name"] for _, p, _ in shown],
-            "series": [
-                _series("Irrigated cropland", 1, [_million_acres(p["irrigated"]) for _, p, _ in shown],
-                        colour=LAND_COVER["irrigated"][1]),
-                _series("Rainfed cropland", 4, [_million_acres(p["rainfed"]) for _, p, _ in shown],
-                        colour=LAND_COVER["rainfed"][1]),
-            ],
-            "horizontal": True, "stacked": True, "highlights": highlights, "hide_axis": True, "still": True,
-            "bar_notes": [f"{_pct(share)}% rainfed" for share in rainfed],
-        }
-
-    def forest_holders(place_id: str, entry: dict[str, Any]) -> dict[str, Any] | None:
-        """Where the group's forest is: forest area in each place, with how forested that place is."""
-        if "forest" not in classes:
-            return None
-        whole, level, rows = group(place_id, entry)
-        rows = [(pid, p) for pid, p in rows if p.get("forest") is not None]
-        total = sum(p["forest"] for _, p in rows)
-        if not rows or total <= 0:
-            return None
-        rows.sort(key=lambda row: row[1]["forest"], reverse=True)
-        shown, selected = shown_rows(rows, place_id)
-        held = [p["forest"] / total * 100 for _, p in shown]
-        if selected is not None:
-            rank = next(n for n, (pid, _) in enumerate(rows) if pid == place_id) + 1
-            title = (
-                f"{entry['name']} holds {_pct(held[selected])}% of {whole}'s forest, "
-                f"{_ordinal(rank)} of {len(rows)} districts"
-            )
-            highlights = [selected]
-        elif len(shown) >= 3:
-            title = f"{_and([p['name'] for _, p in shown[:2]])} hold {_pct(held[0] + held[1])}% of {whole}'s forest"
-            highlights = [0, 1]
-        else:
-            title = f"{shown[0][1]['name']} holds {_pct(held[0])}% of {whole}'s forest"
-            highlights = [0]
-        chart = _bars(
-            "land-cover-forest-ranking", title,
-            "million acres", [p["name"] for _, p in shown], [_million_acres(p["forest"]) for _, p in shown],
-            horizontal=True, series_name="Forest", bar_colours=[LAND_COVER["forest"][1]] * len(shown),
-            highlights=highlights, hide_axis=True, still=True,
-            bar_notes=[f"{_pct(_share(p['forest'], p['area_ha']) or 0)}% of its land" for _, p in shown],
-        )
-        # The place that is a large part of the land and a small part of the forest, when there is one.
-        land = sum(p["area_ha"] for _, p in rows)
-        bare = [(p, p["area_ha"] / land * 100, p["forest"] / total * 100) for _, p in rows]
-        bare = [row for row in bare if row[1] >= 20 and row[2] < 5]
-        if bare:
-            p, of_land, of_forest = max(bare, key=lambda row: row[1])
-            chart["note"] = (
-                f"{p['name']} is {_pct(of_land)}% of {whole}'s land and holds {_pct(of_forest)}% of its forest."
-            )
-        return chart
-
-    def provider(place: Place, year: int | None) -> dict[str, Any]:
-        entry = places.get(place.id)
-        if entry is None:
-            return {
-                "figures": [], "charts": [],
-                "notes": [f"No land-cover figures are available for {place.name}."],
-            }
-        name = entry["name"]
-        measured = [c for c in classes if entry.get(c) is not None]
-        figures = [_figure("Land area", _million_acres(entry["area_ha"]), "million acres")]
-        figures += [
-            _figure(
-                LAND_COVER[c][0], _million_acres(entry[c]), "million acres",
-                _share(entry[c], entry["area_ha"]), "of all land",
-            )
-            for c in measured
-        ]
-        if not measured:
-            return {
-                "figures": figures, "charts": [],
-                "notes": [f"The land-cover maps do not reach {name}."],
-            }
-
-        notes: list[str] = []
-        if missing:
-            notes.append(f"Not measured yet: {', '.join(missing)}.")
-
-        charts = [cover_squares(entry, measured)]
-        if "irrigated" in classes and "rainfed" in classes:
-            charts.append(rain_dependence(place.id, entry))
-        charts.append(forest_holders(place.id, entry))
-        return {"figures": figures, "notes": notes, "charts": [chart for chart in charts if chart is not None]}
-
-    return provider
 
 
 # Each irrigation practice a tehsil can be recommended: a picture for it, its name, what it is,
@@ -810,7 +613,6 @@ def build_providers(
         "water-balance": ("water_balance.json", _water_balance),
         "food-security": ("food_security.json", _food_security),
         "irrigation": ("irrigation.json", lambda data: _irrigation(data, practice)),
-        "land-cover": ("land_cover.json", _land_cover),
         "climate-calendar": ("crop_calendar.json", _crop_calendar),
     }
     loaded: dict[str, Any] = {}
@@ -824,7 +626,7 @@ def build_providers(
         except (KeyError, TypeError, IndexError, ZeroDivisionError, AttributeError) as err:
             logger.error("%s does not have the expected contents: %r", filename, err)
 
-    # The annual statistics, when they are published, replace the single static land-cover file.
+    # Land classification comes only from the annual statistics; without them the section has no data.
     annual = data_dir / "land_cover_annual.json"
     if annual.is_file():
         try:
