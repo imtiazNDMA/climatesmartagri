@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "776844606",
+        "name": "find_place",
+        "arguments": {
+          "name": "Faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 3814,
+    "output_tokens": 86
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "908198356",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "d-punjab-faisalabad"
+        }
+      }
+    ],
+    "input_tokens": 3935,
+    "output_tokens": 118
+  },
+  {
+    "text": "فیصل آباد (Faisalabad) میں درختوں کا رقبہ، \"Land Classification\" سیکشن کے مطابق 2023 کے لیے تقریباً 0.000182 ملین ایکڑ، یعنی 181.87 ایکڑ ہے۔ یہ درختوں کی درجہ بندی شدہ زمین کا 0.0 فیصد حصہ ہے۔\n\nنوٹ: یہ اعداد و شمار ہر سال کی خالص درجہ بندی شدہ اراضی کے رقبے ہیں؛ پورٹل بتاتا ہے کہ کتنی زمین درختوں کے طور پر درجہ بندی ہوئی، نہ کہ کون سی زمین ایک درجہ بندی سے دوسری میں منتقل ہوئی یا اس کی وجہ کیا تھی۔",
+    "tool_calls": [],
+    "input_tokens": 12826,
+    "output_tokens": 309
+  }
+]

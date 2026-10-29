@@ -1,0 +1,8 @@
+[
+  {
+    "text": "کلیمٹ سمارٹ اگریکلچر پورٹل (Climate Smart Agriculture Portal) میں پاکستان کے لیے درج ذیل معلومات دستیاب ہیں:\n\n1. **Land Classification** – زمین کی درجہ بندی (سالانہ کلاس اریا کے ساتھ)\n2. **Climate Smart Irrigation Practices** – آبپاشی کے کلائمٹ سمارٹ طریقے (تھسّل اور ضلعی سطح پر)\n3. **Greenhouse-gas emissions** – گرین ہاؤس گیس اخراج\n4. **Crop water balance** – فصل کا پانی کا توازن\n5. **Food security projections** – خوراک کی سیکورٹی کے تخمینے\n6. **Climate-smart crop calendar** – کلائمٹ سمارٹ فصل کیلنڈر\n7. **Weather forecast** – موسم کی پیشگوئی (بارش، ہوا، درجہ حرارت، نمی، دھند، دباؤ وغیرہ کے متعدد لیئرز، مختلف ماڈلز جیسے ecmwf-ifs, pmd-wrf, pangu وغیرہ)\n8. **AI Crop Disease and Pest Detector** – AI سے فصل کے پتوں پر کیڑے، بیماریاں اور صحت کی شناخت (دھان، مکئی، کپاس، گندم، گنا)\n9. **Hazards** – خطرات کی رہنمائی (فراسٹ، ہیٹ اسٹریس، بھاری بارش، تیز ہوا، کم دھند)\n10. **Exposure and vulnerability** – عوام اور فصلوں کا خطرات کا سامنا (ابھی \"coming soon\" ہے)\n\nپورٹل میں نقشے، چارٹس اور ضلعی سطح کے ویوز کے ذریعے یہ معلومات دیکھی جا سکتی ہیں۔ کوئی بھی سیکشن کھولنے، کسی علاقے یا سال منتخب کرنے، یا کسی لیئر آن کرنے کے لیے مجھے بتائیں۔",
+    "tool_calls": [],
+    "input_tokens": 3432,
+    "output_tokens": 639
+  }
+]

@@ -1,0 +1,23 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "347805757",
+        "name": "set_portal_view",
+        "arguments": {
+          "layer_id": "annual-land-cover",
+          "year": 2020
+        }
+      }
+    ],
+    "input_tokens": 4876,
+    "output_tokens": 208
+  },
+  {
+    "text": "سالانہ زمین کی درجہ بندی (annual land classification) کی پرت آن کر دی گئی ہے اور سال 2020 منتخب کر لیا گیا ہے۔ یہ پرت Land Classification سیکشن میں دستیاب ہے، جس میں پاکستان (Pakistan) کے لیے 2017 تا 2023 کے سالانہ اعداد و شمار موجود ہیں۔",
+    "tool_calls": [],
+    "input_tokens": 4951,
+    "output_tokens": 139
+  }
+]

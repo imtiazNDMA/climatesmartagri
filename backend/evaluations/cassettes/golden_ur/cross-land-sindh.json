@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "976632674",
+        "name": "find_place",
+        "arguments": {
+          "name": "Sindh"
+        }
+      }
+    ],
+    "input_tokens": 4906,
+    "output_tokens": 88
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "618305021",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "p-sindh"
+        }
+      }
+    ],
+    "input_tokens": 5020,
+    "output_tokens": 126
+  },
+  {
+    "text": "\"Land Classification\" سیکشن کے مطابق، سندھ (Sindh) میں 2023 کے لیے فصلوں (crops) کے طور پر درجہ بند شدہ زمین 12.73 ملین ایکڑ ہے، جو درجہ بند شدہ کل زمین کا 37.0 فیصد ہے۔\n\nنوٹ: یہ اعداد و شمار ہر سال کی خالص درجہ بندی شدہ اراضی کے رقبے ہیں؛ پورٹل یہ نہیں بتاتا کہ کون سی زمین ایک درجہ بندی سے دوسری میں منتقل ہوئی یا اس کی وجہ کیا تھی۔",
+    "tool_calls": [],
+    "input_tokens": 16522,
+    "output_tokens": 200
+  }
+]
