@@ -26,7 +26,7 @@ from titiler.core.factory import TilerFactory  # noqa: E402
 
 from .catalogue import Layer, load_catalogue  # noqa: E402
 from .ai.agents.assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
-from .crop_classification import CropClassifier, add_crop_classification_routes  # noqa: E402
+from .crop_classification import CropClassifier, CropClassifierRouter, add_crop_classification_routes  # noqa: E402
 from .facts import Facts  # noqa: E402
 from .land_cover_mpc import (  # noqa: E402
     SUPPORTED_YEARS,
@@ -141,7 +141,7 @@ def create_app(
     tile_providers: Mapping[str, TileProvider] | None = None,
     geojson_providers: Mapping[str, GeoJsonProvider] | None = None,
     forecast_source: ForecastSource | None = None,
-    crop_classifier: CropClassifier | None = None,
+    crop_classifier: CropClassifierRouter | None = None,
     assistant_client: AssistantClient | None = None,
     tracer: Tracer | None = None,
     land_cover: LandCoverResolver | None = None,
@@ -189,7 +189,10 @@ def create_app(
 
     app = FastAPI(title="CSA Portal")
 
-    classifier = crop_classifier or CropClassifier(settings.crop_model_dir)
+    classifier = crop_classifier or CropClassifierRouter([
+        CropClassifier(settings.crop_model_dir, ("Rice", "Maize")),
+        CropClassifier(settings.five_crop_model_dir, ("Cotton", "Wheat", "Sugarcane")),
+    ])
     add_crop_classification_routes(app, classifier)
     hazards = load_hazards(settings.hazard_products_path)
 

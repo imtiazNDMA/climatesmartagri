@@ -5,6 +5,7 @@ import type {
   AssistantChatResponse,
   AssistantOverview,
   AssistantTour,
+  Crop,
   CropClassificationResult,
   DistrictRiskResponse,
   ForecastTime,
@@ -108,7 +109,7 @@ export function fetchSectionData(sectionId: string, placeId: string | null, year
   return getJson<SectionData>(`/api/sections/${sectionId}/data${query}`)
 }
 
-export function classifyCropImage(image: File, crop: 'Rice' | 'Maize', topK = 3) {
+export function classifyCropImage(image: File, crop: Crop, topK = 3) {
   const form = new FormData()
   form.append('image', image)
   form.append('crop', crop)

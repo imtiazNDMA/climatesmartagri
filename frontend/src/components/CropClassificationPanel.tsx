@@ -1,13 +1,14 @@
 import { AlertTriangle, Camera, ImagePlus, LoaderCircle, ScanSearch } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, classifyCropImage } from '../api/client'
-import type { CropClassificationResult } from '../api/types'
+import type { Crop, CropClassificationResult } from '../api/types'
 
 const MAX_BYTES = 10 * 1024 * 1024
+const CROPS: Crop[] = ['Rice', 'Maize', 'Cotton', 'Wheat', 'Sugarcane']
 
 export function CropClassificationPanel() {
   const input = useRef<HTMLInputElement>(null)
-  const [crop, setCrop] = useState<'Rice' | 'Maize'>('Rice')
+  const [crop, setCrop] = useState<Crop>('Rice')
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [result, setResult] = useState<CropClassificationResult | null>(null)
@@ -66,13 +67,13 @@ export function CropClassificationPanel() {
         <ScanSearch size={22} aria-hidden />
         <div>
           <h3>Identify crop health issues</h3>
-          <p>Upload a clear close-up of one affected leaf. The model supports Rice and Maize.</p>
+          <p>Upload a clear close-up of one affected leaf of rice, maize, cotton, wheat or sugarcane.</p>
         </div>
       </section>
 
       <fieldset className="crop-choice">
         <legend>Crop in the image</legend>
-        {(['Rice', 'Maize'] as const).map((option) => (
+        {CROPS.map((option) => (
           <button key={option} type="button" disabled={loading} aria-pressed={crop === option} onClick={() => { setCrop(option); setResult(null) }}>
             {option}
           </button>
@@ -127,6 +128,11 @@ export function CropClassificationPanel() {
               </li>
             ))}
           </ol>
+          {!result.calibrated && (
+            <p className="crop-message crop-note">
+              Confidence for this crop is not calibrated yet: read the percentages as rough.
+            </p>
+          )}
           {result.needs_expert_review && (
             <p className="crop-message crop-warning">
               <AlertTriangle size={17} />

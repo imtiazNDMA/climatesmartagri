@@ -9,6 +9,7 @@ from pathlib import Path
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_BASEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
 DEFAULT_CROP_MODEL_DIR = BACKEND_DIR / "models" / "crop-classification" / "improved-002"
+DEFAULT_FIVE_CROP_MODEL_DIR = BACKEND_DIR / "models" / "crop-classification" / "five-crop-001"
 DEFAULT_HAZARD_PRODUCTS = BACKEND_DIR / "hazard_products.json"
 DEFAULT_HAZARD_MODELS = BACKEND_DIR / "hazard_models.json"
 
@@ -62,7 +63,10 @@ class Settings:
     pmd_user: str = ""
     pmd_pass: str = ""
     pmd_cert_sha256: str = ""
+    # Rice and maize stay on improved-002: it covers their pests and healthy plants (#71).
     crop_model_dir: Path = DEFAULT_CROP_MODEL_DIR
+    # Cotton, wheat and sugarcane.
+    five_crop_model_dir: Path = DEFAULT_FIVE_CROP_MODEL_DIR
     hazard_products_path: Path = DEFAULT_HAZARD_PRODUCTS
     hazard_models_path: Path = DEFAULT_HAZARD_MODELS
     # Local OpenAI-compatible model server (LM Studio by default).
@@ -113,6 +117,7 @@ class Settings:
             pmd_pass=environ.get("CSA_PMD_PASS", ""),
             pmd_cert_sha256=environ.get("CSA_PMD_CERT_SHA256", ""),
             crop_model_dir=Path(environ.get("CSA_CROP_MODEL_DIR", DEFAULT_CROP_MODEL_DIR)),
+            five_crop_model_dir=Path(environ.get("CSA_FIVE_CROP_MODEL_DIR", DEFAULT_FIVE_CROP_MODEL_DIR)),
             hazard_products_path=Path(environ.get("CSA_HAZARD_PRODUCTS", DEFAULT_HAZARD_PRODUCTS)),
             hazard_models_path=Path(environ.get("CSA_HAZARD_MODELS", DEFAULT_HAZARD_MODELS)),
             lm_studio_url=environ.get("CSA_LM_STUDIO_URL", "http://127.0.0.1:1234"),

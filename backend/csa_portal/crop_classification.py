@@ -1,9 +1,10 @@
-"""Image-based Rice and Maize pest and disease classification."""
+"""Image-based pest and disease classification for the five crops, one model package per group of crops."""
 
 from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import threading
 from collections.abc import Callable
 from pathlib import Path
@@ -17,13 +18,14 @@ from pydantic import BaseModel, Field
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_PIXELS = 12_000_000
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
+Crop = Literal["Rice", "Maize", "Cotton", "Wheat", "Sugarcane"]
 
 
 class Prediction(BaseModel):
     label_index: int
     canonical_class_id: str
     canonical_class: str
-    crop: Literal["Rice", "Maize"]
+    crop: Crop
     category: Literal["disease", "pest", "healthy"]
     confidence: float = Field(ge=0, le=1)
 
@@ -32,6 +34,8 @@ class ClassificationResult(BaseModel):
     predictions: list[Prediction]
     needs_expert_review: bool
     model: str = "improved-002"
+    # False until the model's confidence has been calibrated (#70): read percentages as rough.
+    calibrated: bool = False
 
 
 class Predictor(Protocol):
@@ -41,8 +45,9 @@ class Predictor(Protocol):
 class CropClassifier:
     """Load the external TorchScript package once, on the first inference request."""
 
-    def __init__(self, package_dir: Path, review_threshold: float = 0.65) -> None:
+    def __init__(self, package_dir: Path, crops: tuple[str, ...], review_threshold: float = 0.65) -> None:
         self.package_dir = package_dir
+        self.crops = crops
         self.review_threshold = review_threshold
         self._predictor: Predictor | None = None
         self._lock = threading.Lock()
@@ -81,7 +86,39 @@ class CropClassifier:
         return ClassificationResult(
             predictions=predictions,
             needs_expert_review=confidence < self.review_threshold,
+            model=self.package_dir.name,
+            calibrated=self._calibrated(),
         )
+
+    def _calibrated(self) -> bool:
+        config = self.package_dir / "inference_config.json"
+        if not config.is_file():
+            return False
+        return json.loads(config.read_text(encoding="utf-8")).get("confidence_calibrated") is True
+
+
+class CropClassifierRouter:
+    """Send each crop to the model package that serves it."""
+
+    def __init__(self, classifiers: list[CropClassifier]) -> None:
+        self.classifiers = classifiers
+
+    def _for(self, crop: str) -> CropClassifier | None:
+        return next((item for item in self.classifiers if crop in item.crops and item.configured), None)
+
+    @property
+    def crops(self) -> list[str]:
+        return [crop for item in self.classifiers if item.configured for crop in item.crops]
+
+    @property
+    def configured(self) -> bool:
+        return bool(self.crops)
+
+    def classify(self, image: bytes, crop: str, top_k: int) -> ClassificationResult:
+        classifier = self._for(crop)
+        if classifier is None:
+            raise _error(503, f"No classifier is configured for {crop}", "classifier-unavailable")
+        return classifier.classify(image, crop, top_k)
 
 
 ClassifierFactory = Callable[[bytes, str, int], ClassificationResult]
@@ -104,19 +141,19 @@ def validate_image(content: bytes) -> None:
         raise _error(422, "Upload a valid JPEG, PNG or WebP image", "invalid-image") from err
 
 
-def add_crop_classification_routes(app: FastAPI, service: CropClassifier) -> None:
+def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter) -> None:
     @app.get("/api/crop-classification/status")
     def status() -> dict[str, object]:
-        return {"configured": service.configured, "crops": ["Rice", "Maize"], "max_upload_bytes": MAX_UPLOAD_BYTES}
+        return {"configured": service.configured, "crops": service.crops, "max_upload_bytes": MAX_UPLOAD_BYTES}
 
     @app.post("/api/crop-classification/predict", response_model=ClassificationResult)
     async def predict(
-        crop: Annotated[Literal["Rice", "Maize"], Form()],
+        crop: Annotated[Crop, Form()],
         image: Annotated[UploadFile, File()],
         top_k: Annotated[int, Form(ge=1, le=5)] = 3,
     ) -> ClassificationResult:
-        if not service.configured:
-            raise _error(503, "The crop classifier is not configured", "classifier-unavailable")
+        if crop not in service.crops:
+            raise _error(503, f"The classifier for {crop} is not configured", "classifier-unavailable")
         if image.content_type not in ALLOWED_CONTENT_TYPES:
             raise _error(415, "Upload a JPEG, PNG or WebP image", "unsupported-image-type")
         content = await image.read(MAX_UPLOAD_BYTES + 1)

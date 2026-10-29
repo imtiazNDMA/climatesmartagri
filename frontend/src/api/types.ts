@@ -132,11 +132,13 @@ export interface Catalogue {
   forecast?: ForecastCatalogue | null
 }
 
+export type Crop = 'Rice' | 'Maize' | 'Cotton' | 'Wheat' | 'Sugarcane'
+
 export interface CropPrediction {
   label_index: number
   canonical_class_id: string
   canonical_class: string
-  crop: 'Rice' | 'Maize'
+  crop: Crop
   category: 'disease' | 'pest' | 'healthy'
   confidence: number
 }
@@ -145,6 +147,8 @@ export interface CropClassificationResult {
   predictions: CropPrediction[]
   needs_expert_review: boolean
   model: string
+  /** False until the model's confidence is calibrated: its percentages are rough. */
+  calibrated: boolean
 }
 
 export interface HazardBand {
