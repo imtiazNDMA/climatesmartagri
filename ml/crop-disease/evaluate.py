@@ -58,9 +58,11 @@ def main() -> None:
             parser.error("--experiment is required with --run-id")
         mlflow, _ = configure_mlflow(PROJECT, args.experiment)
         with mlflow.start_run(run_id=args.run_id):
+            # Training logs val_macro_f1 per epoch, and MLflow shows a metric's last step, so the selected
+            # checkpoint's scores get their own names.
             mlflow.log_metrics({
-                f"{args.split}_accuracy": result.accuracy,
-                f"{args.split}_macro_f1": result.macro_f1,
+                f"checkpoint_{args.split}_accuracy": result.accuracy,
+                f"checkpoint_{args.split}_macro_f1": result.macro_f1,
             })
             mlflow.log_artifacts(str(args.output), artifact_path=args.split)
     print(f"accuracy={result.accuracy:.4f} macro_f1={result.macro_f1:.4f}")
