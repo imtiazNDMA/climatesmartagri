@@ -50,3 +50,27 @@ def test_historical_classifier_head_has_dense_relu_dropout_and_output(monkeypatc
     assert model.classifier[2].p == 0.4
     assert model.classifier[3].out_features == 7
     assert called == {"pretrained": True, "num_classes": 0}
+
+
+def test_backbone_head_checkpoint_reloads_into_a_fresh_model(monkeypatch):
+    monkeypatch.delenv("CSA_CROP_DATA_DIR", raising=False)
+    import torch
+
+    from autoresearch.train import build_model as build_backbone_head
+
+    trained = build_backbone_head(5, "convnext_nano", pretrained=False).eval()
+    restored = build_backbone_head(5, "convnext_nano", pretrained=False).eval()
+    restored.load_state_dict(trained.state_dict())
+
+    images = torch.randn(2, 3, 64, 64)
+    assert torch.equal(trained(images), restored(images))
+    assert restored(images).shape == (2, 5)
+
+
+def test_learning_rate_warms_up_then_decays_to_zero_over_the_fixed_epochs():
+    from autoresearch.train import LR, lr_at
+
+    assert lr_at(0, 1000) == 0
+    assert lr_at(30, 1000) == LR
+    assert lr_at(500, 1000) < LR
+    assert lr_at(1000, 1000) == 0

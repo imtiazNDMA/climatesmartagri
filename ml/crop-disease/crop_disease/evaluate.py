@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -87,7 +88,9 @@ def write_evaluation_artifacts(
     y_pred: Sequence[int],
     class_names: Sequence[str],
     output_dir: Path,
+    paths: Sequence[str] | None = None,
 ) -> tuple[Path, Path]:
+    """Write the report and confusion matrix, plus one row per image when `paths` is given."""
     import matplotlib.pyplot as plt
     from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
@@ -104,4 +107,10 @@ def write_evaluation_artifacts(
     matrix_path = output_dir / "confusion_matrix.png"
     figure.savefig(matrix_path, dpi=160)
     plt.close(figure)
+    if paths is not None:
+        with open(output_dir / "predictions.csv", "w", encoding="utf-8", newline="") as target:
+            writer = csv.writer(target)
+            writer.writerow(("path", "label", "predicted"))
+            for path, actual, predicted in zip(paths, y_true, y_pred, strict=True):
+                writer.writerow((path, class_names[actual], class_names[predicted]))
     return report_path, matrix_path
