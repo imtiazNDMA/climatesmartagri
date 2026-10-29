@@ -10,6 +10,7 @@ BACKEND_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_BASEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
 DEFAULT_CROP_MODEL_DIR = BACKEND_DIR / "models" / "crop-classification" / "improved-002"
 DEFAULT_FIVE_CROP_MODEL_DIR = BACKEND_DIR / "models" / "crop-classification" / "five-crop-001"
+DEFAULT_CROP_GUIDANCE = BACKEND_DIR / "crop_guidance.json"
 DEFAULT_HAZARD_PRODUCTS = BACKEND_DIR / "hazard_products.json"
 DEFAULT_HAZARD_MODELS = BACKEND_DIR / "hazard_models.json"
 
@@ -67,6 +68,8 @@ class Settings:
     crop_model_dir: Path = DEFAULT_CROP_MODEL_DIR
     # Cotton, wheat and sugarcane.
     five_crop_model_dir: Path = DEFAULT_FIVE_CROP_MODEL_DIR
+    # Symptoms and prevention per class; treatment steps only once reviewed (#15).
+    crop_guidance_path: Path = DEFAULT_CROP_GUIDANCE
     hazard_products_path: Path = DEFAULT_HAZARD_PRODUCTS
     hazard_models_path: Path = DEFAULT_HAZARD_MODELS
     # Local OpenAI-compatible model server (LM Studio by default).
@@ -118,6 +121,7 @@ class Settings:
             pmd_cert_sha256=environ.get("CSA_PMD_CERT_SHA256", ""),
             crop_model_dir=Path(environ.get("CSA_CROP_MODEL_DIR", DEFAULT_CROP_MODEL_DIR)),
             five_crop_model_dir=Path(environ.get("CSA_FIVE_CROP_MODEL_DIR", DEFAULT_FIVE_CROP_MODEL_DIR)),
+            crop_guidance_path=Path(environ.get("CSA_CROP_GUIDANCE", DEFAULT_CROP_GUIDANCE)),
             hazard_products_path=Path(environ.get("CSA_HAZARD_PRODUCTS", DEFAULT_HAZARD_PRODUCTS)),
             hazard_models_path=Path(environ.get("CSA_HAZARD_MODELS", DEFAULT_HAZARD_MODELS)),
             lm_studio_url=environ.get("CSA_LM_STUDIO_URL", "http://127.0.0.1:1234"),

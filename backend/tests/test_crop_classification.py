@@ -152,3 +152,41 @@ def test_a_calibrated_package_sets_its_own_review_threshold(tmp_path):
     # FakePredictor answers with confidence 0.5: above 0.45, below the 0.65 default.
     assert lenient.classify(image_bytes(), "Wheat", 1).needs_expert_review is False
     assert default.classify(image_bytes(), "Wheat", 1).needs_expert_review is True
+
+
+class WhiteflyClassifier(FakeClassifier):
+    def classify(self, image: bytes, crop: str, top_k: int) -> ClassificationResult:
+        return ClassificationResult(
+            predictions=[Prediction(
+                label_index=8, canonical_class_id="cotton_whitefly", canonical_class="Whitefly (cotton)",
+                crop="Cotton", category="pest", confidence=0.98,
+            )],
+            needs_expert_review=False,
+            model="five-crop-001",
+            calibrated=True,
+        )
+
+
+def test_predict_returns_guidance_for_the_top_class_without_treatment_steps(settings):
+    client = TestClient(create_app(settings, crop_classifier=WhiteflyClassifier()))
+    response = client.post(
+        "/api/crop-classification/predict",
+        data={"crop": "Cotton", "top_k": "3"},
+        files={"image": ("leaf.png", image_bytes(), "image/png")},
+    )
+
+    guidance = response.json()["guidance"]
+    assert guidance["name"] == "Whitefly infestation"
+    assert guidance["symptoms"] and guidance["prevention"]
+    assert (guidance["treatment_steps"], guidance["reviewed"]) == ([], False)
+
+
+def test_predict_returns_no_guidance_for_a_class_without_an_entry(settings):
+    client = TestClient(create_app(settings, crop_classifier=FakeClassifier()))
+    response = client.post(
+        "/api/crop-classification/predict",
+        data={"crop": "Rice", "top_k": "3"},
+        files={"image": ("leaf.png", image_bytes(), "image/png")},
+    )
+
+    assert response.json()["guidance"] is None

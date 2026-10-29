@@ -15,6 +15,8 @@ from starlette.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+from .crop_guidance import CropGuidance, Guidance
+
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_PIXELS = 12_000_000
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -36,6 +38,8 @@ class ClassificationResult(BaseModel):
     model: str = "improved-002"
     # False until the model's confidence has been calibrated (#70): read percentages as rough.
     calibrated: bool = False
+    # For the most likely class; None when the guidance file has no entry for it.
+    guidance: Guidance | None = None
 
 
 class Predictor(Protocol):
@@ -141,7 +145,7 @@ def validate_image(content: bytes) -> None:
         raise _error(422, "Upload a valid JPEG, PNG or WebP image", "invalid-image") from err
 
 
-def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter) -> None:
+def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter, guidance: CropGuidance) -> None:
     @app.get("/api/crop-classification/status")
     def status() -> dict[str, object]:
         return {"configured": service.configured, "crops": service.crops, "max_upload_bytes": MAX_UPLOAD_BYTES}
@@ -161,8 +165,11 @@ def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter) 
             raise _error(413, "Image must be 10 MB or smaller", "image-too-large")
         validate_image(content)
         try:
-            return await run_in_threadpool(service.classify, content, crop, top_k)
+            result = await run_in_threadpool(service.classify, content, crop, top_k)
         except HTTPException:
             raise
         except Exception as err:
             raise _error(500, "The classifier could not process this image", "inference-failed") from err
+        if result.predictions:
+            result.guidance = guidance.for_class(result.predictions[0].canonical_class_id)
+        return result

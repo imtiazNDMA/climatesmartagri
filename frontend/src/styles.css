@@ -619,6 +619,12 @@ h2, h3 { margin: 0; }
 .crop-message svg { flex: none; margin-top: 1px; }
 .crop-error, .crop-warning { background: color-mix(in srgb, #f59e0b 14%, var(--surface)); color: color-mix(in srgb, #f59e0b 68%, var(--ink)); }
 .crop-note { background: color-mix(in srgb, var(--muted) 10%, var(--surface)); color: var(--muted); font-size: 13px; }
+.crop-review-first { margin-bottom: 14px; }
+.crop-guidance { padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.crop-guidance h4 { margin: 0 0 10px; font-size: 16px; }
+.crop-guidance h5 { margin: 12px 0 4px; font-size: 13px; color: var(--muted); }
+.crop-guidance ul, .crop-guidance ol { display: grid; gap: 4px; margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.45; }
+.crop-guidance p { margin: 12px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
 .crop-ok { background: color-mix(in srgb, #16a34a 13%, var(--surface)); color: color-mix(in srgb, #16a34a 62%, var(--ink)); }
 .crop-disclaimer { margin: 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; text-align: center; }
 @media (prefers-reduced-motion: reduce) { .crop-spinner { animation: none; } }
