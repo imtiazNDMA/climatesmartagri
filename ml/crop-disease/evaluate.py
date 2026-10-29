@@ -51,7 +51,8 @@ def main() -> None:
     model.load_state_dict(saved["model_state"])
     model.to(device)
     result, _, y_true, y_pred = evaluate_torch(model, loader, saved["class_names"], device)
-    write_evaluation_artifacts(result, y_true, y_pred, saved["class_names"], args.output)
+    paths = [item.path for item in index.items]
+    write_evaluation_artifacts(result, y_true, y_pred, saved["class_names"], args.output, paths)
     if args.experiment or args.run_id:
         if not args.experiment:
             parser.error("--experiment is required with --run-id")
