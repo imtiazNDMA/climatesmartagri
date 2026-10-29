@@ -89,3 +89,15 @@ uv run python -m autoresearch.run --commit <sha> --description "<idea>" --baseli
 ```
 
 Local `results.tsv`, `run.log`, checkpoints, and MLflow state remain outside git.
+
+## Calibration and the portal package
+
+Fit temperature scaling and the expert-review threshold on the val split, then export the portal package and check it against the checkpoint:
+
+```powershell
+uv run calibrate.py checkpoints/autoresearch-seed44-best.pt --report-test
+uv run package_model.py checkpoints/autoresearch-seed44-best.pt ../../backend/models/crop-classification/five-crop-001 `
+    --calibration runs/calibration/calibration.json --verify-split test
+```
+
+The review threshold is the lowest confidence at which accepted answers reach `--target-accuracy` (default 0.98) on val; the test split is only reported. `model.ts` is not in git, so a fresh checkout needs this step before the portal can classify cotton, wheat and sugarcane.
