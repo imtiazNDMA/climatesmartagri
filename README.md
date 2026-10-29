@@ -1,108 +1,235 @@
+<div align="center">
+
 # Climate Smart Agriculture Portal
 
-A map-first portal for Pakistan's climate smart agriculture data, built for disaster management stakeholders.
+**A map-first decision platform for Pakistan's agriculture, climate and hazard data, with a grounded AI assistant and a calibrated crop disease detector.**
 
-## Project structure
+[![CI](https://github.com/imtiazNDMA/climatesmartagri/actions/workflows/ci.yml/badge.svg)](https://github.com/imtiazNDMA/climatesmartagri/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre_GL-6-396CB2?logo=maplibre&logoColor=white)
 
-- `backend/csa_portal/` - FastAPI application package.
-- `backend/scripts/` - repeatable data preparation and development scripts.
-- `backend/tests/` - backend unit and integration tests.
-- `frontend/src/` - React application.
-- `frontend/e2e/` - Playwright browser tests.
-- `data/` - raw source datasets; large raster sources are intentionally untracked.
-- `artifacts/analysis/` - notebooks and generated research outputs, not runtime assets.
-- `docs/` - architecture, plans, and contributor documentation.
+<img src="docs/images/portal-guide-land.png" alt="Land classification for Punjab with figures, a chart and the AI guide answering a question from the portal's own data" width="100%">
 
-## Development
+<sub>Punjab's 2023 land classification, the figures and charts behind it, and the AI guide answering from those same figures.</sub>
 
-Requires [uv](https://docs.astral.sh/uv/) and Node 22.12 or later.
+</div>
 
-On Windows, double-click `start-portal.cmd`. It installs anything missing, starts the backend and frontend, and opens the portal. If the portal is already running it just opens it. Close the window to stop the portal.
+---
 
-Or by hand:
+## Why it exists
 
-    uv sync
-    npm ci
-    npm --prefix frontend ci
-    npm run dev
+Disaster management officers in Pakistan need to know what is growing where, how the land is changing, and what the next days' weather means for farmers. That information is spread across satellite products, weather models, spreadsheets and reports. This portal brings it together on one map. Every section works for the whole country, a province or any district, and an AI guide explains what is on screen in plain language.
 
-For crop-classification inference, install the optional ML runtime with `uv sync --group ml`. The deployment package is stored at `backend/models/crop-classification/improved-002`; `CSA_CROP_MODEL_DIR` can override it when testing another model.
+## Highlights
 
-The portal opens in your browser. The backend runs on port 9988 and the frontend on 9080. The background map needs internet access.
+| | |
+| --- | --- |
+| **10 sections, one map** | Land classification (2017–2023), irrigation, emissions, water balance, food security, crop calendar, live weather forecasts, hazards, crop disease detection |
+| **47 live forecast layers** | From 8 numerical weather models (PMD, ECMWF, CMA and others), turned into district-level frost, heat, rain, wind and visibility guidance |
+| **Grounded AI guide** | A tool-calling agent on a local LLM; every number in an answer is checked against the data it was given |
+| **Crop disease detector** | 37 classes across 5 crops; **0.959 test accuracy, 0.898 macro F1**, temperature-calibrated with an expert-review threshold |
+| **Tested end to end** | About 600 backend tests, 300+ frontend unit tests, 90+ Playwright browser tests, and an LLM evaluation gate in CI |
+| **Observable AI** | OpenTelemetry-style traces for every answer, a SQLite AI store and a token-protected ops dashboard |
 
-Copy `.env.example` to `.env` only when local overrides or PMD credentials are needed. Never commit `.env`.
+## A look inside
 
-## Local AI portal guide
+<table>
+  <tr>
+    <td width="62%"><img src="docs/images/hazards-frost.png" alt="Frost risk guidance by district from a weather model run"></td>
+    <td width="38%"><img src="docs/images/crop-detector.png" alt="The crop detector identifying brown rust on a wheat leaf at 93%"></td>
+  </tr>
+  <tr>
+    <td><b>Hazards.</b> Frost risk per district, computed from a weather model's run as accumulated degree-hours below 0 °C, with the model and run time on screen. Model guidance, clearly labelled as not an official warning.</td>
+    <td><b>Crop detector.</b> A held-out wheat leaf correctly identified as brown rust. Symptoms and prevention follow; treatment is held back until an agronomist reviews it.</td>
+  </tr>
+</table>
 
-The portal includes a grounded AI guide for overview, a map story tour with animated fly-to chapters, and question-answering flows. It connects from the FastAPI backend to LM Studio's OpenAI-compatible API; browsers never connect to LM Studio directly.
+## Engineering highlights
 
-1. Install LM Studio and download/load a Qwen instruct model.
-2. In LM Studio, start the local server on `127.0.0.1:1234`.
-3. Copy `.env.example` to `.env`. The configured model is `qwen/qwen3.8-27b`; change `CSA_LM_STUDIO_MODEL` only if LM Studio displays a different identifier.
-4. Restart the portal and open **AI portal guide** from the bottom of the left rail.
+### A grounded, tool-calling AI assistant
+- **Agent loop over a facts layer.** The model calls typed tools (`find_place`, `get_section_facts`, `get_district_risk`, `get_crop_calendar`) instead of seeing raw data. Every value a chart draws is exposed as a fact with its source.
+- **Numeric grounding on every answer.** A checker extracts each figure the model writes and matches it against the facts it was given, allowing only display rounding. The reader is told when a figure could not be checked.
+- **It can drive the UI, safely.** A `set_portal_view` tool lets the assistant open sections, select places, years and layers, and show forecasts. Every requested change is validated on the server before the frontend applies it.
+- **Prompt-injection aware.** Portal data and conversation history go into the prompt marked as untrusted data, and an adversarial test set probes injection through questions, place names and history.
+- **Local by default.** It runs on a local model through LM Studio ([ADR 0001](docs/adr/0001-local-language-model-by-default.md)), so readers' questions never leave the machine. A concurrency limit and a bounded queue keep the GPU from being overloaded.
 
-Overview and tour content work without the model server. Chat returns a clear unavailable message until LM Studio and the configured Qwen model are running. Keep LM Studio bound to loopback unless the model server is separately authenticated and protected.
+### LLM evaluation as part of CI
+- **Golden and adversarial datasets** are scored on grounded numbers, naming the right section, refusals, the hazard disclaimer, the tools called, and safety.
+- **Cassette replay.** A live run records the model's turns. CI replays them through the *real* tools, agent loop and scorers, so it catches regressions with no GPU, and fails when a pass rate drops below the recorded baseline.
+- **An LLM judge calibrated against humans.** Its grades only count once its agreement with human labels reaches Cohen's κ ≥ 0.6.
 
-## Quality checks
+### Observability for the AI
+- **Traces for every answer.** Traces and nested `agent` / `llm` / `tool` spans use OpenTelemetry GenAI attribute names and record token usage, with optional OTLP/HTTP export.
+- **The AI store.** SQLite in WAL mode with numbered schema migrations, retention, and privacy by default: questions are kept only as a SHA-256 unless content capture is switched on.
+- **Failure never reaches the reader.** A failing store or exporter is counted and shown on `/api/health`, but never breaks an answer.
+- **AI Ops dashboard at `/ops`.** Usage, latency, failure rate, evaluation runs compared side by side, traces, and a queue for human labelling.
 
-Run the fast production-readiness checks:
+### A reproducible computer-vision pipeline
+- **Leak-free data.** About 18,000 images are deduplicated by SHA-256 and perceptual hash. Each group of copies keeps one image in exactly one of train, val and test, so no picture is both trained on and scored, and the manifest rebuilds byte for byte.
+- **Automated experiment loop** tracked in MLflow. ConvNeXt-Nano with EMA beat a MobileNetV2 baseline by **+0.106 test macro F1**, selected on validation only.
+- **Reproducible results.** A wall-clock training budget made scores depend on GPU load. Switching to a fixed-epoch schedule made results reproducible across three seeds (validation macro F1 0.898 / 0.895 / 0.906).
+- **Calibrated confidence.** Temperature scaling (T = 1.33) halves expected calibration error (test ECE 0.0166 → 0.0085). The expert-review threshold is chosen on validation for 98% accuracy above it.
+- **Verified packaging.** TorchScript packages carry the crop mask and the temperature, and are checked against the training checkpoint. Across all 1,720 test images there are 0 top-1 disagreements.
 
-    npm run check
+<p align="center"><img src="docs/evaluations/crop-disease-autoresearch-progress.png" alt="Validation macro F1 across the automated experiment loop" width="80%"></p>
 
-Run the complete suite, including Playwright:
+### Geospatial at country scale
+- **A catalogue-driven interface.** One JSON catalogue describes every section and layer, and the React app builds its navigation, panels, legends and time slider from it.
+- **Satellite land classification** comes straight from Microsoft Planetary Computer. The backend registers one mosaic per year over exactly the scenes that cover Pakistan ([ADR 0003](docs/adr/0003-land-classification-tiles-from-planetary-computer.md)). Per-district statistics are prepared ahead of time.
+- **Cloud-Optimized GeoTIFFs** are served by TiTiler inside the API. Forecast fields are fetched on demand from PMD's early-warning platform and crossfaded between time steps.
+- **Charts that state the finding.** Every chart headline is a sentence computed from the data, such as "Crops covered 60% of Punjab's classified land in 2023".
 
-    npm test
+## Architecture
 
-This runs the backend tests (pytest), the frontend logic tests (Vitest) and the browser tests (Playwright). The first time, install the test browser with `npm --prefix frontend exec playwright install chromium`.
+```mermaid
+flowchart LR
+    subgraph Client
+        UI["React 19 + MapLibre GL<br/>ECharts · Zustand"]
+    end
+    subgraph Server["FastAPI"]
+        API["Sections & facts API"]
+        Agent["Agent runtime<br/>tools · grounding"]
+        Crop["Crop classifier router<br/>TorchScript"]
+        Tiles["TiTiler (COGs)"]
+        Trace["Tracer → AI store (SQLite)"]
+    end
+    UI -->|/api| API
+    UI -->|/api/assistant| Agent
+    UI -->|/api/crop-classification| Crop
+    UI -->|land tiles| MPC[("Microsoft Planetary<br/>Computer")]
+    Agent --> API
+    Agent -->|OpenAI-compatible| LLM[("LM Studio<br/>local LLM")]
+    Agent --> Trace
+    API -->|forecasts| PMD[("PMD early<br/>warning platform")]
+    API --> Tiles
+```
 
-## Evaluating the assistant
+## Tech stack
 
-The assistant is scored on two datasets in `backend/evaluations/`: `golden` (questions about each section, including ones about a different section, place or year than the one on screen) and `adversarial` (prompt injection, requests for official warnings, invented figures, off-topic requests).
+| Layer | Technologies |
+| --- | --- |
+| **Frontend** | React 19, TypeScript, Vite, MapLibre GL, ECharts, Zustand, Vitest, Playwright |
+| **Backend** | Python 3.13, FastAPI, Pydantic, TiTiler, GeoPandas, Rasterio, httpx, uv |
+| **AI / LLM** | Tool-calling agent on an OpenAI-compatible API (LM Studio, Qwen), custom evaluation harness, LLM-as-judge with human-label calibration, OpenTelemetry GenAI spans |
+| **Machine learning** | PyTorch, timm (ConvNeXt), TorchScript, MLflow, temperature scaling |
+| **Data** | Microsoft Planetary Computer (STAC, mosaics), Cloud-Optimized GeoTIFF, GeoJSON, SQLite |
+| **Delivery** | GitHub Actions CI (lint, tests, LLM eval gate, build, browser tests), Docker |
 
-- `npm run eval:live` asks the configured LM Studio model every case three times, writes `docs/evaluations/assistant-live-baseline.md`, and keeps the run in the AI store (`CSA_AI_DB`).
-- `npm run eval:recorded` replays the recorded model turns (`backend/evaluations/cassettes/`) through the real tools and scorers, and fails when a dataset's pass rate falls below `backend/evaluations/baseline.json`. `npm run check` and CI run it.
+## Getting started
 
-CI has no model, so it only replays recorded turns: it catches changes to tools, facts, the agent loop and the scorers, not changes in how the model answers. After changing a prompt or a model, run `uv run python backend/scripts/evaluate.py --mode live --record`, then `uv run python backend/scripts/evaluate.py --write-baseline backend/evaluations/baseline.json`, and commit the new cassettes and baseline with the change.
+**Requirements:** [uv](https://docs.astral.sh/uv/), Node.js 22.12+, and internet access for the base map, land tiles and forecasts. Optional: [LM Studio](https://lmstudio.ai/) for the assistant's answers, and an NVIDIA GPU for training.
 
-After changing a case's view or expected tools, run `uv run python backend/scripts/fill_eval_facts.py` to refresh the numbers its answer may quote.
+```sh
+uv sync --group ml        # Python dependencies, including PyTorch for crop screening
+npm ci && npm --prefix frontend ci
+npm run dev               # API on :9988, web on :9080, opens the browser
+```
 
-## Production build
+On Windows, `start-portal.cmd` does all of this in one double-click. For the assistant, start LM Studio's server on `127.0.0.1:1234` with a Qwen instruct model; the overview and the guided tour work without it.
 
-    npm run build
-    npm run start:api
-    npm run start:web
+<details>
+<summary><b>Preparing data</b></summary>
 
-The API command binds to port 9988 and the preview server to port 9080, both on all network interfaces (`0.0.0.0`), so other machines on the same network can open the portal at `http://<this-machine's-IP>:9080`. The preview server proxies `/api` according to `CSA_BACKEND_URL` at build/server startup. `npm run dev` binds the same way. On Windows, allow inbound access to Node.js/Python the first time Windows Firewall asks. For a public deployment, place both services behind a reverse proxy with TLS and route `/api` to the FastAPI service.
+| Command | Output |
+| --- | --- |
+| `uv run python backend/scripts/prepare_data.py` | Boundaries, irrigation, emissions, water balance, food security, crop calendar → `backend/boundaries/`, `backend/data/` |
+| `uv run python backend/scripts/prepare_land_cover_stats.py` | Annual land-classification figures per district from Planetary Computer |
+| `uv run python backend/scripts/prepare_rasters.py` | Cloud-Optimized GeoTIFF of irrigated/rainfed cropland (not in git) |
+| `uv run python backend/scripts/import_treatment_guide.py <guide>` | Crop guidance file from the agronomy treatment guide |
 
-`backend/catalogue.json` describes every section and layer; the frontend builds its interface from it. `backend/boundaries/` and `backend/data/` are generated by `uv run python backend/scripts/prepare_data.py`. Re-run it after changing source data, then restart the API.
+The crop model weights (`model.ts`) are not in git. Place them in `backend/models/crop-classification/<package>/`.
 
-## Land-cover rasters
+</details>
 
-The four land-cover rasters in `data/geospatial/rasters` are served by [TiTiler](https://developmentseed.org/titiler/), which runs inside the backend. They must first be converted to Cloud-Optimized GeoTIFFs:
+<details>
+<summary><b>Tests and evaluation</b></summary>
 
-    uv run python backend/scripts/prepare_rasters.py
+```sh
+npm run check           # lint, backend tests, recorded LLM evaluation gate, unit tests, build
+npm test                # all of the above plus Playwright browser tests
+npm run eval:live       # ask the local model every evaluation case three times and write a report
+```
 
-This writes `backend/rasters/` (not kept in git; about 1 GB in total) and takes a long time for the 10 m files. A layer shows as "Data not loaded yet" until its file is converted. Restart the portal after converting.
+After changing a prompt or the model, re-record the cassettes and the baseline:
 
-## Settings
+```sh
+uv run python backend/scripts/evaluate.py --mode live --record
+uv run python backend/scripts/evaluate.py --write-baseline backend/evaluations/baseline.json
+```
+
+</details>
+
+<details>
+<summary><b>Deployment</b></summary>
+
+```sh
+npm run build
+npm run start:api       # FastAPI on 0.0.0.0:9988
+npm run start:web       # built frontend on 0.0.0.0:9080, proxying /api to CSA_BACKEND_URL
+```
+
+For a public deployment, put both behind a reverse proxy with TLS. The `Dockerfile` builds an image that runs the API.
+
+</details>
+
+<details>
+<summary><b>Configuration</b> (environment variables, read from <code>.env</code>)</summary>
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `CSA_CATALOGUE_PATH` | `backend/catalogue.json` | Catalogue file |
-| `CSA_BOUNDARIES_DIR` | `backend/boundaries` | Boundary GeoJSON folder |
-| `CSA_BASEMAP_STYLE_URL` | OpenFreeMap Positron | Background map style |
+| `CSA_CATALOGUE_PATH` | `backend/catalogue.json` | Section and layer catalogue |
+| `CSA_BOUNDARIES_DIR` | `backend/boundaries` | Boundary GeoJSON |
 | `CSA_DATA_DIR` | `backend/data` | Prepared section data |
-| `CSA_RASTERS_DIR` | `backend/rasters` | Converted land-cover rasters |
+| `CSA_RASTERS_DIR` | `backend/rasters` | Rasters served by TiTiler |
 | `CSA_FORECAST_LAYERS_PATH` | `backend/forecast_layers.json` | Forecast layer registry |
 | `CSA_FORECAST_DIR` | `backend/forecast` | Forecast cache |
-| `CSA_CROP_MODEL_DIR` | `backend/models/crop-classification/improved-002` | Crop-classification deployment package (`model.ts`, `label_map.json`, `portal_inference.py`) |
-| `CSA_HAZARD_PRODUCTS` | `backend/hazard_products.json` | Hazard guidance products (thresholds, units, severity bands) |
-| `CSA_HAZARD_MODELS` | `backend/hazard_models.json` | Forecast-derived hazard models (rolling windows over real values, e.g. frost degree-hours) |
-| `CSA_LM_STUDIO_URL` | `http://127.0.0.1:1234` | LM Studio OpenAI-compatible server |
-| `CSA_LM_STUDIO_MODEL` | `qwen/qwen3.8-27b` | Exact loaded Qwen model identifier |
-| `CSA_LM_STUDIO_API_KEY` | empty | Optional LM Studio API key |
-| `CSA_LM_STUDIO_TIMEOUT` | `60` | Local generation timeout in seconds |
-| `CSA_PMD_URL` | empty | PMD service URL |
-| `CSA_PMD_USER` | empty | PMD username |
-| `CSA_PMD_PASS` | empty | PMD password |
-| `CSA_PMD_CERT_SHA256` | empty | Trusted PMD certificate fingerprint |
+| `CSA_PMD_URL`, `CSA_PMD_USER`, `CSA_PMD_PASS` | empty | PMD early-warning platform access |
+| `CSA_HAZARD_PRODUCTS` | `backend/hazard_products.json` | Hazard thresholds, units, severity bands |
+| `CSA_HAZARD_MODELS` | `backend/hazard_models.json` | Forecast-derived hazard models |
+| `CSA_CROP_MODEL_DIR` | `…/improved-002` | Rice and maize model package |
+| `CSA_FIVE_CROP_MODEL_DIR` | `…/five-crop-001` | Cotton, wheat and sugarcane model package |
+| `CSA_CROP_GUIDANCE` | `backend/crop_guidance.json` | Symptoms, prevention, reviewed treatment |
+| `CSA_LM_STUDIO_URL` | `http://127.0.0.1:1234` | LM Studio server |
+| `CSA_LM_STUDIO_MODEL` | `qwen/qwen3.8-27b` | Model identifier |
+| `CSA_LM_STUDIO_API_KEY` | empty | Optional API key |
+| `CSA_LM_STUDIO_TIMEOUT` | `60` | Generation timeout (s) |
+| `CSA_AI_CONCURRENCY` | `1` | Questions answered at once |
+| `CSA_AI_QUEUE_SECONDS` | `5` | Wait for a slot before "busy" |
+| `CSA_AI_DB` | `backend/ai.db` | AI store; empty turns it off |
+| `CSA_TRACE_CONTENT` | off | `1` keeps question and answer text |
+| `CSA_TRACE_RETENTION_DAYS` | `30` | Live trace retention |
+| `CSA_OTLP_ENDPOINT` | empty | Optional OTLP/HTTP trace export |
+| `CSA_OPS_TOKEN` | empty | Enables the AI Ops API and `/ops` |
+| `CSA_JUDGE_URL`, `CSA_JUDGE_MODEL` | LM Studio URL, empty | Optional LLM judge |
+
+</details>
+
+## Project layout
+
+```
+backend/
+  csa_portal/          FastAPI app: sections, facts, forecast, hazards, crop screening
+    ai/                agent runtime, tools, tracing, AI store, evaluations, ops API
+  evaluations/         LLM datasets, recorded cassettes, pass-rate baseline
+  scripts/  tests/     data preparation and evaluation; pytest suite
+frontend/
+  src/                 React app: map, panels, charts, assistant, /ops dashboard
+  e2e/                 Playwright browser tests
+ml/crop-disease/       dataset manifest, training, autoresearch, calibration, packaging
+docs/                  architecture decisions, evaluation reports, screenshots
+```
+
+## Engineering practice
+
+- **One branch and pull request per issue**, with CI (lint, about 1,000 tests, the LLM evaluation gate, build) required to be green before merging.
+- **Test-first development** for backend and frontend behaviour.
+- **Architecture decisions** are recorded as [ADRs](docs/adr/), and the domain language is fixed in [`CONTEXT.md`](CONTEXT.md).
+- **Evaluation reports** for the assistant and the crop models are kept in [`docs/evaluations/`](docs/evaluations/).
+
+## Data sources
+
+Esri / Impact Observatory annual land use and land cover (`io-lulc-annual-v02`) via Microsoft Planetary Computer · Pakistan Meteorological Department forecasts · Pakistan's Third National Communication to the UNFCCC (emissions) · project datasets for irrigation, water balance, food security and the crop calendar · base map © [OpenFreeMap](https://openfreemap.org/), data © OpenStreetMap contributors.
