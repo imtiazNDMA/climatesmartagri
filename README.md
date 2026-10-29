@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌾 Climate Smart Agriculture Portal
+# Climate Smart Agriculture Portal
 
 **A map-first decision platform for Pakistan's agriculture, climate and hazard data, with a grounded AI assistant and a calibrated crop disease detector.**
 
@@ -28,12 +28,12 @@ Disaster management officers in Pakistan need to know what is growing where, how
 
 | | |
 | --- | --- |
-| 🗺️ **10 sections, one map** | Land classification (2017–2023), irrigation, emissions, water balance, food security, crop calendar, live weather forecasts, hazards, crop disease detection |
-| 🌦️ **47 live forecast layers** | From 8 numerical weather models (PMD, ECMWF, CMA and others), turned into district-level frost, heat, rain, wind and visibility guidance |
-| 🤖 **Grounded AI guide** | A tool-calling agent on a local LLM; every number in an answer is checked against the data it was given |
-| 🔬 **Crop disease detector** | 37 classes across 5 crops; **0.959 test accuracy, 0.898 macro F1**, temperature-calibrated with an expert-review threshold |
-| ✅ **Tested end to end** | About 600 backend tests, 300+ frontend unit tests, 90+ Playwright browser tests, and an LLM evaluation gate in CI |
-| 📈 **Observable AI** | OpenTelemetry-style traces for every answer, a SQLite AI store and a token-protected ops dashboard |
+| **10 sections, one map** | Land classification (2017–2023), irrigation, emissions, water balance, food security, crop calendar, live weather forecasts, hazards, crop disease detection |
+| **47 live forecast layers** | From 8 numerical weather models (PMD, ECMWF, CMA and others), turned into district-level frost, heat, rain, wind and visibility guidance |
+| **Grounded AI guide** | A tool-calling agent on a local LLM; every number in an answer is checked against the data it was given |
+| **Crop disease detector** | 37 classes across 5 crops; **0.959 test accuracy, 0.898 macro F1**, temperature-calibrated with an expert-review threshold |
+| **Tested end to end** | About 600 backend tests, 300+ frontend unit tests, 90+ Playwright browser tests, and an LLM evaluation gate in CI |
+| **Observable AI** | OpenTelemetry-style traces for every answer, a SQLite AI store and a token-protected ops dashboard |
 
 ## A look inside
 
