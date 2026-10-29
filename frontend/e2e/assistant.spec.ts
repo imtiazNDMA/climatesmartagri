@@ -106,16 +106,19 @@ test('the launcher and open guide can be dragged without leaving the viewport', 
 })
 
 test('the guide animates out before restoring the launcher', async ({ page }) => {
+  // A fake clock, so a slow machine cannot run the 160 ms close animation out before it is checked.
+  await page.clock.install()
   await openPortal(page)
   await page.getByRole('button', { name: 'AI portal guide' }).click()
   const guide = page.getByRole('dialog', { name: 'Portal AI assistant' })
   await expect(guide).toBeVisible()
 
+  await page.clock.pauseAt(Date.now() + 60_000)
   await guide.getByRole('button', { name: 'Close assistant' }).click()
   await expect(guide).toHaveClass(/assistant-closing/)
-  await page.waitForTimeout(50)
   await expect(guide).toHaveCount(1)
-  await expect(guide).toHaveCount(0, { timeout: 1000 })
+  await page.clock.runFor(200)
+  await expect(guide).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'AI portal guide' })).toBeVisible()
 })
 
