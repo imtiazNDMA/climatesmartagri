@@ -83,3 +83,7 @@ _Avoid_: bulletin, warning, alert
 **Crop health screening**:
 The portal's reading of a leaf or plant photo as a disease, pest or healthy class. A low-confidence screening is marked for expert review.
 _Avoid_: diagnosis, detection
+
+**Photo check**:
+The vision model's reading of a photo before a crop health screening: whether it shows a plant or crop pest, which of the five crops it is, and whether it is usable. It never names a disease; the classifiers do the screening.
+_Avoid_: gate, validation, detection

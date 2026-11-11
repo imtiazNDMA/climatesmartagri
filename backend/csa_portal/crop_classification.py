@@ -15,7 +15,9 @@ from starlette.concurrency import run_in_threadpool
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+from .ai.model import ModelError
 from .crop_guidance import CropGuidance, Guidance
+from .photo_check import PhotoCheck, PhotoCheckOutcome
 
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 MAX_IMAGE_PIXELS = 12_000_000
@@ -40,6 +42,10 @@ class ClassificationResult(BaseModel):
     calibrated: bool = False
     # For the most likely class; None when the guidance file has no entry for it.
     guidance: Guidance | None = None
+    # The crop the photo was classified as; None when the photo check stopped it before a classifier was asked.
+    crop: Crop | None = None
+    # Present when the reader left the crop to the photo check (Auto).
+    photo_check: PhotoCheckOutcome | None = None
 
 
 class Predictor(Protocol):
@@ -145,25 +151,61 @@ def validate_image(content: bytes) -> None:
         raise _error(422, "Upload a valid JPEG, PNG or WebP image", "invalid-image") from err
 
 
-def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter, guidance: CropGuidance) -> None:
+async def read_upload(image: UploadFile) -> bytes:
+    if image.content_type not in ALLOWED_CONTENT_TYPES:
+        raise _error(415, "Upload a JPEG, PNG or WebP image", "unsupported-image-type")
+    content = await image.read(MAX_UPLOAD_BYTES + 1)
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise _error(413, "Image must be 10 MB or smaller", "image-too-large")
+    validate_image(content)
+    return content
+
+
+def add_crop_classification_routes(
+    app: FastAPI, service: CropClassifierRouter, guidance: CropGuidance, photo_check: PhotoCheck | None = None
+) -> None:
+    async def checked(content: bytes, picked: Crop | None) -> PhotoCheckOutcome:
+        """The photo check's outcome. Any failure of the model is one answer, so the panel can fall back to the
+        reader naming the crop."""
+        if photo_check is None:
+            raise _error(503, "The photo check is not switched on", "photo-check-unavailable")
+        try:
+            return await run_in_threadpool(photo_check.check, content, picked)
+        except ModelError as err:
+            raise _error(503, "The photo could not be checked. Pick the crop yourself.", "photo-check-unavailable") from err
+
     @app.get("/api/crop-classification/status")
     def status() -> dict[str, object]:
-        return {"configured": service.configured, "crops": service.crops, "max_upload_bytes": MAX_UPLOAD_BYTES}
+        return {
+            "configured": service.configured, "crops": service.crops, "max_upload_bytes": MAX_UPLOAD_BYTES,
+            # Whether the reader may leave the crop to the photo check.
+            "auto": photo_check is not None,
+        }
+
+    @app.post("/api/crop-classification/check", response_model=PhotoCheckOutcome)
+    async def check(crop: Annotated[Crop, Form()], image: Annotated[UploadFile, File()]) -> PhotoCheckOutcome:
+        """The photo check for a crop the reader named: it warns, and never stands in the way of a screening."""
+        return await checked(await read_upload(image), crop)
 
     @app.post("/api/crop-classification/predict", response_model=ClassificationResult)
     async def predict(
-        crop: Annotated[Crop, Form()],
+        crop: Annotated[Crop | Literal["Auto"], Form()],
         image: Annotated[UploadFile, File()],
         top_k: Annotated[int, Form(ge=1, le=5)] = 3,
     ) -> ClassificationResult:
-        if crop not in service.crops:
+        if crop != "Auto" and crop not in service.crops:
             raise _error(503, f"The classifier for {crop} is not configured", "classifier-unavailable")
-        if image.content_type not in ALLOWED_CONTENT_TYPES:
-            raise _error(415, "Upload a JPEG, PNG or WebP image", "unsupported-image-type")
-        content = await image.read(MAX_UPLOAD_BYTES + 1)
-        if len(content) > MAX_UPLOAD_BYTES:
-            raise _error(413, "Image must be 10 MB or smaller", "image-too-large")
-        validate_image(content)
+        content = await read_upload(image)
+        outcome: PhotoCheckOutcome | None = None
+        if crop == "Auto":
+            outcome = await checked(content, None)
+            if outcome.identified_crop is None:
+                # Not a plant, not one of the five crops, or not clear which: no classifier is asked, since it
+                # would name one of its own classes for anything.
+                return ClassificationResult(predictions=[], needs_expert_review=False, model="", photo_check=outcome)
+            crop = outcome.identified_crop
+            if crop not in service.crops:
+                raise _error(503, f"The classifier for {crop} is not configured", "classifier-unavailable")
         try:
             result = await run_in_threadpool(service.classify, content, crop, top_k)
         except HTTPException:
@@ -172,4 +214,9 @@ def add_crop_classification_routes(app: FastAPI, service: CropClassifierRouter, 
             raise _error(500, "The classifier could not process this image", "inference-failed") from err
         if result.predictions:
             result.guidance = guidance.for_class(result.predictions[0].canonical_class_id)
+        result.crop = crop
+        result.photo_check = outcome
+        if outcome is not None and outcome.quality:
+            # A poor photo is still screened, but the result goes to an expert whatever the confidence.
+            result.needs_expert_review = True
         return result

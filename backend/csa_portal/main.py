@@ -28,6 +28,7 @@ from .catalogue import Layer, load_catalogue  # noqa: E402
 from .ai.agents.assistant import AssistantClient, AssistantService, add_assistant_routes  # noqa: E402
 from .crop_classification import CropClassifier, CropClassifierRouter, add_crop_classification_routes  # noqa: E402
 from .crop_guidance import CropGuidance  # noqa: E402
+from .photo_check import PhotoCheck  # noqa: E402
 from .facts import Facts  # noqa: E402
 from .land_cover_mpc import (  # noqa: E402
     SUPPORTED_YEARS,
@@ -145,6 +146,7 @@ def create_app(
     crop_classifier: CropClassifierRouter | None = None,
     assistant_client: AssistantClient | None = None,
     tracer: Tracer | None = None,
+    photo_check_model: Any | None = None,
     land_cover: LandCoverResolver | None = None,
     land_cover_error: str | None = None,
 ) -> FastAPI:
@@ -194,7 +196,14 @@ def create_app(
         CropClassifier(settings.crop_model_dir, ("Rice", "Maize")),
         CropClassifier(settings.five_crop_model_dir, ("Cotton", "Wheat", "Sugarcane")),
     ])
-    add_crop_classification_routes(app, classifier, CropGuidance(settings.crop_guidance_path))
+    # The photo check has its own, shorter wait than the assistant: past it the reader names the crop instead.
+    if photo_check_model is None and settings.photo_check:
+        photo_check_model = LmStudioModel(
+            settings.lm_studio_url, settings.lm_studio_model, settings.photo_check_timeout, settings.lm_studio_api_key,
+            temperature=0, remote_images=settings.lm_studio_remote_images,
+        )
+    photo_check = PhotoCheck(photo_check_model, settings.lm_studio_model, tracer) if photo_check_model is not None else None
+    add_crop_classification_routes(app, classifier, CropGuidance(settings.crop_guidance_path), photo_check)
     hazards = load_hazards(settings.hazard_products_path)
 
     # --- Land-cover rasters, served by TiTiler from converted (cloud-optimized) files.
