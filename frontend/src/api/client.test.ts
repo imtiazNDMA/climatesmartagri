@@ -136,6 +136,7 @@ describe('client', () => {
     expect(body.history).toHaveLength(8)
     expect(body.history[0].content).toBe('Message 2')
     expect(body.view).toMatchObject({ section_id: 'hazards', place_id: 'PK101' })
+    expect(body.language).toBe('en')
   })
 
   it('requests district risk for an exact forecast time and run', async () => {

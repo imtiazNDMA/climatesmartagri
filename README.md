@@ -30,7 +30,7 @@ Disaster management officers in Pakistan need to know what is growing where, how
 | --- | --- |
 | **10 sections, one map** | Land classification (2017–2023), irrigation, emissions, water balance, food security, crop calendar, live weather forecasts, hazards, crop disease detection |
 | **47 live forecast layers** | From 8 numerical weather models (PMD, ECMWF, CMA and others), turned into district-level frost, heat, rain, wind and visibility guidance |
-| **Grounded AI guide** | A tool-calling agent on a local LLM; every number in an answer is checked against the data it was given |
+| **Grounded AI guide** | A tool-calling agent on a local LLM, answering in English or Urdu; every number in an answer is checked against the data it was given |
 | **Crop disease detector** | 37 classes across 5 crops; **0.959 test accuracy, 0.898 macro F1**, temperature-calibrated with an expert-review threshold |
 | **Tested end to end** | About 600 backend tests, 300+ frontend unit tests, 90+ Playwright browser tests, and an LLM evaluation gate in CI |
 | **Observable AI** | OpenTelemetry-style traces for every answer, a SQLite AI store and a token-protected ops dashboard |
@@ -56,9 +56,10 @@ Disaster management officers in Pakistan need to know what is growing where, how
 - **It can drive the UI, safely.** A `set_portal_view` tool lets the assistant open sections, select places, years and layers, and show forecasts. Every requested change is validated on the server before the frontend applies it.
 - **Prompt-injection aware.** Portal data and conversation history go into the prompt marked as untrusted data, and an adversarial test set probes injection through questions, place names and history.
 - **Local by default.** It runs on a local model through LM Studio ([ADR 0001](docs/adr/0001-local-language-model-by-default.md)), so readers' questions never leave the machine. A concurrency limit and a bounded queue keep the GPU from being overloaded.
+- **English and Urdu.** Urdu answers render right to left in Nastaliq script, with figures kept in digits the grounding check can read. On the local model the Urdu golden set matches English on grounded answers ([evaluation](docs/evaluations/assistant-urdu-10-evaluation.md)).
 
 ### LLM evaluation as part of CI
-- **Golden and adversarial datasets** are scored on grounded numbers, naming the right section, refusals, the hazard disclaimer, the tools called, and safety.
+- **Golden (English and Urdu) and adversarial datasets** are scored on grounded numbers, naming the right section, refusals, the hazard disclaimer, the tools called, and safety.
 - **Cassette replay.** A live run records the model's turns. CI replays them through the *real* tools, agent loop and scorers, so it catches regressions with no GPU, and fails when a pass rate drops below the recorded baseline.
 - **An LLM judge calibrated against humans.** Its grades only count once its agreement with human labels reaches Cohen's κ ≥ 0.6.
 

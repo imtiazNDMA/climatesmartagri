@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "844225065",
+        "name": "find_place",
+        "arguments": {
+          "name": "Sindh"
+        }
+      }
+    ],
+    "input_tokens": 3820,
+    "output_tokens": 337
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "296156232",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "irrigation",
+          "place_id": "p-sindh"
+        }
+      }
+    ],
+    "input_tokens": 3934,
+    "output_tokens": 78
+  },
+  {
+    "text": "سندھ (Sindh) میں زیرِزمین پانی سے سیراب ہونے والی زمین کا ریکارڈ \"Climate Smart Irrigation Practices\" سیکشن میں موجود ہے۔\n\n- زیرِزمین پانی سے سیراب ہونے والی زمین: **0.54 ملین ایکڑ**\n- یہ کل سیرابی کے قابل (equipped) زمین کا **4.1%** ہے\n\nیاد رہے کہ سندھ میں سیرابی کا زیادہ تر حصہ (95.9%) سطحی پانی سے ہوتا ہے، جبکہ زیرِزمین پانی کا حصہ نسبتاً کم ہے۔",
+    "tool_calls": [],
+    "input_tokens": 6948,
+    "output_tokens": 199
+  }
+]

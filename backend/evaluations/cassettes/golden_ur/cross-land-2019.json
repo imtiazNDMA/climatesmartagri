@@ -1,0 +1,24 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "996546864",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "PK",
+          "year": 2019
+        }
+      }
+    ],
+    "input_tokens": 4875,
+    "output_tokens": 135
+  },
+  {
+    "text": "2019 میں پاکستان (Pakistan) کی درجہ بند زمین کا 20.2 فیصد حصہ فصلوں (crops) پر مشتمل تھا۔ یہ اعداد و شمار پورٹل کے \"Land Classification\" سیکشن سے ہیں۔\n\n(نوٹ: یہ ہر سال کی درجہ بند اراضی کے خالص رقبے ہیں؛ پورٹل یہ نہیں بتاتا کہ زمین ایک درجے سے دوسرے کیسے منتقل ہوئی یا اس کی وجہ کیا تھی۔)",
+    "tool_calls": [],
+    "input_tokens": 15850,
+    "output_tokens": 195
+  }
+]

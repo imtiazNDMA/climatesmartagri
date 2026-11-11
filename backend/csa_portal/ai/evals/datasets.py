@@ -66,6 +66,8 @@ class Dataset(_Strict):
     name: str
     version: int
     review_status: str
+    # The language the assistant is asked to answer in for every case.
+    language: Literal["en", "ur"] = "en"
     cases: list[EvalCase]
 
     @model_validator(mode="after")
@@ -88,6 +90,8 @@ def load_dataset(name: str, directory: Path = DATASETS_DIR) -> Dataset:
 def dump_dataset(dataset: Dataset) -> str:
     """The dataset as JSON with one case per line and defaults left out, so a diff shows one line per case."""
     head = {key: getattr(dataset, key) for key in ("name", "version", "review_status")}
+    if dataset.language != "en":
+        head["language"] = dataset.language
     lines = [json.dumps(case.model_dump(mode="json", exclude_defaults=True), ensure_ascii=False) for case in dataset.cases]
     body = ",\n".join(f"    {line}" for line in lines)
     fields = ",\n".join(f"  {json.dumps(key)}: {json.dumps(value, ensure_ascii=False)}" for key, value in head.items())

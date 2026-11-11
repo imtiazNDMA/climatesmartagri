@@ -172,3 +172,14 @@ def test_the_judge_grades_with_the_context_and_facts_the_assistant_was_shown(set
     data = json_module.loads(judge_model.sent[0][1]["content"])
     assert data["context"]["portal"]["title"] == "Climate Smart Agriculture Portal"
     assert "current_view" in data["context"]
+
+
+def test_an_urdu_dataset_asks_every_question_for_an_urdu_answer(settings):
+    urdu = DATASET.model_copy(update={"language": "ur"})
+    model = ScriptedModel([Completion(text="hello"), Completion(text="hello")])
+
+    run_dataset(assistant(settings, model), urdu, mode="live", model="qwen")
+
+    assert all("ANSWER LANGUAGE:" in sent[-1]["content"] for sent in model.sent)
+    assert "Language: Urdu" in markdown_report([(urdu, run_dataset(
+        assistant(settings, ScriptedModel([Completion(text="hello")] * 2)), urdu, mode="live", model="qwen"))])

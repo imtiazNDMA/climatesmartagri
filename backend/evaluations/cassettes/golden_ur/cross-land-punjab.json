@@ -1,0 +1,37 @@
+[
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "182156169",
+        "name": "find_place",
+        "arguments": {
+          "name": "Punjab"
+        }
+      }
+    ],
+    "input_tokens": 3877,
+    "output_tokens": 100
+  },
+  {
+    "text": null,
+    "tool_calls": [
+      {
+        "id": "625715401",
+        "name": "get_section_facts",
+        "arguments": {
+          "section_id": "land-cover",
+          "place_id": "p-punjab"
+        }
+      }
+    ],
+    "input_tokens": 3994,
+    "output_tokens": 130
+  },
+  {
+    "text": "پورٹل کے **Land Classification** سیکشن کے مطابق، 2023 میں پنجاب (Punjab) کی درج شدہ زمین کا 60.3 فیصد حصہ فصلوں (زرعی زمین) کے طور پر درج ہے۔\n\nتفصیل:\n- درج شدہ زمین: 50.62 ملین ایکڑ، جو پنجاب کی کل زمین کا 100 فیصد ہے۔\n- فصلوں (Crops) کا حصہ: 30.53 ملین ایکڑ، یعنی درج شدہ زمین کا 60.3 فیصد۔\n\nنوٹ: یہ اعداد و شمار ہر سال کی درج شدہ اقسام کے خالص رقبے ہیں؛ پورٹل یہ نہیں بتاتا کہ کون سی زمین ایک قسم سے دوسری میں منتقل ہوئی یا اس کی وجہ کیا تھی۔",
+    "tool_calls": [],
+    "input_tokens": 15467,
+    "output_tokens": 303
+  }
+]

@@ -33,3 +33,11 @@ def test_a_typographic_minus_sign_keeps_the_figure_negative():
 
     assert result.numbers == (-8.1,)
     assert result.passed
+
+
+def test_urdu_and_arabic_indic_digits_are_read_as_figures():
+    result = score_grounding("گندم کا رقبہ ۱۲٫۵ ملین ایکڑ اور ٣٠ فیصد ہے، کل ۱۲٬۳۴۵ ہیکٹر۔", [12.5, 30, 12345])
+
+    assert result.numbers == (12.5, 30.0, 12345.0)
+    assert result.passed
+    assert score_grounding("رقبہ ۴۲ فیصد ہے۔", [30]).unsupported == (42.0,)

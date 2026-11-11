@@ -89,7 +89,7 @@ def judge_client(settings: Settings, name: str) -> LmStudioModel:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--dataset", action="append", dest="datasets", help="golden, adversarial, ... (repeatable)")
+    parser.add_argument("--dataset", action="append", dest="datasets", help="golden, golden_ur, adversarial, ... (repeatable)")
     parser.add_argument("--mode", choices=("recorded", "live"), default="recorded")
     parser.add_argument("--repeats", type=int, help="runs per case (default 1 recorded, 3 live)")
     parser.add_argument("--record", action="store_true", help="live only: save the first repeat as cassettes")
@@ -107,7 +107,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("--record needs --mode live")
 
     settings = Settings.from_env()
-    datasets = [load_dataset(name, DATASETS_DIR) for name in args.datasets or ["golden", "adversarial"]]
+    datasets = [load_dataset(name, DATASETS_DIR) for name in args.datasets or ["golden", "golden_ur", "adversarial"]]
     if args.case_ids:
         requested = set(args.case_ids)
         for dataset in datasets:

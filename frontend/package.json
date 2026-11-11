@@ -15,6 +15,7 @@
     "e2e": "playwright test"
   },
   "dependencies": {
+    "@fontsource/noto-nastaliq-urdu": "^5.3.0",
     "@lottiefiles/dotlottie-react": "^0.20.0",
     "@lottiefiles/dotlottie-web": "0.81.0",
     "animejs": "^4.5.0",

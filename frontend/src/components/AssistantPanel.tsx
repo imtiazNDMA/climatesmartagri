@@ -3,9 +3,12 @@ import { ArrowLeft, ArrowRight, Bot, ChevronRight, Compass, MessageCircle, Send,
 import { DotLottieReact } from './lottie'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import '@fontsource/noto-nastaliq-urdu/arabic-400.css'
+import './assistantUrdu.css'
 import { askAssistant, fetchAssistantOverview, fetchAssistantTour } from '../api/client'
 import type {
   AssistantChatMessage,
+  AssistantLanguage,
   AssistantOverview,
   AssistantTour,
   AssistantTourStep,
@@ -14,9 +17,15 @@ import type {
 import type { DistrictRiskState } from '../data/useDistrictRisk'
 import { applyPortalActions, useView, viewStore } from '../state/viewState'
 import { useAssistantDrag, type AssistantPosition } from './useAssistantDrag'
+import { CHAT_TEXT, storedLanguage, storeLanguage } from './assistantLanguage'
 
 type Mode = 'overview' | 'chat' | 'tour'
-type ChatEntry = AssistantChatMessage & { sources?: string[]; grounded?: boolean; uncheckedNumbers?: number[] }
+type ChatEntry = AssistantChatMessage & {
+  language: AssistantLanguage
+  sources?: string[]
+  grounded?: boolean
+  uncheckedNumbers?: number[]
+}
 const TOUR_STEP_MS = 7000
 
 function applyTourStep(
@@ -60,6 +69,8 @@ export function AssistantPanel({
   const [messages, setMessages] = useState<ChatEntry[]>([])
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
+  const [language, setLanguage] = useState<AssistantLanguage>(storedLanguage)
+  const text = CHAT_TEXT[language]
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -117,17 +128,18 @@ export function AssistantPanel({
   }
   const submit = async (event: FormEvent) => {
     event.preventDefault()
-    const text = question.trim()
-    if (!text || busy) return
+    const asked = question.trim()
+    if (!asked || busy) return
     const history = messages.slice(-8).map(({ role, content }) => ({ role, content }))
-    setMessages([...messages, { role: 'user', content: text }])
+    const answerLanguage = language
+    setMessages([...messages, { role: 'user', content: asked, language: answerLanguage }])
     setQuestion('')
     setBusy(true)
     setError(null)
     const controller = new AbortController()
     requestRef.current = controller
     try {
-      const reply = await askAssistant(text, history, {
+      const reply = await askAssistant(asked, history, {
         section_id: section,
         place_id: place,
         year,
@@ -140,10 +152,10 @@ export function AssistantPanel({
           run: districtRisk.data.run,
           districts: districtRisk.data.districts,
         } : null,
-      }, controller.signal)
+      }, controller.signal, answerLanguage)
       if (reply.portal_actions?.length) applyPortalActions(reply.portal_actions)
       setMessages((current) => [...current, {
-        role: 'assistant', content: reply.answer, sources: reply.source_names,
+        role: 'assistant', content: reply.answer, language: answerLanguage, sources: reply.source_names,
         grounded: reply.grounded, uncheckedNumbers: reply.unchecked_numbers,
       }])
     } catch (problem) {
@@ -188,6 +200,19 @@ export function AssistantPanel({
         <button type="button" aria-pressed={mode === 'overview'} onClick={() => setMode('overview')}><Sparkles size={15} />Overview</button>
         <button type="button" aria-pressed={mode === 'tour'} onClick={startTour}><Compass size={15} />Tour</button>
         <button type="button" aria-pressed={mode === 'chat'} onClick={() => setMode('chat')}><MessageCircle size={15} />Ask</button>
+        {mode === 'chat' && (
+          <span className="assistant-language" role="group" aria-label="Answer language">
+            {(['en', 'ur'] as const).map((option) => (
+              <button
+                type="button"
+                key={option}
+                lang={option}
+                aria-pressed={language === option}
+                onClick={() => { setLanguage(option); storeLanguage(option) }}
+              >{option === 'en' ? 'English' : 'اردو'}</button>
+            ))}
+          </span>
+        )}
       </nav>
 
       <div className="assistant-body">
@@ -245,39 +270,43 @@ export function AssistantPanel({
           <div className="assistant-chat">
             <div className="assistant-messages" aria-live="polite">
               {messages.length === 0 && (
-                <div className="assistant-intro">
+                <div className="assistant-intro" lang={language} dir={language === 'ur' ? 'rtl' : undefined}>
                   <Bot size={24} aria-hidden />
-                  <p>Ask about the current map, a portal section, indicators, forecasts, or hazard guidance.</p>
-                  {overview?.suggested_questions.slice(0, 3).map((suggestion) => (
+                  <p>{text.intro}</p>
+                  {(text.suggestions ?? overview?.suggested_questions ?? []).slice(0, 3).map((suggestion) => (
                     <button type="button" key={suggestion} onClick={() => setQuestion(suggestion)}>{suggestion}</button>
                   ))}
                 </div>
               )}
-              {messages.map((message, index) => (
-                <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
-                  <span>{message.role === 'user' ? 'You' : 'Guide'}</span>
-                  {message.role === 'assistant' ? (
-                    <div className="assistant-message-content">
-                      <Markdown
-                        remarkPlugins={[remarkGfm]}
-                        allowedElements={['p', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'blockquote', 'br']}
-                      >
-                        {message.content}
-                      </Markdown>
-                    </div>
-                  ) : <p>{message.content}</p>}
-                  {message.sources && message.sources.length > 0 && (
-                    <small>Sources: {message.sources.join(' · ')}</small>
-                  )}
-                  {message.role === 'assistant' && message.grounded === false && (
-                    <small className="assistant-unchecked" role="status">
-                      A figure in this answer could not be checked against the facts used.
-                      {message.uncheckedNumbers?.length ? ` Unchecked: ${message.uncheckedNumbers.join(', ')}.` : ''}
-                    </small>
-                  )}
-                </div>
-              ))}
-              {busy && <p className="assistant-thinking"><i />Qwen is thinking…</p>}
+              {messages.map((message, index) => {
+                const words = CHAT_TEXT[message.language]
+                const dir = message.language === 'ur' ? 'rtl' : undefined
+                return (
+                  <div key={`${message.role}-${index}`} className={`assistant-message ${message.role}`}>
+                    <span lang={message.language}>{message.role === 'user' ? words.you : words.guide}</span>
+                    {message.role === 'assistant' ? (
+                      <div className="assistant-message-content" lang={message.language} dir={dir}>
+                        <Markdown
+                          remarkPlugins={[remarkGfm]}
+                          allowedElements={['p', 'strong', 'em', 'ul', 'ol', 'li', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'blockquote', 'br']}
+                        >
+                          {message.content}
+                        </Markdown>
+                      </div>
+                    ) : <p lang={message.language} dir="auto">{message.content}</p>}
+                    {message.sources && message.sources.length > 0 && (
+                      <small lang={message.language} dir={dir}>{words.sources} {message.sources.join(' · ')}</small>
+                    )}
+                    {message.role === 'assistant' && message.grounded === false && (
+                      <small className="assistant-unchecked" role="status" lang={message.language} dir={dir}>
+                        {words.unchecked}
+                        {message.uncheckedNumbers?.length ? ` ${words.uncheckedList} ${message.uncheckedNumbers.join(', ')}.` : ''}
+                      </small>
+                    )}
+                  </div>
+                )
+              })}
+              {busy && <p className="assistant-thinking" lang={language}><i />{text.thinking}</p>}
             </div>
             <form className="assistant-compose" onSubmit={submit}>
               <input
@@ -285,10 +314,12 @@ export function AssistantPanel({
                 value={question}
                 maxLength={2000}
                 onChange={(event) => setQuestion(event.target.value)}
-                placeholder="Ask about this portal…"
-                aria-label="Question for the portal guide"
+                placeholder={text.placeholder}
+                aria-label={text.question}
+                lang={language}
+                dir="auto"
               />
-              <button type="submit" aria-label="Send question" disabled={!question.trim() || busy}><Send size={17} /></button>
+              <button type="submit" aria-label={text.send} disabled={!question.trim() || busy}><Send size={17} /></button>
             </form>
           </div>
         )}
