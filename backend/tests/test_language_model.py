@@ -252,6 +252,45 @@ def test_a_photo_loses_its_location_and_device_before_the_model_sees_it():
     assert (photo.sha256, photo.size, photo.width, photo.height) == (hashlib.sha256(upload).hexdigest(), len(upload), 800, 600)
 
 
+def test_a_photo_taken_sideways_is_turned_upright():
+    import io
+
+    from PIL import Image
+
+    from csa_portal.language_model import Photo
+
+    exif = Image.Exif()
+    exif[0x0112] = 6  # held sideways: the pixels must be turned to read upright
+    buffer = io.BytesIO()
+    Image.new("RGB", (200, 100), (40, 120, 50)).save(buffer, "JPEG", exif=exif)
+
+    photo = Photo.from_upload(buffer.getvalue())
+
+    assert Image.open(io.BytesIO(photo.data)).size == (100, 200)
+    assert (photo.width, photo.height) == (200, 100)  # the record describes the upload as it came
+
+
+def test_a_photo_whose_exif_cannot_be_read_is_still_sent(monkeypatch):
+    # Real phone and editor photos carry damaged EXIF blocks; one made Pillow's exif_transpose raise a TypeError
+    # in the evaluation, so only the orientation is read and a failure to read it leaves the photo as it is.
+    import io
+
+    from PIL import Image
+
+    from csa_portal.language_model import Photo
+
+    def broken(self):
+        raise TypeError("bad operand type for abs(): 'str'")
+
+    monkeypatch.setattr(Image.Image, "getexif", broken)
+    buffer = io.BytesIO()
+    Image.new("RGB", (200, 100), (40, 120, 50)).save(buffer, "JPEG")
+
+    photo = Photo.from_upload(buffer.getvalue())
+
+    assert Image.open(io.BytesIO(photo.data)).size == (200, 100)
+
+
 def test_a_photo_is_not_sent_to_a_model_outside_the_local_network_unless_the_deployment_allows_it():
     from csa_portal.language_model import Photo
 

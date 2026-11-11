@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from collections.abc import Iterator
 from typing import Any, Protocol, TypeVar
 
-from PIL import Image, ImageOps
+from PIL import Image
 from pydantic import BaseModel, ValidationError
 
 Shape = TypeVar("Shape", bound=BaseModel)
@@ -63,6 +63,13 @@ class Completion:
     output_tokens: int | None = None
 
 
+_ORIENTATIONS = {
+    2: Image.Transpose.FLIP_LEFT_RIGHT, 3: Image.Transpose.ROTATE_180, 4: Image.Transpose.FLIP_TOP_BOTTOM,
+    5: Image.Transpose.TRANSPOSE, 6: Image.Transpose.ROTATE_270, 7: Image.Transpose.TRANSVERSE,
+    8: Image.Transpose.ROTATE_90,
+}
+
+
 @dataclass(frozen=True)
 class Photo:
     """A reader's photo, made ready for a model. `data` is a fresh JPEG copy with nothing of the upload's EXIF
@@ -80,7 +87,15 @@ class Photo:
         with Image.open(io.BytesIO(content)) as image:
             width, height = image.size
             # Turn the pixels the way EXIF says the photo was held, since the copy carries no EXIF to say it.
-            copy = ImageOps.exif_transpose(image).convert("RGB")
+            # Only the orientation is read: Pillow's exif_transpose re-writes the whole EXIF block and fails
+            # on a damaged one, which real phone and editor photos have.
+            try:
+                orientation = image.getexif().get(0x0112)
+            except Exception:  # a damaged block can fail to read at all; the photo is then left as it is
+                orientation = None
+            copy = image.convert("RGB")
+        if orientation in _ORIENTATIONS:
+            copy = copy.transpose(_ORIENTATIONS[orientation])
         copy.thumbnail((longest_side, longest_side))
         buffer = io.BytesIO()
         copy.save(buffer, "JPEG", quality=90)

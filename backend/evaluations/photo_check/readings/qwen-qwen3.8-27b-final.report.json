@@ -1,0 +1,95 @@
+{
+  "photos": {
+    "crop": 500,
+    "other-plant": 100,
+    "not-plant": 50,
+    "poor": 50
+  },
+  "bars": [
+    {
+      "name": "crop-identification",
+      "value": 0.512,
+      "threshold": 0.97,
+      "at_least": true,
+      "met": false
+    },
+    {
+      "name": "false-stops",
+      "value": 0.062,
+      "threshold": 0.02,
+      "at_least": false,
+      "met": false
+    },
+    {
+      "name": "non-plant-stopped",
+      "value": 1.0,
+      "threshold": 0.95,
+      "at_least": true,
+      "met": true
+    },
+    {
+      "name": "unsupported-plant-stopped",
+      "value": 0.91,
+      "threshold": 0.85,
+      "at_least": true,
+      "met": true
+    },
+    {
+      "name": "auto-macro-f1-drop",
+      "value": 0.1121,
+      "threshold": 0.02,
+      "at_least": false,
+      "met": false
+    }
+  ],
+  "ship": false,
+  "crop_outcomes": {
+    "Cotton": {
+      "right": 62,
+      "wrong-crop": 2,
+      "unclear": 12,
+      "stopped": 24
+    },
+    "Maize": {
+      "right": 42,
+      "wrong-crop": 12,
+      "unclear": 44,
+      "stopped": 2
+    },
+    "Rice": {
+      "right": 45,
+      "wrong-crop": 8,
+      "unclear": 47,
+      "stopped": 0
+    },
+    "Sugarcane": {
+      "right": 76,
+      "wrong-crop": 5,
+      "unclear": 19,
+      "stopped": 0
+    },
+    "Wheat": {
+      "right": 31,
+      "wrong-crop": 17,
+      "unclear": 47,
+      "stopped": 5
+    }
+  },
+  "confusions": {
+    "Cotton -> Rice": 1,
+    "Cotton -> Sugarcane": 1,
+    "Maize -> Cotton": 1,
+    "Maize -> Sugarcane": 11,
+    "Rice -> Maize": 7,
+    "Rice -> Sugarcane": 1,
+    "Sugarcane -> Maize": 4,
+    "Sugarcane -> Rice": 1,
+    "Wheat -> Maize": 9,
+    "Wheat -> Rice": 5,
+    "Wheat -> Sugarcane": 3
+  },
+  "quality_raised_on_poor": 0.96,
+  "quality_raised_on_clean": 0.132,
+  "hand_macro_f1": 0.9151,
+  "auto_macro_f1": 0.803
+}
