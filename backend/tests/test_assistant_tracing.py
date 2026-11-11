@@ -194,6 +194,11 @@ def test_ai_settings_are_read_from_the_environment():
     assert (defaults.ai_db_path.name, defaults.trace_content, defaults.trace_retention_days) == ("ai.db", False, 30)
     assert (defaults.ai_concurrency, defaults.ai_queue_seconds, defaults.otlp_endpoint) == (1, 5, "")
     assert Settings._from({"CSA_AI_CONCURRENCY": "0"}).ai_concurrency == 1
+
+
+def test_photos_stay_on_the_local_network_unless_the_deployment_says_otherwise():
+    assert Settings._from({}).lm_studio_remote_images is False
+    assert Settings._from({"CSA_LM_STUDIO_REMOTE_IMAGES": "1"}).lm_studio_remote_images is True
     assert Settings._from({"CSA_AI_DB": ""}).ai_db_path is None
 
 

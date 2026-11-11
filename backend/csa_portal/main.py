@@ -285,6 +285,7 @@ def create_app(
         settings.lm_studio_model,
         settings.lm_studio_timeout,
         settings.lm_studio_api_key,
+        remote_images=settings.lm_studio_remote_images,
     )
     add_assistant_routes(
         app,

@@ -77,6 +77,8 @@ class Settings:
     lm_studio_model: str = "qwen/qwen3.8-27b"
     lm_studio_api_key: str = ""
     lm_studio_timeout: float = 60
+    # Photos go only to a model on the local network unless this is on; it is separate from any hosted text model.
+    lm_studio_remote_images: bool = False
     # The AI store and tracing. Without a database (the default when built directly, as tests do) answers are
     # still traced in memory, but nothing is kept.
     ai_db_path: Path | None = None
@@ -128,6 +130,7 @@ class Settings:
             lm_studio_model=environ.get("CSA_LM_STUDIO_MODEL", "qwen/qwen3.8-27b"),
             lm_studio_api_key=environ.get("CSA_LM_STUDIO_API_KEY", ""),
             lm_studio_timeout=positive_float(environ.get("CSA_LM_STUDIO_TIMEOUT", "60"), 60),
+            lm_studio_remote_images=environ.get("CSA_LM_STUDIO_REMOTE_IMAGES", "") == "1",
             ai_db_path=optional_path(environ.get("CSA_AI_DB", str(BACKEND_DIR / "ai.db"))),
             trace_content=environ.get("CSA_TRACE_CONTENT", "") == "1",
             trace_retention_days=positive_int(environ.get("CSA_TRACE_RETENTION_DAYS", "30"), 30),

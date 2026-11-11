@@ -221,13 +221,17 @@ class _TracedChat:
 class TracedModel(_TracedChat):
     """A language model whose every `complete` and `chat` call is an `llm` span with request and usage attributes."""
 
-    def complete(self, messages: list[dict[str, Any]], tools: Any = None, output: Any = None) -> Any:
+    def complete(self, messages: list[dict[str, Any]], tools: Any = None, output: Any = None, image: Any = None) -> Any:
         with span("llm", f"chat {self.model_name}", **self._attributes()) as current:
-            reply = (
-                self.inner.complete(messages, tools=tools)
-                if output is None
-                else self.inner.complete(messages, tools=tools, output=output)
-            )
+            # Only what was asked for is passed on, so a model that takes neither a shape nor a photo still works.
+            asked = {name: value for name, value in (("output", output), ("image", image)) if value is not None}
+            if image is not None:
+                # What the photo was, never the photo: its pixels are not kept anywhere (#16 asks consent first).
+                current.set(**{
+                    "csa.image.sha256": image.sha256, "csa.image.bytes": image.size,
+                    "csa.image.width": image.width, "csa.image.height": image.height,
+                })
+            reply = self.inner.complete(messages, tools=tools, **asked)
             usage = {"gen_ai.usage.input_tokens": reply.input_tokens, "gen_ai.usage.output_tokens": reply.output_tokens}
             current.set(**{name: value for name, value in usage.items() if value is not None})
             current.set(**{"csa.tool_calls": len(reply.tool_calls)})

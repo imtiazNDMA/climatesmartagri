@@ -199,3 +199,27 @@ def test_evaluation_traces_keep_their_text_even_with_content_capture_off():
         active.answered("Golden answer")
 
     assert (sink.traces[0].question_text, sink.traces[0].answer_text) == ("Golden question", "Golden answer")
+
+
+def test_a_traced_photo_call_records_what_the_photo_was_and_never_the_photo():
+    import io
+
+    from PIL import Image
+
+    from csa_portal.ai.model import Completion, Photo, ScriptedModel
+    from csa_portal.ai.tracing import traced
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (320, 240), (40, 120, 50)).save(buffer, "JPEG")
+    upload = buffer.getvalue()
+    photo = Photo.from_upload(upload)
+    sink = Sink()
+    inner = ScriptedModel([Completion(text="A leaf.")])
+    with Tracer(sink, capture_content=True).trace("photo-check", model="qwen", question="What is this?"):
+        traced(inner, "qwen").complete([{"role": "user", "content": "What is this?"}], image=photo)
+
+    assert inner.images == [photo]
+    attributes = sink.traces[0].spans[0].attributes
+    assert attributes["csa.image.sha256"] == hashlib.sha256(upload).hexdigest()
+    assert (attributes["csa.image.bytes"], attributes["csa.image.width"], attributes["csa.image.height"]) == (len(upload), 320, 240)
+    assert not any(isinstance(value, bytes) or "base64" in str(value) for value in attributes.values())
