@@ -7,13 +7,19 @@ model can be added as another adapter without touching callers.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import io
+import ipaddress
 import json
 import urllib.error
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
 from collections.abc import Iterator
 from typing import Any, Protocol, TypeVar
 
+from PIL import Image, ImageOps
 from pydantic import BaseModel, ValidationError
 
 Shape = TypeVar("Shape", bound=BaseModel)
@@ -57,11 +63,39 @@ class Completion:
     output_tokens: int | None = None
 
 
+@dataclass(frozen=True)
+class Photo:
+    """A reader's photo, made ready for a model. `data` is a fresh JPEG copy with nothing of the upload's EXIF
+    (location, device, time) and no side longer than asked. The other fields describe the upload itself and are
+    all that may be recorded about it."""
+
+    data: bytes
+    sha256: str
+    size: int
+    width: int
+    height: int
+
+    @classmethod
+    def from_upload(cls, content: bytes, longest_side: int = 1024) -> Photo:
+        with Image.open(io.BytesIO(content)) as image:
+            width, height = image.size
+            # Turn the pixels the way EXIF says the photo was held, since the copy carries no EXIF to say it.
+            copy = ImageOps.exif_transpose(image).convert("RGB")
+        copy.thumbnail((longest_side, longest_side))
+        buffer = io.BytesIO()
+        copy.save(buffer, "JPEG", quality=90)
+        return cls(buffer.getvalue(), hashlib.sha256(content).hexdigest(), len(content), width, height)
+
+
 class LanguageModel(Protocol):
     def chat(self, messages: list[dict[str, Any]]) -> str: ...
 
     def complete(
-        self, messages: list[dict[str, Any]], tools: list[Tool] | None = None, output: type[BaseModel] | None = None
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[Tool] | None = None,
+        output: type[BaseModel] | None = None,
+        image: Photo | None = None,
     ) -> Completion: ...
 
     def stream(self, messages: list[dict[str, Any]]) -> Iterator[str]: ...
@@ -71,13 +105,21 @@ class LmStudioModel:
     """LM Studio's OpenAI-compatible chat completions endpoint."""
 
     def __init__(
-        self, base_url: str, model: str, timeout: float = 60, api_key: str = "", temperature: float = 0.2
+        self,
+        base_url: str,
+        model: str,
+        timeout: float = 60,
+        api_key: str = "",
+        temperature: float = 0.2,
+        remote_images: bool = False,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
         self.api_key = api_key
         self.temperature = temperature
+        # Photos stay on the local network unless the deployment says otherwise; text follows ADR 0001 as before.
+        self.remote_images = remote_images
 
     def chat(self, messages: list[dict[str, Any]]) -> str:
         text = self.complete(messages).text
@@ -86,10 +128,19 @@ class LmStudioModel:
         return text
 
     def complete(
-        self, messages: list[dict[str, Any]], tools: list[Tool] | None = None, output: type[BaseModel] | None = None
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[Tool] | None = None,
+        output: type[BaseModel] | None = None,
+        image: Photo | None = None,
     ) -> Completion:
         """Words or tool calls; or, with `output`, an object of that shape in `data`. A reply that does not fit
-        the shape is asked for once more, then given up as `bad-model-response`."""
+        the shape is asked for once more, then given up as `bad-model-response`. An `image` is shown to the model
+        beside the last user message."""
+        if image is not None:
+            if not (self.remote_images or _on_local_network(self.base_url)):
+                raise ModelError(503, "image-not-local", "Photos are only sent to a model on the local network")
+            messages = _with_photo(messages, image)
         if output is not None:
             return Completion(data=self._shaped(messages, output))
         payload = self._payload(messages)
@@ -192,6 +243,30 @@ class LmStudioModel:
         return message
 
 
+def _on_local_network(url: str) -> bool:
+    host = urllib.parse.urlparse(url).hostname or ""
+    if host == "localhost":
+        return True
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return address.is_loopback or address.is_private
+
+
+def _with_photo(messages: list[dict[str, Any]], photo: Photo) -> list[dict[str, Any]]:
+    """A copy of `messages` whose last user message shows the photo after its words."""
+    last = next((i for i in range(len(messages) - 1, -1, -1) if messages[i].get("role") == "user"), None)
+    if last is None:
+        raise ValueError("a photo needs a user message to go with")
+    url = "data:image/jpeg;base64," + base64.b64encode(photo.data).decode("ascii")
+    shown = {
+        **messages[last],
+        "content": [{"type": "text", "text": messages[last]["content"]}, {"type": "image_url", "image_url": {"url": url}}],
+    }
+    return [*messages[:last], shown, *messages[last + 1 :]]
+
+
 def _tool_call(call: Any) -> ToolCall:
     try:
         arguments = json.loads(call["function"]["arguments"] or "{}")
@@ -214,13 +289,14 @@ class ScriptedModel:
     """A model that plays back scripted turns in order, for tests and recorded evaluations.
 
     Each turn is a `Completion` (for `chat` and `complete`) or a list of text pieces (for `stream`). It keeps the
-    messages and tools it was sent, and fails loudly when a caller asks for more turns than were scripted.
+    messages, tools and photo it was sent, and fails loudly when a caller asks for more turns than were scripted.
     """
 
     def __init__(self, turns: list[Completion | list[str]]) -> None:
         self.turns = list(turns)
         self.sent: list[list[dict[str, Any]]] = []
         self.tools: list[list[Tool] | None] = []
+        self.images: list[Photo | None] = []
 
     def chat(self, messages: list[dict[str, Any]]) -> str:
         text = self.complete(messages).text
@@ -229,9 +305,14 @@ class ScriptedModel:
         return text
 
     def complete(
-        self, messages: list[dict[str, Any]], tools: list[Tool] | None = None, output: type[BaseModel] | None = None
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[Tool] | None = None,
+        output: type[BaseModel] | None = None,
+        image: Photo | None = None,
     ) -> Completion:
         turn = self._next(messages, tools)
+        self.images.append(image)
         assert isinstance(turn, Completion), "the next scripted turn is a stream, not a completion"
         return turn
 

@@ -188,3 +188,93 @@ def test_a_thinking_model_whose_shaped_answer_lands_in_its_reasoning_is_still_re
     model = LmStudioModel(lm.url, "qwen-test", timeout=2)
 
     assert model.complete([{"role": "user", "content": "Sum it up"}], output=Headline).data.figure == 95.9
+
+
+def _upload(size=(1600, 1200), gps=False):
+    import io
+
+    from PIL import Image
+
+    image = Image.new("RGB", size, (40, 120, 50))
+    exif = Image.Exif()
+    if gps:
+        exif[0x010F] = "FieldPhone"  # Make
+        exif[0x8825] = {1: "N", 2: (31.0, 25.0, 0.0), 3: "E", 4: (73.0, 5.0, 0.0)}  # GPS
+    buffer = io.BytesIO()
+    image.save(buffer, "JPEG", exif=exif)
+    return buffer.getvalue()
+
+
+def test_a_photo_goes_to_the_model_beside_the_last_question_as_a_jpeg(lm):
+    import base64
+    import io
+
+    from PIL import Image
+
+    from csa_portal.language_model import Photo
+
+    lm.reply({"content": '{"headline": "A maize leaf", "figure": 1}'})
+    model = LmStudioModel(lm.url, "qwen-test", timeout=2)
+    messages = [{"role": "system", "content": "Look closely."}, {"role": "user", "content": "What is this?"}]
+
+    model.complete(messages, output=Headline, image=Photo.from_upload(_upload()))
+
+    system, user = lm.requests[0]["messages"]
+    assert system == {"role": "system", "content": "Look closely."}
+    text, picture = user["content"]
+    assert text == {"type": "text", "text": "What is this?"}
+    assert picture["type"] == "image_url"
+    prefix, encoded = picture["image_url"]["url"].split(",", 1)
+    assert prefix == "data:image/jpeg;base64"
+    sent = Image.open(io.BytesIO(base64.b64decode(encoded)))
+    assert sent.format == "JPEG"
+    assert max(sent.size) == 1024  # a large photo is shrunk before it is sent
+    assert messages[1] == {"role": "user", "content": "What is this?"}  # the caller's messages are left alone
+
+
+def test_a_photo_loses_its_location_and_device_before_the_model_sees_it():
+    import hashlib
+    import io
+
+    from PIL import Image
+
+    from csa_portal.language_model import Photo
+
+    upload = _upload(size=(800, 600), gps=True)
+    assert Image.open(io.BytesIO(upload)).getexif().get_ifd(0x8825)  # the upload does carry a location
+
+    photo = Photo.from_upload(upload)
+
+    cleaned = Image.open(io.BytesIO(photo.data))
+    assert not cleaned.getexif()
+    assert b"FieldPhone" not in photo.data
+    # What is recorded about a photo describes the upload, not the copy sent.
+    assert (photo.sha256, photo.size, photo.width, photo.height) == (hashlib.sha256(upload).hexdigest(), len(upload), 800, 600)
+
+
+def test_a_photo_is_not_sent_to_a_model_outside_the_local_network_unless_the_deployment_allows_it():
+    from csa_portal.language_model import Photo
+
+    photo = Photo.from_upload(_upload(size=(64, 64)))
+    question = [{"role": "user", "content": "What is this?"}]
+
+    with pytest.raises(ModelError) as refused:
+        LmStudioModel("https://models.example.invalid", "hosted", timeout=1).complete(question, image=photo)
+    assert refused.value.reason == "image-not-local"
+
+    # Allowed, the request is attempted (and fails only because the host does not exist).
+    with pytest.raises(ModelError) as attempted:
+        LmStudioModel("https://models.example.invalid", "hosted", timeout=1, remote_images=True).complete(question, image=photo)
+    assert attempted.value.reason == "assistant-unavailable"
+
+
+def test_a_scripted_model_keeps_the_photo_it_was_sent():
+    from csa_portal.language_model import Completion, Photo, ScriptedModel
+
+    photo = Photo.from_upload(_upload(size=(64, 64)))
+    model = ScriptedModel([Completion(text="A leaf."), Completion(text="Nothing.")])
+
+    model.complete([{"role": "user", "content": "What is this?"}], image=photo)
+    model.complete([{"role": "user", "content": "And now?"}])
+
+    assert model.images == [photo, None]
